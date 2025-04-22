@@ -61,6 +61,12 @@
                         <img src="{{ url }}" alt="PDF-bild" style="max-width: 100%; margin-bottom: 20px;">
                     {% endfor %}
                 {% endif %}
+                {% if vision_table %}
+                <h2>AI-bedömning (skala 1–10):</h2>
+                <div class="ai-table">
+                    {{ vision_table|safe }}
+                </div>
+            {% endif %}
                 </div>
             </div>
         </section>

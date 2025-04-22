@@ -76,10 +76,38 @@ Motivering: …
 """
 
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.4,
         max_tokens=500,
+    )
+
+    return response.choices[0].message.content.strip()
+
+def analyze_scales_from_images(image_urls):
+    prompt = """
+Du är en expert på personlighetstest. Titta på bilderna nedan som innehåller stapeldiagram för olika beteenden och karaktärsdrag.
+
+För varje skala (t.ex. Struktur, Tolerans, Omtänksamhet etc.), tolka vilken siffra (1–10) som är markerad.
+
+Returnera resultatet som en tabell där varje rad innehåller:
+
+- Namn på karaktärsdraget
+- Bedömt värde (1–10)
+
+Format: en **markdown-tabell** med två kolumner: "Skala" och "Poäng".
+"""
+
+    # Lägg till alla bilder som image inputs
+    images = [{"type": "image_url", "image_url": {"url": img}} for img in image_urls]
+
+    # Kombinera prompt + bilder
+    content = [{"type": "text", "text": prompt}] + images
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": content}],
+        max_tokens=1000,
     )
 
     return response.choices[0].message.content.strip()
@@ -109,8 +137,14 @@ def index(request):
         if uploaded_url:
             pdf_image_urls = convert_pdf_url_to_images(uploaded_url)
 
+    vision_result = None
+    if pdf_image_urls:
+        vision_result = analyze_scales_from_images(pdf_image_urls)
+
     return render(request, 'index.html', {
         'result': result,
         'analysis': analysis,
         'pdf_images': pdf_image_urls,
+        'vision_table': vision_result,
     })
+
