@@ -35,7 +35,7 @@ def convert_pdf_url_to_images(url):
     headers = {"x-api-key": os.getenv("PDFCO_API_KEY")}
     payload = {
         "url": url,
-        "pages": "",  # tom = alla sidor
+        "pages": "2-7",  # ✅ Bara sidor 3–8 (hoppar 1–2)
         "async": False
     }
 
