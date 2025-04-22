@@ -86,16 +86,25 @@ Motivering: …
 
 def analyze_scales_from_images(image_urls):
     prompt = """
-Du är en expert på personlighetstest. Titta på bilderna nedan som innehåller stapeldiagram för olika beteenden och karaktärsdrag.
+Du ser en eller flera bilder från ett personlighetstest.
 
-För varje skala (t.ex. Struktur, Tolerans, Omtänksamhet etc.), tolka vilken siffra (1–10) som är markerad.
+Varje karaktärsdrag har en visuell skala med 10 rutor i rad från vänster till höger:
+- Varje färgad (lila) ruta räknas som 1 poäng
+- 10 rutor = maxpoäng (10), 1 ruta = lägsta poäng (1)
+- Räkna de färgade rutorna och avgör individens poäng
 
-Returnera resultatet som en tabell där varje rad innehåller:
+Du ska:
+1. Identifiera namnet på varje skala (står direkt ovanför eller bredvid raderna med rutor)
+2. Räkna exakt hur många rutor är färgade
+3. Presentera svaret i **en tabell med två kolumner**: "Skala" och "Poäng"
 
-- Namn på karaktärsdraget
-- Bedömt värde (1–10)
+Obs: Ignorera all text till vänster och höger – titta endast på skalanamnet och antalet färgade rutor i rad.
 
-Format: en **markdown-tabell** med två kolumner: "Skala" och "Poäng".
+Exempel:
+| Skala          | Poäng |
+|----------------|-------|
+| Empati         | 7     |
+| Struktur       | 5     |
 """
 
     # Lägg till alla bilder som image inputs
