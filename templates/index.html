@@ -29,7 +29,7 @@
         <!-- Header-->
         <header class="bg-primary bg-gradient text-white">
             <div class="container px-4 text-center">
-                <h1 class="fw-bolder">Domarnämnden verktyg</h1>
+                <h1 class="fw-bolder">Administrativ förmåga</h1>
                 <!-- <p class="lead">A functional Bootstrap 5 boilerplate for one page scrolling websites</p>
                 <a class="btn btn-lg btn-light" href="#about">Start scrolling!</a> -->
             </div>
@@ -37,20 +37,30 @@
         <!-- About section-->
         <section id="about">
             <div class="container px-4">
-                <div class="row gx-4 justify-content-center">
-                    <div class="col-lg-8">
-                        <h2>Ladda upp PDF</h2>
-                        <form method="POST" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <input type="file" name="pdf" accept="application/pdf" required>
-                            <button type="submit">Analysera</button>
-                        </form>
-                        
-                        {% if result %}
-                            <h2>Extraherad text:</h2>
-                            <pre>{{ result }}</pre>
-                        {% endif %}
-                    </div>
+                <div class="col-lg-8">
+                    <h2>Ladda upp karaktärsdragsprofilen</h2>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="file" name="pdf" accept="application/pdf" required>
+                        <button type="submit">Analysera</button>
+                    </form>
+                
+                    {% if result %}
+                        <h2 class="mt-4">Extraherad text:</h2>
+                        <pre>{{ result }}</pre>
+                    {% endif %}
+                
+                    {% if analysis %}
+                        <h2 class="mt-4">AI-baserad analys:</h2>
+                        <pre>{{ analysis }}</pre>
+                    {% endif %}
+                
+                    {% if pdf_images %}
+                    <h2>Bilder från PDF (PDF.co):</h2>
+                    {% for url in pdf_images %}
+                        <img src="{{ url }}" alt="PDF-bild" style="max-width: 100%; margin-bottom: 20px;">
+                    {% endfor %}
+                {% endif %}
                 </div>
             </div>
         </section>
