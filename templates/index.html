@@ -40,61 +40,62 @@
                 <div class="row gx-4 justify-content-center">
                     <div class="col-lg-8">
 
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <h3>1. Ladda upp Excel</h3>
-                        <input type="file" name="excel">
-                        <button type="submit">Analysera testresultat</button>
-                    </form>
-
-                    {% if trait_scores %}
-                        <h3>🎯 Utdragna indikatorvärden från Excel</h3>
-                        <table style="border: 1px solid black;">
-                            <thead>
-                                <tr>
-                                    <th>Indikator</th>
-                                    <th>Poäng</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for trait, score in trait_scores.items %}
-                                <tr>
-                                    <td>{{ trait }}</td>
-                                    <td>{{ score }}</td>
-                                </tr>
+                        <div class="adminui-container">
+                            <h1 class="adminui-title">🧠 Administrativ förmåga</h1>
+                        
+                            <!-- Excel Upload -->
+                            <form method="post" enctype="multipart/form-data">
+                              {% csrf_token %}
+                              <div class="adminui-upload-area">
+                                <label for="excel" class="adminui-drop-zone">
+                                  <input type="file" name="excel" id="excel" hidden>
+                                  <div class="adminui-icon">📂</div>
+                                  <p>Dra och släpp fil här<br><span>eller klicka för att välja</span></p>
+                                </label>
+                                <button class="adminui-button" type="submit">Analysera testresultat</button>
+                              </div>
+                            </form>
+                        
+                            {% if trait_scores %}
+                            <div class="adminui-table-wrap">
+                              <h2 class="adminui-subtitle">📊 Utdragna indikatorvärden</h2>
+                              <table class="adminui-table">
+                                <tr><th>Indikator</th><th>Poäng</th></tr>
+                                {% for name, value in trait_scores %}
+                                  <tr><td>{{ name }}</td><td>{{ value }}</td></tr>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                        {% endif %}
-                    
-                    {% if test_text %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <h3>2. Justera testtext (administrativ förmåga)</h3>
-                        <textarea name="test_text" rows="6" style="width: 100%;">{{ test_text }}</textarea>
-                    
-                        <h3>3. Klistra in intervjuanteckningar</h3>
-                        <textarea name="intervju" rows="6" style="width: 100%;"></textarea>
-                        <button type="submit">Analysera intervju</button>
-                    </form>
-                    {% endif %}
-                    
-                    {% if intervju_result %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <h3>4. Justera intervjuanalys</h3>
-                        <textarea name="intervju_text" rows="6" style="width: 100%;">{{ intervju_result }}</textarea>
-                        <input type="hidden" name="test_text" value="{{ test_text }}">
-                        <button name="generate" value="1" type="submit">Skapa helhetsbedömning</button>
-                    </form>
-                    {% endif %}
-                    
-                    {% if helhetsbedomning %}
-                    <h3>5. Helhetsbedömning:</h3>
-                    <p>{{ helhetsbedomning }}</p>
-                    {% endif %}
-
-
+                              </table>
+                            </div>
+                            {% endif %}
+                        
+                            {% if test_text %}
+                            <form method="post">
+                              {% csrf_token %}
+                              <h2 class="adminui-subtitle">📝 Justera testtext</h2>
+                              <textarea name="test_text" class="adminui-textarea" rows="6">{{ test_text }}</textarea>
+                        
+                              <h2 class="adminui-subtitle">🗣️ Klistra in intervjuanteckningar</h2>
+                              <textarea name="intervju" class="adminui-textarea" rows="6" placeholder="Skriv eller klistra in..."></textarea>
+                        
+                              <button class="adminui-button" type="submit">Analysera intervju</button>
+                            </form>
+                            {% endif %}
+                        
+                            {% if intervju_result %}
+                            <form method="post">
+                              {% csrf_token %}
+                              <h2 class="adminui-subtitle">🧩 Justera intervjuanalys</h2>
+                              <textarea name="intervju_text" class="adminui-textarea" rows="6">{{ intervju_result }}</textarea>
+                              <input type="hidden" name="test_text" value="{{ test_text }}">
+                              <button name="generate" value="true" class="adminui-button" type="submit">Skapa helhetsbedömning</button>
+                            </form>
+                            {% endif %}
+                        
+                            {% if helhetsbedomning %}
+                              <h2 class="adminui-subtitle">✅ Helhetsbedömning</h2>
+                              <div class="adminui-assessment-box">{{ helhetsbedomning }}</div>
+                            {% endif %}
+                          </div>
                     
                     <!--<form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
