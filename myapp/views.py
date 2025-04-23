@@ -5,14 +5,23 @@ import requests
 from django.shortcuts import render
 from openai import OpenAI
 from dotenv import load_dotenv
+from google.cloud import vision
+from google.oauth2 import service_account
+
 
 # Ladda .env
 load_dotenv()
 if os.path.exists("env.py"):
     import env
 
-# Initiera OpenAI
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# OpenAI-klienten
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Google Vision-klienten (byt namn så det inte krockar)
+credentials = service_account.Credentials.from_service_account_file(
+    os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+)
+vision_client = vision.ImageAnnotatorClient(credentials=credentials)
 
 # 🧩 1. Ladda upp PDF till PDF.co
 def upload_pdf_to_pdfco(pdf_file):
@@ -75,7 +84,7 @@ Anpassningsförmåga: God förmåga
 Motivering: …
 """
 
-    response = client.chat.completions.create(
+    response = openai_client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.4,
@@ -84,48 +93,47 @@ Motivering: …
 
     return response.choices[0].message.content.strip()
 
-def analyze_scales_from_images(image_urls):
-    prompt = """
-Du ser en eller flera bilder från ett personlighetstest.
+def analyze_google_vision_from_url(image_url):
+    response = requests.get(image_url)
+    image_content = response.content
+    image = vision.Image(content=image_content)
 
-Varje karaktärsdrag har en visuell skala med 10 rutor i rad från vänster till höger:
-- Varje färgad (lila) ruta räknas som 1 poäng
-- 10 rutor = maxpoäng (10), 1 ruta = lägsta poäng (1)
-- Räkna de färgade rutorna och avgör individens poäng
+    # Kör objektigenkänning
+    response = vision_client.object_localization(image=image)
+    objects = response.localized_object_annotations
 
-Du ska:
-1. Identifiera namnet på varje skala (står direkt ovanför eller bredvid raderna med rutor)
-2. Räkna exakt hur många rutor är färgade
-3. Presentera svaret i **en tabell med två kolumner**: "Skala" och "Poäng"
+    print(f"🔍 {image_url} – {len(objects)} objekt hittade:")
+    for obj in objects:
+        print(f" - {obj.name} ({round(obj.score * 100)}%)")
 
-Obs: Ignorera all text till vänster och höger – titta endast på skalanamnet och antalet färgade rutor i rad.
+    return objects
 
-Exempel:
-| Skala          | Poäng |
-|----------------|-------|
-| Empati         | 7     |
-| Struktur       | 5     |
-"""
+def analyze_with_google_vision(image_urls):
+    for idx, image_url in enumerate(image_urls, start=1):
+        print(f"\n🔍 Bild {idx}: {image_url}")
 
-    # Lägg till alla bilder som image inputs
-    images = [{"type": "image_url", "image_url": {"url": img}} for img in image_urls]
+        # Hämta bilden från URL
+        response = requests.get(image_url)
+        image_content = response.content
+        image = vision.Image(content=image_content)
 
-    # Kombinera prompt + bilder
-    content = [{"type": "text", "text": prompt}] + images
+        # Kör objektidentifiering
+        response = vision_client.object_localization(image=image)
 
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": content}],
-        max_tokens=1000,
-    )
+        print("🧠 Upptäckta objekt:")
+        for obj in response.localized_object_annotations:
+            print(f"- {obj.name} (score: {obj.score:.2f})")
 
-    return response.choices[0].message.content.strip()
+        # Exempel: Räkna rektanglar (om vi antar att rutorna tolkas som 'Rectangle')
+        rectangles = [obj for obj in response.localized_object_annotations if "rectangle" in obj.name.lower()]
+        print(f"➡️  Totalt antal 'rectangle'-objekt: {len(rectangles)}")
 
 # 🌐 Huvudvy
 def index(request):
     result = None
     analysis = None
     pdf_image_urls = []
+    vision_result = None
 
     if request.method == 'POST' and request.FILES.get('pdf'):
         pdf_file = request.FILES['pdf']
@@ -146,9 +154,10 @@ def index(request):
         if uploaded_url:
             pdf_image_urls = convert_pdf_url_to_images(uploaded_url)
 
-    vision_result = None
-    if pdf_image_urls:
-        vision_result = analyze_scales_from_images(pdf_image_urls)
+        if pdf_image_urls:
+            for url in pdf_image_urls:
+                analyze_google_vision_from_url(url)
+                analyze_with_google_vision(pdf_image_urls)
 
     return render(request, 'index.html', {
         'result': result,
