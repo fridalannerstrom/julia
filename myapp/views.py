@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from openai import OpenAI
 import io
+import markdown2
 
 # Ladda .env
 load_dotenv()
@@ -85,8 +86,9 @@ Intervju:
                 model="gpt-4o",
                 messages=[{"role": "user", "content": prompt}]
             )
-            context["helhetsbedomning"] = response.choices[0].message.content.strip()
+            context["helhetsbedomning"] = markdown2.markdown(response.choices[0].message.content.strip())
             context["test_text"] = test_text
             context["intervju_text"] = intervju_text
+            context["intervju_result"] = request.POST.get("intervju_result", "")
 
     return render(request, "index.html", context)

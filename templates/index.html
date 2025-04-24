@@ -41,20 +41,24 @@
                     <div class="col-lg-8">
 
                         <div class="adminui-container">
-                            <h1 class="adminui-title">🧠 Administrativ förmåga</h1>
+                            <h1 class="adminui-title">Ladda upp Excel</h1>
                         
                             <!-- Excel Upload -->
                             <form method="post" enctype="multipart/form-data">
-                              {% csrf_token %}
-                              <div class="adminui-upload-area">
-                                <label for="excel" class="adminui-drop-zone">
-                                  <input type="file" name="excel" id="excel" hidden>
-                                  <div class="adminui-icon">📂</div>
-                                  <p>Dra och släpp fil här<br><span>eller klicka för att välja</span></p>
-                                </label>
-                                <button class="adminui-button" type="submit">Analysera testresultat</button>
-                              </div>
-                            </form>
+                                {% csrf_token %}
+                                <div class="adminui-upload-area">
+                                  <label for="excel" class="adminui-drop-zone">
+                                    <input type="file" name="excel" id="excel" hidden onchange="showFilename(this)">
+                                    <div class="adminui-icon">📂</div>
+                                    <p>Klicka för att ladda upp fil</p>
+                                  </label>
+                                  
+                                  <!-- Här visas det valda filnamnet -->
+                                  <p id="filename" style="margin-top: 10px; color: #666; font-style: italic;"></p>
+                              
+                                  <button class="adminui-button" type="submit">Analysera testresultat</button>
+                                </div>
+                              </form>
                         
                             {% if trait_scores %}
                             <div class="adminui-table-wrap">
@@ -71,7 +75,7 @@
                             {% if test_text %}
                             <form method="post">
                               {% csrf_token %}
-                              <h2 class="adminui-subtitle">📝 Justera testtext</h2>
+                              <h2 class="adminui-subtitle">Testanalys</h2><br><p>Justera texten om du vill</p>
                               <textarea name="test_text" class="adminui-textarea" rows="6">{{ test_text }}</textarea>
                         
                               <h2 class="adminui-subtitle">🗣️ Klistra in intervjuanteckningar</h2>
@@ -84,7 +88,7 @@
                             {% if intervju_result %}
                             <form method="post">
                               {% csrf_token %}
-                              <h2 class="adminui-subtitle">🧩 Justera intervjuanalys</h2>
+                              <h2 class="adminui-subtitle">Intervjuanalys</h2><br><p>Justera texten om du vill</p>
                               <textarea name="intervju_text" class="adminui-textarea" rows="6">{{ intervju_result }}</textarea>
                               <input type="hidden" name="test_text" value="{{ test_text }}">
                               <button name="generate" value="true" class="adminui-button" type="submit">Skapa helhetsbedömning</button>
@@ -93,7 +97,7 @@
                         
                             {% if helhetsbedomning %}
                               <h2 class="adminui-subtitle">✅ Helhetsbedömning</h2>
-                              <div class="adminui-assessment-box">{{ helhetsbedomning }}</div>
+                              <div class="adminui-assessment-box">{{ helhetsbedomning|safe }}</div>
                             {% endif %}
                           </div>
                     
@@ -132,6 +136,12 @@
         <footer class="py-5 bg-dark">
             <div class="container px-4"><p class="m-0 text-center text-white">Copyright &copy; TQ Nordic</p></div>
         </footer>
+        <script>
+            function showFilename(input) {
+              const fileName = input.files[0] ? input.files[0].name : "Ingen fil vald";
+              document.getElementById("filename").textContent = `Vald fil: ${fileName}`;
+            }
+          </script>
         <!-- Bootstrap core JS-->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
         <!-- Core theme JS-->
