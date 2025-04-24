@@ -1,1 +1,1 @@
-web: gunicorn project_cleo.wsgi
+web: gunicorn myproject.wsgi
