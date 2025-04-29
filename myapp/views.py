@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import io
 import markdown2
-from django.db import models
 from .models import Prompt
 
 # Ladda .env
@@ -18,6 +17,7 @@ if os.path.exists("env.py"):
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Körs endast om en prompt inte redan finns – skriver INTE över text
 def ensure_default_prompts_exist():
     defaults = {
         "testanalys": """Du är en psykolog specialiserad på testtolkning. Nedan finns innehållet från en Excel-rapport med en kandidats testresultat.
@@ -51,8 +51,8 @@ Intervju:
 """
     }
 
-    for name, text in defaults.items():
-        Prompt.objects.get_or_create(name=name, defaults={"text": text})
+    for name in defaults:
+        Prompt.objects.get_or_create(name=name)  # 👈 ändrad rad – skriver aldrig över!
 
 @csrf_exempt
 def prompt_editor(request):
@@ -86,7 +86,6 @@ def index(request):
 
             excel_text = output.getvalue()
 
-            # Hämta prompten från databasen
             base_prompt = Prompt.objects.get(name="testanalys").text
             prompt = base_prompt.replace("{excel_text}", excel_text)
 
@@ -126,4 +125,3 @@ def index(request):
             context["intervju_result"] = request.POST.get("intervju_result", "")
 
     return render(request, "index.html", context)
-
