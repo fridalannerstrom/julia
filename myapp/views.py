@@ -51,8 +51,8 @@ Intervju:
 """
     }
 
-    for name in defaults:
-        Prompt.objects.get_or_create(name=name)  # 👈 ändrad rad – skriver aldrig över!
+    for name, text in defaults.items():
+        Prompt.objects.get_or_create(name=name, defaults={"text": text})
 
 @csrf_exempt
 def prompt_editor(request):
