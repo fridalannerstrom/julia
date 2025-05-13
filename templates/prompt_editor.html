@@ -7,9 +7,9 @@
         <meta name="description" content="" />
         <meta name="author" content="" />
         <title>Julia</title>
-        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
         <!-- Core theme CSS (includes Bootstrap)-->
         <link rel="stylesheet" href="{% static 'css/style.css' %}">
+        <link rel="icon" type="image/x-icon" href="{% static 'assets/favicon.ico' %}">
     </head>
     <body id="page-top">
         <!-- Navigation-->
@@ -20,7 +20,7 @@
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Verktyget</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'prompt_editor' %}">Ändra prompts</a></li>
+                        <a class="nav-link" href="{% url 'prompt_editor' %}">Ändra prompts</a>
                     </ul> 
                 </div>
             </div>

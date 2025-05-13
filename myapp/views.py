@@ -18,7 +18,8 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Skapa standardprompter för användaren om de inte finns
 def ensure_default_prompts_exist(user):
-    defaults = {
+    if not Prompt.objects.filter(user=user).exists():
+        defaults = {
         "testanalys": """Du är en psykolog specialiserad på testtolkning. Nedan finns innehållet från en Excel-rapport med en kandidats testresultat.
 
 Innehållet är rådata från ett Exceldokument. Ditt uppdrag är att:
@@ -48,10 +49,9 @@ Test:
 Intervju:
 {intervju_text}
 """
-    }
-
-    for name, text in defaults.items():
-        Prompt.objects.get_or_create(user=user, name=name, defaults={"text": text})
+        }
+        for name, text in defaults.items():
+            Prompt.objects.create(user=user, name=name, text=text)
 
 
 @login_required
