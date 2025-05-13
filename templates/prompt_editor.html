@@ -45,7 +45,7 @@
                           {% csrf_token %}
                           {% for prompt in prompts %}
                             <h3>{{ prompt.name|capfirst }}</h3>
-                            <p>Obs! Ta inte bort taggarna, t ex {excel_text}.</p>
+                            <p>Obs! Ta inte bort taggarna, t ex {excel_text}</p>
                             <textarea name="prompt_{{ prompt.name }}" rows="8" style="width:100%">{{ prompt.text }}</textarea>
                             <hr>
                           {% endfor %}
