@@ -15,6 +15,9 @@ import os
 import dj_database_url
 from dotenv import load_dotenv
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # Ladda .env eller env.py (för lokala miljövariabler)
 load_dotenv()
@@ -22,10 +25,6 @@ load_dotenv()
 # För att kunna importera lokala env.py direkt (om du använder den istället)
 if os.path.exists(os.path.join(BASE_DIR, "env.py")):
     import env  # din egna fil där du sätter os.environ["..."]
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
