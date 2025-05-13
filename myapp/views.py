@@ -1,24 +1,23 @@
-# views.py
 import os
+import io
 import openpyxl
+import markdown2
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from dotenv import load_dotenv
 from openai import OpenAI
-import io
-import markdown2
 from .models import Prompt
 
-# Ladda .env
+# Ladda miljövariabler
 load_dotenv()
 if os.path.exists("env.py"):
     import env
 
-load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Körs endast om en prompt inte redan finns – skriver INTE över text
-def ensure_default_prompts_exist():
+# Skapa standardprompter för användaren om de inte finns
+def ensure_default_prompts_exist(user):
     defaults = {
         "testanalys": """Du är en psykolog specialiserad på testtolkning. Nedan finns innehållet från en Excel-rapport med en kandidats testresultat.
 
@@ -52,26 +51,42 @@ Intervju:
     }
 
     for name, text in defaults.items():
-        Prompt.objects.get_or_create(name=name, defaults={"text": text})
+        Prompt.objects.get_or_create(user=user, name=name, defaults={"text": text})
 
+
+@login_required
 @csrf_exempt
 def prompt_editor(request):
-    ensure_default_prompts_exist()
-    prompts = Prompt.objects.all()
+    ensure_default_prompts_exist(request.user)
+    prompts = Prompt.objects.filter(user=request.user)
 
     if request.method == "POST":
-        for prompt in prompts:
-            field_name = f"prompt_{prompt.name}"
-            new_text = request.POST.get(field_name)
-            if new_text is not None:
-                prompt.text = new_text
+        if "reset" in request.POST:
+            name = request.POST["reset"]
+            defaults = {
+                "testanalys": """Du är en psykolog specialiserad på testtolkning...""",
+                "intervjuanalys": """Du är en HR-expert. Nedan finns intervjuanteckningar...""",
+                "helhetsbedomning": """Du är en HR-expert. Nedan finns en testanalys..."""
+            }
+            if name in defaults:
+                prompt = Prompt.objects.get(user=request.user, name=name)
+                prompt.text = defaults[name]
                 prompt.save()
+        else:
+            for prompt in prompts:
+                field_name = f"prompt_{prompt.name}"
+                new_text = request.POST.get(field_name)
+                if new_text is not None:
+                    prompt.text = new_text
+                    prompt.save()
 
     return render(request, "prompt_editor.html", {"prompts": prompts})
 
+
+@login_required
 @csrf_exempt
 def index(request):
-    ensure_default_prompts_exist()
+    ensure_default_prompts_exist(request.user)
     context = {}
 
     if request.method == 'POST':
@@ -85,8 +100,7 @@ def index(request):
                 output.write("\t".join([str(cell) if cell is not None else "" for cell in row]) + "\n")
 
             excel_text = output.getvalue()
-
-            base_prompt = Prompt.objects.get(name="testanalys").text
+            base_prompt = Prompt.objects.get(user=request.user, name="testanalys").text
             prompt = base_prompt.replace("{excel_text}", excel_text)
 
             response = client.chat.completions.create(
@@ -97,7 +111,7 @@ def index(request):
 
         elif "intervju" in request.POST:
             intervjuanteckningar = request.POST.get("intervju")
-            base_prompt = Prompt.objects.get(name="intervjuanalys").text
+            base_prompt = Prompt.objects.get(user=request.user, name="intervjuanalys").text
             prompt = base_prompt.replace("{intervjuanteckningar}", intervjuanteckningar)
 
             response = client.chat.completions.create(
@@ -112,7 +126,7 @@ def index(request):
             test_text = request.POST.get("test_text")
             intervju_text = request.POST.get("intervju_text")
 
-            base_prompt = Prompt.objects.get(name="helhetsbedomning").text
+            base_prompt = Prompt.objects.get(user=request.user, name="helhetsbedomning").text
             prompt = base_prompt.replace("{test_text}", test_text).replace("{intervju_text}", intervju_text)
 
             response = client.chat.completions.create(

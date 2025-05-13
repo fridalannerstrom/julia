@@ -40,7 +40,7 @@
                     <div class="col-lg-8">
 
                         <h2>Redigera AI-prompter</h2>
-
+                        <p><b>Taggar att använda:</b><br> {excel_text} (funkar bara i ruta 1)<br> {intervjuanteckningar} (funkar bara i ruta 2) <br>{test_text}, {intervju_text} (dessa funkar bara i ruta 3) </p>
                         <form method="post">
                           {% csrf_token %}
                           {% for prompt in prompts %}
