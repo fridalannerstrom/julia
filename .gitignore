@@ -8,4 +8,16 @@ node_modules/
 .github/
 cloudinary_python.txt
 .venv
-env.py
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.env
+.env.*
+
+# Django stuff
+db.sqlite3
+.env.py
