@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from dotenv import load_dotenv
 from openai import OpenAI
 from .models import Prompt
+from django.conf import settings
 
 # Ladda miljövariabler
 load_dotenv()
@@ -101,22 +102,22 @@ def index(request):
 
             excel_text = output.getvalue()
             base_prompt = Prompt.objects.get(user=request.user, name="testanalys").text
-            prompt = base_prompt.replace("{excel_text}", excel_text)
+            final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{excel_text}", excel_text)
 
             response = client.chat.completions.create(
                 model="gpt-4o",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": final_prompt}]
             )
             context["test_text"] = response.choices[0].message.content.strip()
 
         elif "intervju" in request.POST:
             intervjuanteckningar = request.POST.get("intervju")
             base_prompt = Prompt.objects.get(user=request.user, name="intervjuanalys").text
-            prompt = base_prompt.replace("{intervjuanteckningar}", intervjuanteckningar)
+            final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{intervjuanteckningar}", intervjuanteckningar)
 
             response = client.chat.completions.create(
                 model="gpt-4o",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": final_prompt}]
             )
             context["intervju_text"] = intervjuanteckningar
             context["intervju_result"] = response.choices[0].message.content.strip()
@@ -127,11 +128,11 @@ def index(request):
             intervju_text = request.POST.get("intervju_text")
 
             base_prompt = Prompt.objects.get(user=request.user, name="helhetsbedomning").text
-            prompt = base_prompt.replace("{test_text}", test_text).replace("{intervju_text}", intervju_text)
+            final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{test_text}", test_text).replace("{intervju_text}", intervju_text)
 
             response = client.chat.completions.create(
                 model="gpt-4o",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": final_prompt}]
             )
             context["helhetsbedomning"] = markdown2.markdown(response.choices[0].message.content.strip())
             context["test_text"] = test_text
