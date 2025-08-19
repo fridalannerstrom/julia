@@ -90,6 +90,15 @@ def index(request):
     ensure_default_prompts_exist(request.user)
     context = {}
 
+    # Behåll tidigare inskickad data även om man bara klickar ett av stegen
+    test_text = request.POST.get("test_text", "")
+    intervju_text = request.POST.get("intervju_text", "")
+    intervju_result = request.POST.get("intervju_result", "")
+
+    context["test_text"] = test_text
+    context["intervju_text"] = intervju_text
+    context["intervju_result"] = intervju_result
+
     if request.method == 'POST':
         if "excel" in request.FILES:
             file = request.FILES['excel']
@@ -104,32 +113,40 @@ def index(request):
             base_prompt = Prompt.objects.get(user=request.user, name="testanalys").text
             final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{excel_text}", excel_text)
 
+            import ssl
+            print("🔒 SSL version:", ssl.OPENSSL_VERSION)
+            print("🔑 API key exists?", bool(os.getenv("OPENAI_API_KEY")))
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[{"role": "user", "content": final_prompt}]
             )
-            context["test_text"] = response.choices[0].message.content.strip()
+            test_text = response.choices[0].message.content.strip()
+            context["test_text"] = test_text
 
         elif "intervju" in request.POST:
-            intervjuanteckningar = request.POST.get("intervju")
+            intervjuanteckningar = request.POST.get("intervju", "")
             base_prompt = Prompt.objects.get(user=request.user, name="intervjuanalys").text
             final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{intervjuanteckningar}", intervjuanteckningar)
 
+            import ssl
+            print("🔒 SSL version:", ssl.OPENSSL_VERSION)
+            print("🔑 API key exists?", bool(os.getenv("OPENAI_API_KEY")))
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[{"role": "user", "content": final_prompt}]
             )
+            intervju_result = response.choices[0].message.content.strip()
             context["intervju_text"] = intervjuanteckningar
-            context["intervju_result"] = response.choices[0].message.content.strip()
-            context["test_text"] = request.POST.get("test_text")
+            context["intervju_result"] = intervju_result
+            context["test_text"] = test_text  # Behåll testtexten också
 
         elif "generate" in request.POST:
-            test_text = request.POST.get("test_text")
-            intervju_text = request.POST.get("intervju_text")
-
             base_prompt = Prompt.objects.get(user=request.user, name="helhetsbedomning").text
             final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{test_text}", test_text).replace("{intervju_text}", intervju_text)
 
+            import ssl
+            print("🔒 SSL version:", ssl.OPENSSL_VERSION)
+            print("🔑 API key exists?", bool(os.getenv("OPENAI_API_KEY")))
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[{"role": "user", "content": final_prompt}]
@@ -137,6 +154,6 @@ def index(request):
             context["helhetsbedomning"] = markdown2.markdown(response.choices[0].message.content.strip())
             context["test_text"] = test_text
             context["intervju_text"] = intervju_text
-            context["intervju_result"] = request.POST.get("intervju_result", "")
+            context["intervju_result"] = intervju_result
 
     return render(request, "index.html", context)
