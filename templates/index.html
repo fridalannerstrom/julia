@@ -84,9 +84,21 @@
                             {% endif %}
                         
                             {% if helhetsbedomning %}
-                              <h2 class="adminui-subtitle">✅ Helhetsbedömning</h2>
-                              <div class="adminui-assessment-box">{{ helhetsbedomning|safe }}</div>
-                            {% endif %}
+                                <h2 class="adminui-subtitle">✅ Helhetsbedömning</h2>
+
+                                {# >>> NYTT: Betygstabell för Domarnämnden (visas om ratings_table_html finns) <<< #}
+                                {% if ratings_table_html %}
+                                    <div class="adminui-assessment-box">
+                                    <h3 style="margin-top:0">Översikt – kompetensgradering (5-gradig skala)</h3>
+                                    {{ ratings_table_html|safe }}
+                                    <p style="font-size:.9rem;color:#666;margin-top:8px">
+                                        Skala: 1&nbsp;= Utrymme för utveckling · 2&nbsp;= Tillräcklig · 3&nbsp;= God · 4&nbsp;= Mycket god · 5&nbsp;= Utmärkt
+                                    </p>
+                                    </div>
+                                {% endif %}
+
+                                <div class="adminui-assessment-box">{{ helhetsbedomning|safe }}</div>
+                                {% endif %}
                           </div>
                     
                     <!--<form method="POST" enctype="multipart/form-data">
