@@ -2,6 +2,7 @@ import os
 import io
 import re
 import json
+import textwrap
 import openpyxl
 import markdown2
 from django.shortcuts import render
@@ -10,21 +11,25 @@ from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from dotenv import load_dotenv
 from openai import OpenAI
-from .models import Prompt
 from django.conf import settings
+from .models import Prompt
 
-# Ladda miljövariabler
+# ──────────────────────────────────────────────────────────────────────────────
+# Miljö
+# ──────────────────────────────────────────────────────────────────────────────
 load_dotenv()
 if os.path.exists("env.py"):
-    import env
+    import env  # noqa: F401
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Skapa standardprompter för användaren om de inte finns
+# ──────────────────────────────────────────────────────────────────────────────
+# Defaults: skapas per användare om inget finns
+# ──────────────────────────────────────────────────────────────────────────────
 def ensure_default_prompts_exist(user):
     if not Prompt.objects.filter(user=user).exists():
         defaults = {
-        "testanalys": """Du är en psykolog specialiserad på testtolkning. Nedan finns innehållet från en Excel-rapport med en kandidats testresultat.
+            "testanalys": """Du är en psykolog specialiserad på testtolkning. Nedan finns innehållet från en Excel-rapport med en kandidats testresultat.
 
 Innehållet är rådata från ett Exceldokument. Ditt uppdrag är att:
 1. Identifiera siffran i kolumnen "Competency Score: Planning & Organising (STEN)"
@@ -34,14 +39,14 @@ Innehållet är rådata från ett Exceldokument. Ditt uppdrag är att:
 Excelinnehåll:
 {excel_text}
 """,
-        "intervjuanalys": """Du är en HR-expert. Nedan finns intervjuanteckningar. 
+            "intervjuanalys": """Du är en HR-expert. Nedan finns intervjuanteckningar. 
 Beskriv 3 styrkor och 3 utvecklingsområden. 
 Om någon styrka kan bli ett riskbeteende vid press/stress, nämn det.
 
 Anteckningar:
 {intervjuanteckningar}
 """,
-        "helhetsbedomning": """Du är en HR-expert. Nedan finns en testanalys och en intervjusammanfattning. 
+            "helhetsbedomning": """Du är en HR-expert. Nedan finns en testanalys och en intervjusammanfattning. 
 Skriv en helhetsbedömning och ange betyg enligt skalan:
 - Utrymme för förbättring
 - Tillräckligt god förmåga
@@ -57,16 +62,46 @@ Intervju:
         for name, text in defaults.items():
             Prompt.objects.create(user=user, name=name, text=text)
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Hjälpare
+# ──────────────────────────────────────────────────────────────────────────────
+def _trim(s: str, max_chars: int = 6500) -> str:
+    """Trimma långa texter (behåll början och slut) för att undvika tokenproblem."""
+    s = s or ""
+    if len(s) <= max_chars:
+        return s
+    head = s[: max_chars // 2]
+    tail = s[- max_chars // 2 :]
+    return head + "\n...\n" + tail
 
-def build_ratings_table_html(ratings: dict) -> str:
+def _safe_json_from_text(txt: str):
     """
-    Bygger en tabelliknande layout (5 kolumner: 1-5) med bock i vald kolumn.
-    ratings förväntas vara ett dict enligt schemat i prompten (se generate-steget).
+    Försök plocka JSON efter rubriken RATINGS_JSON.
+    Hanterar även ```json ... ``` och whitespace.
     """
-    # Kolumnrubriker enligt Domarnämndens 5-gradiga skala
+    if not txt:
+        return None
+    m = re.search(r"###\s*RATINGS_JSON\s*(.*)$", txt, flags=re.DOTALL | re.IGNORECASE)
+    if not m:
+        return None
+    block = m.group(1).strip()
+
+    fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", block, flags=re.DOTALL)
+    if fence:
+        block = fence.group(1)
+    else:
+        brace = re.search(r"(\{.*\})", block, flags=re.DOTALL)
+        if brace:
+            block = brace.group(1)
+
+    try:
+        return json.loads(block)
+    except Exception:
+        return None
+
+def _ratings_table_html(ratings: dict) -> str:
+    """Bygger en tabelliknande layout (5 kolumner: 1–5) med bock i vald kolumn."""
     headers = ["Utrymme för utveckling", "Tillräcklig", "God", "Mycket god", "Utmärkt"]
-
-    # För att visa i definierad och logisk ordning:
     section_order = [
         ("leda_utveckla_och_engagera", "1. Leda, utveckla och engagera"),
         ("mod_och_handlingskraft", "2. Mod och handlingskraft"),
@@ -75,52 +110,36 @@ def build_ratings_table_html(ratings: dict) -> str:
         ("kommunikation_och_samarbete", "5. Kommunikation och samarbete"),
     ]
 
-    # Hjälprad för en underkategori
-    def row_html(name: str, value: int) -> str:
-        tds = []
-        for col in range(1, 6):
-            mark = "✓" if value == col else ""
-            tds.append(f'<td class="dn-cell">{mark}</td>')
-        return f"""
-        <tr>
-            <th class="dn-sub">{name}</th>
-            {''.join(tds)}
-        </tr>"""
+    def row(name, val):
+        tds = "".join(f'<td class="dn-cell">{"✓" if val==i else ""}</td>' for i in range(1,6))
+        return f'<tr><th class="dn-sub">{name}</th>{tds}</tr>'
 
-    # Bygg tabeller per sektion
-    sections_html = []
+    sections = []
     for key, title in section_order:
         if key not in ratings:
             continue
         rows = []
-        for sub_name, score in ratings[key].items():
-            # skydda mot out-of-range
+        for sub, score in ratings[key].items():
             try:
-                val = int(score)
+                v = int(score)
             except Exception:
-                val = 3
-            val = max(1, min(5, val))
-            rows.append(row_html(sub_name, val))
-
-        table_html = f"""
+                v = 3
+            v = max(1, min(5, v))
+            rows.append(row(sub, v))
+        sections.append(f"""
         <div class="dn-section">
           <h3 class="dn-h3">{title}</h3>
           <table class="dn-table">
             <thead>
               <tr>
                 <th class="dn-head dn-first"></th>
-                {''.join([f'<th class="dn-head">{h}</th>' for h in headers])}
+                {''.join(f'<th class="dn-head">{h}</th>' for h in headers)}
               </tr>
             </thead>
-            <tbody>
-              {''.join(rows)}
-            </tbody>
+            <tbody>{''.join(rows)}</tbody>
           </table>
-        </div>
-        """
-        sections_html.append(table_html)
+        </div>""")
 
-    # Enkel inlined CSS så du slipper röra statiska filer nu
     css = """
     <style>
       .dn-section{margin:24px 0;}
@@ -129,17 +148,36 @@ def build_ratings_table_html(ratings: dict) -> str:
       .dn-head{font-weight:600;font-size:.9rem;text-align:center;white-space:nowrap;}
       .dn-first{width:32%;}
       .dn-sub{font-weight:600;background:#f7f9fc;padding:10px;border-radius:8px 0 0 8px;}
-      .dn-cell{background:#f7f9fc;text-align:center;padding:10px;min-width:110px;border-left:4px solid #fff;}
-      .dn-cell:first-of-type{border-left:none;}
-      .dn-cell, .dn-sub{border:1px solid #e6ebf2;border-left:0;}
+      .dn-cell{background:#f7f9fc;text-align:center;padding:10px;min-width:110px;
+               border-left:4px solid #fff;border:1px solid #e6ebf2;border-left:0;}
       tr>th.dn-sub + td{border-left:1px solid #e6ebf2;}
-      .dn-cell{border-radius:0;}
       tr>td.dn-cell:last-child{border-radius:0 8px 8px 0;}
-    </style>
-    """
-    return css + "\n".join(sections_html)
+    </style>"""
+    return css + "\n".join(sections)
 
+def _default_all_three():
+    """Sista fallback — fyll 3:or överallt så UI alltid renderar."""
+    return {
+        "leda_utveckla_och_engagera": {
+            "Leda andra": 3, "Engagera andra": 3, "Delegera": 3, "Utveckla andra": 3
+        },
+        "mod_och_handlingskraft": {
+            "Beslutsamhet": 3, "Integritet": 3, "Hantera konflikter": 3
+        },
+        "sjalkannedom_och_emotionell_stabilitet": {
+            "Självmedvetenhet": 3, "Uthållighet": 3
+        },
+        "strategiskt_tankande_och_anpassningsformaga": {
+            "Strategiskt fokus": 3, "Anpassningsförmåga": 3
+        },
+        "kommunikation_och_samarbete": {
+            "Teamarbete": 3, "Inflytelserik": 3
+        }
+    }
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Prompt Editor (om du har en sida för att redigera prompter)
+# ──────────────────────────────────────────────────────────────────────────────
 @login_required
 @csrf_exempt
 def prompt_editor(request):
@@ -168,7 +206,9 @@ def prompt_editor(request):
 
     return render(request, "prompt_editor.html", {"prompts": prompts})
 
-
+# ──────────────────────────────────────────────────────────────────────────────
+# Huvudvy
+# ──────────────────────────────────────────────────────────────────────────────
 @login_required
 @csrf_exempt
 def index(request):
@@ -185,49 +225,60 @@ def index(request):
     context["intervju_result"] = intervju_result
 
     if request.method == 'POST':
+        # ── Steg 1: Excel -> Testanalys ───────────────────────────────────────
         if "excel" in request.FILES:
-            file = request.FILES['excel']
-            wb = openpyxl.load_workbook(file)
-            ws = wb.active
+            try:
+                file = request.FILES['excel']
+                wb = openpyxl.load_workbook(file)
+                ws = wb.active
 
-            output = io.StringIO()
-            for row in ws.iter_rows(values_only=True):
-                output.write("\t".join([str(cell) if cell is not None else "" for cell in row]) + "\n")
+                output = io.StringIO()
+                for row in ws.iter_rows(values_only=True):
+                    output.write("\t".join([str(cell) if cell is not None else "" for cell in row]) + "\n")
 
-            excel_text = output.getvalue()
-            base_prompt = Prompt.objects.get(user=request.user, name="testanalys").text
-            final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{excel_text}", excel_text)
+                excel_text = output.getvalue()
+                base_prompt = Prompt.objects.get(user=request.user, name="testanalys").text
+                final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{excel_text}", excel_text)
 
-            import ssl
-            print("🔒 SSL version:", ssl.OPENSSL_VERSION)
-            print("🔑 API key exists?", bool(os.getenv("OPENAI_API_KEY")))
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[{"role": "user", "content": final_prompt}]
-            )
-            test_text = response.choices[0].message.content.strip()
-            context["test_text"] = test_text
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": final_prompt}]
+                )
+                test_text = response.choices[0].message.content.strip()
+                context["test_text"] = test_text
+            except Exception as e:
+                print("OpenAI error (testanalys):", repr(e))
+                context["error"] = "Kunde inte hämta testanalys från AI: " + str(e)[:500]
+                return render(request, "index.html", context)
 
+        # ── Steg 2: Intervju -> Intervjuanalys ───────────────────────────────
         elif "intervju" in request.POST:
-            intervjuanteckningar = request.POST.get("intervju", "")
-            base_prompt = Prompt.objects.get(user=request.user, name="intervjuanalys").text
-            final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{intervjuanteckningar}", intervjuanteckningar)
+            try:
+                intervjuanteckningar = request.POST.get("intervju", "")
+                base_prompt = Prompt.objects.get(user=request.user, name="intervjuanalys").text
+                final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{intervjuanteckningar}", intervjuanteckningar)
 
-            import ssl
-            print("🔒 SSL version:", ssl.OPENSSL_VERSION)
-            print("🔑 API key exists?", bool(os.getenv("OPENAI_API_KEY")))
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[{"role": "user", "content": final_prompt}]
-            )
-            intervju_result = response.choices[0].message.content.strip()
-            context["intervju_text"] = intervjuanteckningar
-            context["intervju_result"] = intervju_result
-            context["test_text"] = test_text  # Behåll testtexten också
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": final_prompt}]
+                )
+                intervju_result = response.choices[0].message.content.strip()
+                context["intervju_text"] = intervjuanteckningar
+                context["intervju_result"] = intervju_result
+                context["test_text"] = test_text  # Behåll testtexten också
+            except Exception as e:
+                print("OpenAI error (intervjuanalys):", repr(e))
+                context["error"] = "Kunde inte hämta intervjuanalys från AI: " + str(e)[:500]
+                return render(request, "index.html", context)
 
+        # ── Steg 3: Helhetsbedömning + RATINGS_JSON -> Tabell ────────────────
         elif "generate" in request.POST:
             base_prompt = Prompt.objects.get(user=request.user, name="helhetsbedomning").text
-            # Lägg till en andra del som kräver RATINGS_JSON i Domarnämndens format
+
+            # Trimma långa indata (vanlig kraschorsak)
+            tt = _trim(test_text, 6500)
+            it = _trim(intervju_text, 6500)
+
             ratings_instruction = """
 ---
 Nu ska du också leverera en tabellgradering enligt Domarnämndens kravprofil.
@@ -274,48 +325,95 @@ Skalan (använd i JSON som heltal):
 4 = Mycket god
 5 = Utmärkt
 
-Underlag att basera bedömningen på: testanalysen och intervjusammanfattningen ovan.
-Var konsekvent och realistisk. Ingen extra text i JSON-delen.
+Basa bedömningen på testanalysen och intervjuanteckningarna ovan.
+Ingen extra text i JSON-delen.
 """
+
             final_prompt = (
                 settings.STYLE_INSTRUCTION
                 + "\n\n"
-                + base_prompt.replace("{test_text}", test_text).replace("{intervju_text}", intervju_text)
+                + base_prompt.replace("{test_text}", tt).replace("{intervju_text}", it)
                 + "\n"
                 + ratings_instruction
             )
 
-            import ssl
-            print("🔒 SSL version:", ssl.OPENSSL_VERSION)
-            print("🔑 API key exists?", bool(os.getenv("OPENAI_API_KEY")))
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[{"role": "user", "content": final_prompt}]
-            )
-            full = response.choices[0].message.content.strip()
+            # 1) Primärt anrop: rapport + JSON i ett svar
+            try:
+                resp = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": final_prompt}],
+                    max_tokens=1400,
+                    temperature=0.2
+                )
+                full = resp.choices[0].message.content.strip()
+            except Exception as e:
+                print("OpenAI error (helhet primary):", repr(e))
+                context["error"] = "Kunde inte skapa helhetsbedömning (primärt anrop): " + str(e)[:500]
+                return render(request, "index.html", context)
 
-            # Dela upp svaret i RAPPORT och RATINGS_JSON
-            # 1) Hämta rapportdelen (markdownas som tidigare)
-            rapport_part = full
-            ratings_json = None
-
-            # Försök plocka ut JSON efter sektionen ### RATINGS_JSON
-            m = re.search(r"###\s*RATINGS_JSON\s*(\{.*\})", full, flags=re.DOTALL)
-            if m:
-                try:
-                    ratings_json = json.loads(m.group(1))
-                    # Ta bort JSON-delen ur rapporttexten innan vi markdownar
-                    rapport_part = full[:m.start()].strip()
-                except Exception as e:
-                    print("JSON parse error:", e)
-
+            # 2) Plocka ut RAPPORT + JSON
+            ratings = _safe_json_from_text(full)
+            rapport_part = re.split(r"###\s*RATINGS_JSON", full, flags=re.IGNORECASE)[0].strip()
             context["helhetsbedomning"] = markdown2.markdown(rapport_part)
 
-            # Bygg och skicka tabell-HTML om vi fick JSON
-            if ratings_json:
-                table_html = build_ratings_table_html(ratings_json)
-                context["ratings_table_html"] = mark_safe(table_html)
+            # 3) Om JSON saknas – backup-anrop som bara returnerar JSON
+            if not ratings:
+                print("No JSON found – trying compact backup call")
+                backup_prompt = textwrap.dedent(f"""
+                Returnera ENDAST giltig JSON enligt schemat nedan, utan Markdown-staket och utan extra text.
+                Skalan: 1=Utrymme för utveckling, 2=Tillräcklig, 3=God, 4=Mycket god, 5=Utmärkt.
+                Bedöm på test + intervju.
 
+                TEST:
+                {tt}
+
+                INTERVJU:
+                {it}
+
+                SCHEMA:
+                {{
+                  "leda_utveckla_och_engagera": {{
+                    "Leda andra": 3,
+                    "Engagera andra": 3,
+                    "Delegera": 3,
+                    "Utveckla andra": 3
+                  }},
+                  "mod_och_handlingskraft": {{
+                    "Beslutsamhet": 3,
+                    "Integritet": 3,
+                    "Hantera konflikter": 3
+                  }},
+                  "sjalkannedom_och_emotionell_stabilitet": {{
+                    "Självmedvetenhet": 3,
+                    "Uthållighet": 3
+                  }},
+                  "strategiskt_tankande_och_anpassningsformaga": {{
+                    "Strategiskt fokus": 3,
+                    "Anpassningsförmåga": 3
+                  }},
+                  "kommunikation_och_samarbete": {{
+                    "Teamarbete": 3,
+                    "Inflytelserik": 3
+                  }}
+                }}
+                """).strip()
+                try:
+                    r2 = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[{"role": "user", "content": backup_prompt}],
+                        max_tokens=700,
+                        temperature=0.1
+                    )
+                    ratings = json.loads(r2.choices[0].message.content)
+                except Exception as e:
+                    print("OpenAI error (helhet backup-json):", repr(e))
+                    ratings = _default_all_three()  # sista fallback — UI ska aldrig dö
+
+            # 4) Rendera tabellen
+            table_html = _ratings_table_html(ratings)
+            context["ratings_table_html"] = mark_safe(table_html)
+
+            # 5) Bevara tidigare fält
             context["test_text"] = test_text
             context["intervju_text"] = intervju_text
             context["intervju_result"] = intervju_result
