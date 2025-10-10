@@ -419,3 +419,128 @@ Ingen extra text i JSON-delen.
             context["intervju_result"] = intervju_result
 
     return render(request, "index.html", context)
+
+
+# ====== CHAT HELPERS =========================================================
+import chardet
+from docx import Document
+from PyPDF2 import PdfReader
+
+MAX_FILE_TEXT = 15000  # tecken; vi trimmar för att inte spränga tokens
+
+def _read_file_text(django_file) -> str:
+    name = django_file.name.lower()
+    try:
+        if name.endswith(".pdf"):
+            reader = PdfReader(django_file)
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            return text
+        elif name.endswith(".docx"):
+            doc = Document(django_file)
+            return "\n".join(p.text for p in doc.paragraphs)
+        elif name.endswith((".txt",".csv",".md",".json",".py",".html")):
+            data = django_file.read()
+            enc = chardet.detect(data).get("encoding") or "utf-8"
+            return data.decode(enc, errors="ignore")
+        else:
+            return ""  # okänd typ -> hoppa text
+    except Exception:
+        return ""
+
+def _trim_middle(s: str, max_chars: int = MAX_FILE_TEXT) -> str:
+    s = s or ""
+    if len(s) <= max_chars: 
+        return s
+    return s[: max_chars//2] + "\n...\n" + s[- max_chars//2 :]
+
+def _build_openai_messages(session):
+    """Konstruera historiken som OpenAI-meddelanden."""
+    msgs = [{"role":"system","content": session.system_prompt}]
+    for m in session.messages.order_by("created_at"):
+        msgs.append({"role": m.role, "content": m.content})
+    return msgs
+
+# ====== CHAT VIEWS ===========================================================
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect
+from django.core.files.base import ContentFile
+from .models import ChatSession, ChatMessage, ChatAttachment
+
+@login_required
+def chat_home(request):
+    # skapa session om none
+    if request.method == "POST":
+        title = request.POST.get("title","Ny chatt").strip() or "Ny chatt"
+        s = ChatSession.objects.create(user=request.user, title=title)
+        # valfri första system-prompt override
+        sp = request.POST.get("system_prompt")
+        if sp:
+            s.system_prompt = sp
+            s.save()
+        return redirect("chat_session", session_id=s.id)
+
+    sessions = ChatSession.objects.filter(user=request.user).order_by("-updated_at")
+    return render(request, "chat_home.html", {"sessions": sessions})
+
+
+@login_required
+def chat_session(request, session_id):
+    session = get_object_or_404(ChatSession, id=session_id, user=request.user)
+
+    # uppdatera system-prompt/titel
+    if request.method == "POST" and "save_settings" in request.POST:
+        session.title = request.POST.get("title") or session.title
+        session.system_prompt = request.POST.get("system_prompt") or session.system_prompt
+        session.save()
+        return redirect("chat_session", session_id=session.id)
+
+    # skicka meddelande
+    if request.method == "POST" and "send_message" in request.POST:
+        user_text = request.POST.get("message","").strip()
+        if user_text or request.FILES:
+            user_msg = ChatMessage.objects.create(session=session, role="user", content=user_text)
+
+            # spara bilagor + extrahera text
+            file_texts = []
+            for f in request.FILES.getlist("files"):
+                att = ChatAttachment.objects.create(
+                    message=user_msg,
+                    file=f,
+                    original_name=f.name
+                )
+                # Läs om från lagrat filobjekt (säkrast)
+                att_text = _read_file_text(att.file)
+                att.text_excerpt = _trim_middle(att_text, MAX_FILE_TEXT)
+                att.save()
+                if att.text_excerpt:
+                    file_texts.append(f"\n--- \nFIL: {att.original_name}\n{att.text_excerpt}")
+
+            # bygg prompt (lägg filtexter sist i user-meddelandet)
+            if file_texts:
+                user_msg.content += "\n\nBifogade filer (textutdrag):" + "".join(file_texts)
+                user_msg.save()
+
+            # anropa OpenAI
+            try:
+                messages = _build_openai_messages(session)
+                resp = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=messages,
+                    max_tokens=1200,
+                    temperature=0.3,
+                )
+                ai_text = resp.choices[0].message.content.strip()
+            except Exception as e:
+                ai_text = f"(Ett fel inträffade vid AI-anropet: {e})"
+
+            ChatMessage.objects.create(session=session, role="assistant", content=ai_text)
+            session.save()  # bump updated_at
+            return redirect("chat_session", session_id=session.id)
+
+    messages = session.messages.order_by("created_at")
+    sessions = ChatSession.objects.filter(user=request.user).order_by("-updated_at")[:20]
+    return render(
+        request, 
+        "chat_session.html", 
+        {"session": session, "messages": messages, "sessions": sessions}
+    )

@@ -180,3 +180,6 @@ stresshanteringsförmåga och emotionella stabilitet."
 
 Använd denna stil i alla dina svar.
 """
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
