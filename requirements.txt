@@ -49,3 +49,6 @@ tzdata==2025.2
 urllib3==2.4.0
 webencodings==0.5.1
 whitenoise==6.9.0
+chardet
+python-docx
+PyPDF2
