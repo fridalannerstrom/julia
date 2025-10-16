@@ -134,26 +134,25 @@
   });
 
   function scrollBottom(){ wrap.scrollTop = wrap.scrollHeight; }
-  scrollBottom(); // vid laddning
+  scrollBottom();
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     // 1) Visa user-bubbla direkt
     const userText = msgEl.value.trim();
-    if (userText || filesEl.files.length) {
-      const userMsg = document.createElement('div');
-      userMsg.className = 'msg';
-      userMsg.innerHTML = `
-        <div class="w-100">
-          <div class="meta">User • nu</div>
-          <div class="bubble bubble-user"></div>
-        </div>`;
-      userMsg.querySelector('.bubble').textContent = userText || '(fil skickad)';
-      wrap.appendChild(userMsg);
-    }
+    const userMsg = document.createElement('div');
+    userMsg.className = 'msg';
+    userMsg.innerHTML = `
+      <div class="w-100">
+        <div class="meta">User • nu</div>
+        <div class="bubble bubble-user"></div>
+        <div class="user-attachments mt-2 small"></div> <!-- här kommer länkarna -->
+      </div>`;
+    userMsg.querySelector('.bubble-user').textContent = userText || '(fil skickad)';
+    wrap.appendChild(userMsg);
 
-    // 2) Förbered AI-bubbla som strömningsmål
+    // 2) Förbered AI-bubbla (stream-mål)
     const aiMsg = document.createElement('div');
     aiMsg.className = 'msg';
     aiMsg.innerHTML = `
@@ -166,9 +165,8 @@
     scrollBottom();
 
     // 3) Skicka stream-POST
-    const fd = new FormData(form);  // inkluderar CSRF + filer
-    msgEl.value = '';
-    filesEl.value = '';
+    const fd = new FormData(form);           // inkluderar CSRF + filer
+    msgEl.value = ''; filesEl.value = '';
 
     try {
       const resp = await fetch(form.action, { method: 'POST', body: fd });
@@ -179,20 +177,58 @@
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder('utf-8');
+
       let raw = '';
+      let controlDone = false;
+      let controlBuf = '';
+
       aiBubble.innerHTML = ''; // ta bort "skriver…"
 
       while (true) {
         const {value, done} = await reader.read();
         if (done) break;
+
         const chunk = decoder.decode(value, {stream:true});
+
+        if (!controlDone) {
+          controlBuf += chunk;
+          const nlIdx = controlBuf.indexOf('\n');
+          if (nlIdx !== -1) {
+            const firstLine = controlBuf.slice(0, nlIdx);
+            let rest = controlBuf.slice(nlIdx + 1);
+
+            if (firstLine.startsWith('__ATTACH_JSON__')) {
+              try {
+                const jsonStr = firstLine.replace('__ATTACH_JSON__','');
+                const links = JSON.parse(jsonStr || '[]');
+                if (Array.isArray(links) && links.length) {
+                  const holder = userMsg.querySelector('.user-attachments');
+                  holder.innerHTML = links.map(l =>
+                    `🔗 <a href="${l.url}" target="_blank" rel="noopener">Bifogad fil: ${l.name}</a>`
+                  ).join('<br>');
+                }
+              } catch(e) {
+                // ignorera parsningfel
+              }
+            }
+            controlDone = true;
+
+            // resten av chunken är del av AI-texten
+            if (rest) {
+              raw += rest;
+              aiBubble.innerHTML = marked.parse(raw);
+              scrollBottom();
+            }
+          }
+          continue; // invänta att vi fått första hela raden
+        }
+
+        // Vanlig AI-text efter kontrollraden
         raw += chunk;
         aiBubble.innerHTML = marked.parse(raw);
         scrollBottom();
       }
 
-      // säker slutrendering
-      aiBubble.innerHTML = marked.parse(raw);
       aiMsg.querySelector('.meta').textContent = 'Assistant • nu';
       scrollBottom();
 

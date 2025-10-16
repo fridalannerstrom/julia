@@ -599,8 +599,22 @@ def chat_send(request, session_id):
 
     def token_stream():
         pieces = []
+
+        # >>> NYTT: skicka tillbaka bilagelänkar direkt som första rad
+        att_links = []
         try:
-            # ✅ RÄTT SÄTT FÖR DIN SDK: create(..., stream=True)
+            # hämta URL + namn från de bilagor vi nyss sparade
+            for a in user_msg.attachments.all():
+                if a.file and hasattr(a.file, "url"):
+                    att_links.append({"name": a.original_name, "url": a.file.url})
+        except Exception:
+            att_links = []
+
+        # Skicka en kontrollrad som klienten fångar upp (sedan kommer AI-text)
+        # Viktigt med newline på slutet, så vi kan särskilja i klienten
+        yield "__ATTACH_JSON__" + json.dumps(att_links) + "\n"
+
+        try:
             stream = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
@@ -609,15 +623,12 @@ def chat_send(request, session_id):
                 stream=True,
             )
             for chunk in stream:
-                # försök plocka textbiten oavsett None
                 piece = ""
                 try:
                     delta = chunk.choices[0].delta
-                    # delta kan vara ett dict-liknande objekt eller None
                     if isinstance(delta, dict):
                         piece = delta.get("content") or ""
                     else:
-                        # vissa versioner exponerar .content direkt
                         piece = getattr(delta, "content", "") or ""
                 except Exception:
                     piece = ""
