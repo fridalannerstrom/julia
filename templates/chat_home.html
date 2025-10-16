@@ -27,20 +27,7 @@
 <main class="container container-narrow my-4">
   <h1 class="mb-3">Chattar</h1>
 
-  <!-- Skapa ny session -->
-  <form method="post" class="card p-3 mb-4">
-    {% csrf_token %}
-    <div class="mb-2">
-      <label class="form-label">Titel</label>
-      <input name="title" class="form-control" placeholder="Ny chatt">
-    </div>
-    <div class="mb-2">
-      <label class="form-label">Instruktion (system-prompt, valfri)</label>
-      <textarea name="system_prompt" rows="3" class="form-control"
-        placeholder="Du är en hjälpsam, saklig och diplomatisk assistent."></textarea>
-    </div>
-    <button class="btn btn-primary">Skapa ny chatt</button>
-  </form>
+<h5>Dina chattar</h5>
 
   <!-- Lista sessions -->
   <div class="card p-0">
@@ -56,6 +43,22 @@
       {% endfor %}
     </div>
   </div>
+    <br>
+    <h5>Skapa ny chatt</h5>
+    <!-- Skapa ny session -->
+  <form method="post" class="card p-3 mb-4">
+    {% csrf_token %}
+    <div class="mb-2">
+      <label class="form-label">Titel</label>
+      <input name="title" class="form-control" placeholder="Ny chatt">
+    </div>
+    <div class="mb-2">
+      <label class="form-label">Instruktion (system-prompt, valfri)</label>
+      <textarea name="system_prompt" rows="3" class="form-control"
+        placeholder="Du är en hjälpsam, saklig och diplomatisk assistent."></textarea>
+    </div>
+    <button class="btn btn-primary">Skapa ny chatt</button>
+  </form>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
