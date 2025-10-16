@@ -6,16 +6,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Chatt – session</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
     body{background:#f7f9fc}
     .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
     .sidebar{max-height:80vh;overflow:auto}
-    .chat-box{max-height:55vh;overflow:auto}
-    .msg{padding:.5rem .75rem;border-radius:.6rem}
-    .msg-user{background:#e8f0ff}
-    .msg-ai{background:#f2f5f9}
-    .mono{white-space:pre-wrap}
+
+    /* Chat */
+    #chat-wrap{height:60vh; overflow-y:auto; border:1px solid #eef1f5; border-radius:12px; padding:12px}
+    .msg{margin:10px 0; display:flex; gap:8px}
+    .bubble{padding:10px 12px; border-radius:10px; max-width:75%; white-space:pre-wrap}
+    .bubble-user{margin-left:auto; background:#e8f0ff}
+    .bubble-ai{margin-right:auto; background:#f2f5f9}
+    .meta{font-size:.8rem; color:#6b7280; margin-bottom:4px}
+    .typing{opacity:.7; font-style:italic}
   </style>
+
+  <!-- Markdown-rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 <nav class="navbar navbar-dark bg-dark">
@@ -63,20 +71,27 @@
 
     <!-- Main chat -->
     <div class="col-12 col-md-8">
-      <div class="card p-3 mb-3 chat-box">
+      <div id="chat-wrap" class="card p-3 mb-3">
         {% for m in messages %}
-          <div class="mb-3">
-            <div class="small text-muted mb-1">{{ m.role|title }} • {{ m.created_at }}</div>
-            <div class="msg {% if m.role == 'user' %}msg-user{% else %}msg-ai{% endif %} mono">
-              {{ m.content }}
+          <div class="msg">
+            <div class="w-100">
+              <div class="meta">{{ m.role|title }} • {{ m.created_at }}</div>
+
+              {% if m.role == "user" %}
+                <div class="bubble bubble-user">{{ m.content }}</div>
+              {% else %}
+                <!-- Låt JS rendera Markdown → HTML för historiken också -->
+                <div class="bubble bubble-ai" data-md="{{ m.content|escape }}"></div>
+              {% endif %}
+
+              {% if m.attachments.all %}
+                <div class="mt-2">
+                  {% for a in m.attachments.all %}
+                    <a href="{{ a.file.url }}" target="_blank">📎 {{ a.original_name }}</a><br>
+                  {% endfor %}
+                </div>
+              {% endif %}
             </div>
-            {% if m.attachments.all %}
-              <div class="mt-2">
-                {% for a in m.attachments.all %}
-                  <a href="{{ a.file.url }}" target="_blank">📎 {{ a.original_name }}</a><br>
-                {% endfor %}
-              </div>
-            {% endif %}
           </div>
         {% empty %}
           <p class="text-muted">Ingen historik ännu.</p>
@@ -85,17 +100,17 @@
 
       <!-- Composer -->
       <div class="card p-3">
-        <form method="post" enctype="multipart/form-data">
+        <form id="chat-form" action="{% url 'chat_send' session.id %}" method="post" enctype="multipart/form-data">
           {% csrf_token %}
           <div class="mb-2">
             <label class="form-label">Meddelande</label>
-            <textarea name="message" rows="3" class="form-control" placeholder="Skriv ett meddelande…"></textarea>
+            <textarea name="message" id="msg" rows="3" class="form-control" placeholder="Skriv ett meddelande…"></textarea>
           </div>
           <div class="mb-2">
             <label class="form-label">Filer (valfritt)</label>
-            <input type="file" name="files" multiple class="form-control">
+            <input type="file" name="files" id="files" multiple class="form-control">
           </div>
-          <button name="send_message" value="1" class="btn btn-primary">Skicka</button>
+          <button type="submit" class="btn btn-primary">Skicka</button>
         </form>
       </div>
     </div>
@@ -103,5 +118,90 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+(function(){
+  const wrap = document.getElementById('chat-wrap');
+  const form = document.getElementById('chat-form');
+  const msgEl = document.getElementById('msg');
+  const filesEl = document.getElementById('files');
+
+  // Rendera historiska AI-meddelanden (Markdown -> HTML)
+  document.querySelectorAll('.bubble-ai[data-md]').forEach(el => {
+    const raw = el.getAttribute('data-md') || '';
+    el.innerHTML = marked.parse(raw);
+    el.removeAttribute('data-md');
+  });
+
+  function scrollBottom(){ wrap.scrollTop = wrap.scrollHeight; }
+  scrollBottom(); // vid laddning
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // 1) Visa user-bubbla direkt
+    const userText = msgEl.value.trim();
+    if (userText || filesEl.files.length) {
+      const userMsg = document.createElement('div');
+      userMsg.className = 'msg';
+      userMsg.innerHTML = `
+        <div class="w-100">
+          <div class="meta">User • nu</div>
+          <div class="bubble bubble-user"></div>
+        </div>`;
+      userMsg.querySelector('.bubble').textContent = userText || '(fil skickad)';
+      wrap.appendChild(userMsg);
+    }
+
+    // 2) Förbered AI-bubbla som strömningsmål
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'msg';
+    aiMsg.innerHTML = `
+      <div class="w-100">
+        <div class="meta">Assistant • skriver…</div>
+        <div class="bubble bubble-ai"><span class="typing">Skriver…</span></div>
+      </div>`;
+    const aiBubble = aiMsg.querySelector('.bubble-ai');
+    wrap.appendChild(aiMsg);
+    scrollBottom();
+
+    // 3) Skicka stream-POST
+    const fd = new FormData(form);  // inkluderar CSRF + filer
+    msgEl.value = '';
+    filesEl.value = '';
+
+    try {
+      const resp = await fetch(form.action, { method: 'POST', body: fd });
+      if (!resp.ok || !resp.body) {
+        aiBubble.textContent = '(Fel: kunde inte starta streamen)';
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let raw = '';
+      aiBubble.innerHTML = ''; // ta bort "skriver…"
+
+      while (true) {
+        const {value, done} = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, {stream:true});
+        raw += chunk;
+        aiBubble.innerHTML = marked.parse(raw);
+        scrollBottom();
+      }
+
+      // säker slutrendering
+      aiBubble.innerHTML = marked.parse(raw);
+      aiMsg.querySelector('.meta').textContent = 'Assistant • nu';
+      scrollBottom();
+
+    } catch (err) {
+      aiBubble.textContent = `(Ett fel inträffade: ${err})`;
+      scrollBottom();
+    }
+  });
+})();
+</script>
 </body>
 </html>

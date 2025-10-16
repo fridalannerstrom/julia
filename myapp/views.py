@@ -13,6 +13,9 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from django.conf import settings
 from .models import Prompt
+from django.http import StreamingHttpResponse
+from django.views.decorators.csrf import csrf_exempt
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Miljö
@@ -506,33 +509,33 @@ def chat_session(request, session_id):
 
     # skicka meddelande
     if request.method == "POST" and "send_message" in request.POST:
-        user_text = request.POST.get("message","").strip()
+        user_text = request.POST.get("message", "").strip()
         if user_text or request.FILES:
+            # 1) Spara själva user-meddelandet som bara "ren" text (utan utdrag)
             user_msg = ChatMessage.objects.create(session=session, role="user", content=user_text)
 
-            # spara bilagor + extrahera text
+            # 2) Spara bilagor + extrahera text (men skriv inte in den i user_msg.content)
             file_texts = []
             for f in request.FILES.getlist("files"):
                 att = ChatAttachment(message=user_msg, original_name=f.name)
-                # spara originalfilen
-                att.file.save(f.name, f, save=False)
-
-                # läs text från den sparade filen
-                att_text = _read_file_text(att.file)
+                att.file.save(f.name, f, save=False)  # spara originalfilen
+                att_text = _read_file_text(att.file)  # extrahera text
                 att.text_excerpt = _trim_middle(att_text, MAX_FILE_TEXT)
+                att.save()
 
-                att.save()  # nu innehåller inga bytes hamnar i textfält
+                # bygg endast ett "osynligt" prompt-tillägg till AI (inte till UI)
                 if att.text_excerpt:
                     file_texts.append(f"\n--- \nFIL: {att.original_name}\n{att.text_excerpt}")
 
-            # bygg prompt (lägg filtexter sist i user-meddelandet)
-            if file_texts:
-                user_msg.content += "\n\nBifogade filer (textutdrag):" + "".join(file_texts)
-                user_msg.save()
-
-            # anropa OpenAI
+            # 3) Bygg prompt till OpenAI: ersätt sista user-meddelandet med en version
+            #    som inkluderar filtexter, men utan att ändra vad som sparas i DB/UI
             try:
                 messages = _build_openai_messages(session)
+                combined = user_msg.content
+                if file_texts:
+                    combined += "\n\n(Bifogade filer – textutdrag, visas ej för användaren)" + "".join(file_texts)
+                messages[-1]["content"] = combined  # endast för anropet, ej sparat i DB
+
                 resp = client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=messages,
@@ -543,14 +546,96 @@ def chat_session(request, session_id):
             except Exception as e:
                 ai_text = f"(Ett fel inträffade vid AI-anropet: {e})"
 
+            # 4) Spara AI-svaret och bumpa sessionen
             ChatMessage.objects.create(session=session, role="assistant", content=ai_text)
-            session.save()  # bump updated_at
+            session.save()
             return redirect("chat_session", session_id=session.id)
 
     messages = session.messages.order_by("created_at")
     sessions = ChatSession.objects.filter(user=request.user).order_by("-updated_at")[:20]
     return render(
-        request, 
-        "chat_session.html", 
+        request,
+        "chat_session.html",
         {"session": session, "messages": messages, "sessions": sessions}
     )
+
+@csrf_exempt
+@login_required
+def chat_send(request, session_id):
+    """
+    POST: message + files  -> streamar AI-svaret som text/plain.
+    Kompatibel med OpenAI Python SDK där man använder create(..., stream=True).
+    """
+    session = get_object_or_404(ChatSession, id=session_id, user=request.user)
+    if request.method != "POST":
+        return StreamingHttpResponse(iter(["Only POST allowed"]), content_type="text/plain; charset=utf-8", status=405)
+
+    user_text = (request.POST.get("message") or "").strip()
+    if not user_text and not request.FILES:
+        resp = StreamingHttpResponse(iter([""]), content_type="text/plain; charset=utf-8", status=200)
+        resp["Cache-Control"] = "no-cache"; resp["X-Accel-Buffering"] = "no"
+        return resp
+
+    # 1) Spara user-meddelande (utan filutdrag i content)
+    user_msg = ChatMessage.objects.create(session=session, role="user", content=user_text)
+
+    # 2) Filer -> extrahera text -> endast för prompten
+    file_texts = []
+    for f in request.FILES.getlist("files"):
+        att = ChatAttachment(message=user_msg, original_name=f.name)
+        att.file.save(f.name, f, save=False)
+        att_text = _read_file_text(att.file)
+        att.text_excerpt = _trim_middle(att_text, MAX_FILE_TEXT)
+        att.save()
+        if att.text_excerpt:
+            file_texts.append(f"\n--- \nFIL: {att.original_name}\n{att.text_excerpt}")
+
+    # 3) Historik + ersätt sista user content med dold filtext (endast i prompten)
+    messages = _build_openai_messages(session)
+    combined = user_msg.content
+    if file_texts:
+        combined += "\n\n(Bifogade filer – textutdrag, visas ej för användaren)" + "".join(file_texts)
+    messages[-1]["content"] = combined
+
+    def token_stream():
+        pieces = []
+        try:
+            # ✅ RÄTT SÄTT FÖR DIN SDK: create(..., stream=True)
+            stream = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                temperature=0.3,
+                max_tokens=1200,
+                stream=True,
+            )
+            for chunk in stream:
+                # försök plocka textbiten oavsett None
+                piece = ""
+                try:
+                    delta = chunk.choices[0].delta
+                    # delta kan vara ett dict-liknande objekt eller None
+                    if isinstance(delta, dict):
+                        piece = delta.get("content") or ""
+                    else:
+                        # vissa versioner exponerar .content direkt
+                        piece = getattr(delta, "content", "") or ""
+                except Exception:
+                    piece = ""
+
+                if piece:
+                    pieces.append(piece)
+                    yield piece
+
+        except Exception as e:
+            err = f"\n\n(Ett fel inträffade vid AI-anropet: {e})"
+            pieces.append(err)
+            yield err
+        finally:
+            ai_text = "".join(pieces).strip()
+            ChatMessage.objects.create(session=session, role="assistant", content=ai_text)
+            session.save()
+
+    resp = StreamingHttpResponse(token_stream(), content_type="text/plain; charset=utf-8")
+    resp["Cache-Control"] = "no-cache"
+    resp["X-Accel-Buffering"] = "no"
+    return resp
