@@ -30,19 +30,40 @@
 <h5>Dina chattar</h5>
 
   <!-- Lista sessions -->
-  <div class="card p-0">
-    <div class="list-group list-group-flush">
-      {% for s in sessions %}
-        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+<div class="card p-0 sidebar">
+  <div class="list-group list-group-flush">
+
+    {% for s in sessions %}
+      <div class="list-group-item d-flex align-items-center gap-2">
+        <a class="flex-grow-1 text-decoration-none {% if s.id == session.id %}fw-semibold{% endif %}"
            href="{% url 'chat_session' s.id %}">
-          <span>{{ s.title }}</span>
-          <small class="text-muted">{{ s.updated_at }}</small>
+          {{ s.title }}
         </a>
-      {% empty %}
-        <div class="list-group-item">Inga chattar ännu.</div>
-      {% endfor %}
-    </div>
+
+        <small class="text-muted me-2">
+          {{ s.updated_at|date:"M j, Y, H:i" }}
+        </small>
+
+        <form action="{% url 'chat_delete' s.id %}" method="post"
+              onsubmit="return confirm('Ta bort denna chatt? Det går inte att ångra.');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-danger" title="Ta bort">
+            <!-- inline-trash ikon (Bootstrap-lik) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                 viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M5.5 5.5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd"
+                    d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5h6h2.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM5 2.5a.5.5 0 0 0 .5.5h5a.5.5 0 0 0 .5-.5V2H5v.5z"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+    {% empty %}
+      <div class="list-group-item text-muted">Ingen historik ännu.</div>
+    {% endfor %}
+
   </div>
+</div>
     <br>
     <h5>Skapa ny chatt</h5>
     <!-- Skapa ny session -->

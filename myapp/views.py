@@ -15,6 +15,9 @@ from django.conf import settings
 from .models import Prompt
 from django.http import StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect
+from django.views.decorators.http import require_POST
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -650,3 +653,10 @@ def chat_send(request, session_id):
     resp["Cache-Control"] = "no-cache"
     resp["X-Accel-Buffering"] = "no"
     return resp
+
+@require_POST
+@login_required
+def chat_delete(request, session_id):
+    s = get_object_or_404(ChatSession, id=session_id, user=request.user)
+    s.delete()  # Messages/attachments följer med om du har on_delete=CASCADE
+    return redirect("chat_home")
