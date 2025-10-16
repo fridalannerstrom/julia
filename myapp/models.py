@@ -50,7 +50,7 @@ class ChatAttachment(models.Model):
     message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE, related_name="attachments")
     file = models.FileField(upload_to=upload_to_chat)
     original_name = models.CharField(max_length=255)
-    text_excerpt = models.TextField(blank=True, default="")  # extraherad text (kortad)
+    text_excerpt = models.TextField(blank=True)  # endast ren text här
 
     def __str__(self):
         return self.original_name

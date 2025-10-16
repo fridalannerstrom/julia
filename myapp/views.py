@@ -431,19 +431,29 @@ MAX_FILE_TEXT = 15000  # tecken; vi trimmar för att inte spränga tokens
 def _read_file_text(django_file) -> str:
     name = django_file.name.lower()
     try:
+        # se till att vi läser från början
+        if hasattr(django_file, "open"):
+            django_file.open(mode="rb")
+        try:
+            django_file.seek(0)
+        except Exception:
+            pass
+
         if name.endswith(".pdf"):
             reader = PdfReader(django_file)
-            text = "\n".join(page.extract_text() or "" for page in reader.pages)
-            return text
+            text = "\n".join((page.extract_text() or "") for page in reader.pages)
         elif name.endswith(".docx"):
             doc = Document(django_file)
-            return "\n".join(p.text for p in doc.paragraphs)
-        elif name.endswith((".txt",".csv",".md",".json",".py",".html")):
+            text = "\n".join(p.text for p in doc.paragraphs)
+        elif name.endswith((".txt", ".csv", ".md", ".json", ".py", ".html")):
             data = django_file.read()
             enc = chardet.detect(data).get("encoding") or "utf-8"
-            return data.decode(enc, errors="ignore")
+            text = data.decode(enc, errors="ignore")
         else:
-            return ""  # okänd typ -> hoppa text
+            text = ""
+
+        # CRUCIAL för Postgres: inga NUL-tecken i TextField
+        return (text or "").replace("\x00", "")
     except Exception:
         return ""
 
@@ -503,15 +513,15 @@ def chat_session(request, session_id):
             # spara bilagor + extrahera text
             file_texts = []
             for f in request.FILES.getlist("files"):
-                att = ChatAttachment.objects.create(
-                    message=user_msg,
-                    file=f,
-                    original_name=f.name
-                )
-                # Läs om från lagrat filobjekt (säkrast)
+                att = ChatAttachment(message=user_msg, original_name=f.name)
+                # spara originalfilen
+                att.file.save(f.name, f, save=False)
+
+                # läs text från den sparade filen
                 att_text = _read_file_text(att.file)
                 att.text_excerpt = _trim_middle(att_text, MAX_FILE_TEXT)
-                att.save()
+
+                att.save()  # nu innehåller inga bytes hamnar i textfält
                 if att.text_excerpt:
                     file_texts.append(f"\n--- \nFIL: {att.original_name}\n{att.text_excerpt}")
 
