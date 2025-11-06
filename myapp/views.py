@@ -55,15 +55,19 @@ def _run_openai(prompt_text: str, style: str, **vars_) -> str:
     return (resp.choices[0].message.content or "").strip()
 
 # ── NYTT: gör _ratings_table_html konfigurerbar (header av/på) ───────────────
-def _ratings_table_html(ratings: dict, show_headers: bool = True) -> str:
-    headers = ["Utrymme för utveckling", "Tillräcklig", "God", "Mycket god", "Utmärkt"]
-    section_order = [
+def _ratings_table_html(
+    ratings: dict,
+    section_filter=None,         # lista av (key,title) om du vill rendera 1..n sektioner
+    include_css: bool = True     # sätt False när du redan lagt in CSS en gång
+) -> str:
+    default_order = [
         ("leda_utveckla_och_engagera", "1. Leda, utveckla och engagera"),
         ("mod_och_handlingskraft", "2. Mod och handlingskraft"),
         ("sjalkannedom_och_emotionell_stabilitet", "3. Självkännedom och emotionell stabilitet"),
         ("strategiskt_tankande_och_anpassningsformaga", "4. Strategiskt tänkande och anpassningsförmåga"),
         ("kommunikation_och_samarbete", "5. Kommunikation och samarbete"),
     ]
+    section_order = section_filter or default_order
 
     def row(name, val):
         tds = "".join(f'<td class="dn-cell">{"✓" if val == i else ""}</td>' for i in range(1, 6))
@@ -73,7 +77,6 @@ def _ratings_table_html(ratings: dict, show_headers: bool = True) -> str:
     for key, title in section_order:
         if key not in ratings:
             continue
-
         rows = []
         for sub, score in ratings[key].items():
             try:
@@ -83,18 +86,11 @@ def _ratings_table_html(ratings: dict, show_headers: bool = True) -> str:
             v = max(1, min(5, v))
             rows.append(row(sub, v))
 
-        # ✅ fix: bygg header-celler separat, undvik inbäddad f-string
-        if show_headers:
-            header_cells = "".join([f"<th class='dn-head'>{h}</th>" for h in headers])
-            thead_html = f"<thead><tr><th class='dn-head dn-first'></th>{header_cells}</tr></thead>"
-        else:
-            thead_html = "<thead></thead>"
-
         sections.append(f"""
         <div class="dn-section">
           <h3 class="dn-h3">{title}</h3>
           <table class="dn-table">
-            {thead_html}
+            <thead></thead>  <!-- inga headers alls -->
             <tbody>{''.join(rows)}</tbody>
           </table>
         </div>""")
@@ -112,7 +108,63 @@ def _ratings_table_html(ratings: dict, show_headers: bool = True) -> str:
       tr>th.dn-sub + td{border-left:1px solid #e6ebf2;}
       tr>td.dn-cell:last-child{border-radius:0 8px 8px 0;}
     </style>"""
-    return css + "\n".join(sections)
+    return (css if include_css else "") + "\n".join(sections)
+
+def _gen_ratings_from_ai(excel_text: str, intervju_text: str = "") -> dict:
+    tt = _trim(excel_text, 6500)
+    it = _trim(intervju_text, 6500)
+
+    prompt = f"""
+Du ska bedöma en kandidat på en femgradig skala (1–5) utifrån testdata{' och intervju' if it else ''}.
+Om data inte räcker för en aspekt: välj 3 (God).
+
+Returnera ENBART giltig JSON enligt schema nedan – inga kommentarer, ingen markdown.
+
+TEST:
+{tt}
+
+INTERVJU:
+{it}
+
+SCHEMA:
+{{
+  "leda_utveckla_och_engagera": {{
+    "Leda andra": 3,
+    "Engagera andra": 3,
+    "Delegera": 3,
+    "Utveckla andra": 3
+  }},
+  "mod_och_handlingskraft": {{
+    "Beslutsamhet": 3,
+    "Integritet": 3,
+    "Hantera konflikter": 3
+  }},
+  "sjalkannedom_och_emotionell_stabilitet": {{
+    "Självmedvetenhet": 3,
+    "Uthållighet": 3
+  }},
+  "strategiskt_tankande_och_anpassningsformaga": {{
+    "Strategiskt fokus": 3,
+    "Anpassningsförmåga": 3
+  }},
+  "kommunikation_och_samarbete": {{
+    "Teamarbete": 3,
+    "Inflytelserik": 3
+  }}
+}}
+Skalan: 1=Utrymme för utveckling, 2=Tillräcklig, 3=God, 4=Mycket god, 5=Utmärkt.
+""".strip()
+
+    try:
+        r = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=700,
+            temperature=0.1,
+        )
+        return json.loads(r.choices[0].message.content)
+    except Exception:
+        return _default_all_three()
 
 
 # ── NYTT: statisk skalförklaring (HTML) med header ───────────────────────────
@@ -124,7 +176,7 @@ def _scale_demo_html() -> str:
         "strategiskt_tankande_och_anpassningsformaga": {"Exempel": 3},
         "kommunikation_och_samarbete": {"Exempel": 3},
     }
-    return _ratings_table_html(demo, show_headers=True)
+    return _ratings_table_html(demo)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -354,69 +406,71 @@ def index(request):
     })
 
     if request.method == 'POST':
-        # ── Steg 1: Excel -> generera 7 sektioner ─────────────────────────────
+        # ── Steg 1: Excel -> generera 7 sektioner + betygstabeller ──────────────
         if "excel" in request.FILES:
             try:
                 file = request.FILES['excel']
                 wb = openpyxl.load_workbook(file)
                 ws = wb.active
+
+                # 1) Gör råtext av excelen (behåll i context om du vill visa/återanvända)
                 output = io.StringIO()
                 for row in ws.iter_rows(values_only=True):
                     output.write("\t".join([str(cell) if cell is not None else "" for cell in row]) + "\n")
                 excel_text = output.getvalue()
+                context["test_text"] = excel_text  # sparas genom flödet
 
-                # Spara rå testtext (valfritt att visa)
-                context["test_text"] = excel_text
-
-                # Hämta prompter per fält
+                # 2) Hämta prompter per fält (robust—ignorera saknade nycklar)
                 P = {p.name: p.text for p in Prompt.objects.filter(user=request.user)}
+                def run(name):
+                    pt = P.get(name, "")
+                    if not pt:
+                        return ""
+                    return _run_openai(pt, settings.STYLE_INSTRUCTION,
+                                    excel_text=_trim(excel_text), intervju_text=_trim(""))
 
-                # Kör rubrikvis (intervju tom i detta skede)
-                kwargs = dict(excel_text=_trim(excel_text), intervju_text=_trim(""))
-                context["tq_fardighet_text"] = _run_openai(P["tq_fardighet"], settings.STYLE_INSTRUCTION, **kwargs)
-                context["tq_motivation_text"] = _run_openai(P["tq_motivation"], settings.STYLE_INSTRUCTION, **kwargs)
-                context["leda_text"] = _run_openai(P["leda"], settings.STYLE_INSTRUCTION, **kwargs)
-                context["mod_text"] = _run_openai(P["mod"], settings.STYLE_INSTRUCTION, **kwargs)
-                context["sjalkannedom_text"] = _run_openai(P["sjalkannedom"], settings.STYLE_INSTRUCTION, **kwargs)
-                context["strategi_text"] = _run_openai(P["strategi"], settings.STYLE_INSTRUCTION, **kwargs)
-                context["kommunikation_text"] = _run_openai(P["kommunikation"], settings.STYLE_INSTRUCTION, **kwargs)
+                # 3) Generera rubriktexter (intervju saknas i detta steg)
+                context["tq_fardighet_text"] = run("tq_fardighet")
+                context["tq_motivation_text"] = run("tq_motivation")
+                context["leda_text"] = run("leda")
+                context["mod_text"] = run("mod")
+                context["sjalkannedom_text"] = run("sjalkannedom")
+                context["strategi_text"] = run("strategi")
+                context["kommunikation_text"] = run("kommunikation")
+
+                # 4) Generera betyg (1–5) enbart från testdata och rendera tabeller per sektion
+                ratings = _gen_ratings_from_ai(excel_text, "")
+                context["ratings_json"] = json.dumps(ratings)  # om du vill bära vidare
+
+                # visa under respektive rubrik (utan header-rad). CSS läggs bara på första.
+                context["leda_table_html"] = mark_safe(_ratings_table_html(
+                    ratings,
+                    section_filter=[("leda_utveckla_och_engagera", "Leda, utveckla och engagera")],
+                    include_css=True
+                ))
+                context["mod_table_html"] = mark_safe(_ratings_table_html(
+                    ratings,
+                    section_filter=[("mod_och_handlingskraft", "Mod och handlingskraft")],
+                    include_css=False
+                ))
+                context["sjalkannedom_table_html"] = mark_safe(_ratings_table_html(
+                    ratings,
+                    section_filter=[("sjalkannedom_och_emotionell_stabilitet", "Självkännedom och emotionell stabilitet")],
+                    include_css=False
+                ))
+                context["strategi_table_html"] = mark_safe(_ratings_table_html(
+                    ratings,
+                    section_filter=[("strategiskt_tankande_och_anpassningsformaga", "Strategiskt tänkande och anpassningsförmåga")],
+                    include_css=False
+                ))
+                context["kommunikation_table_html"] = mark_safe(_ratings_table_html(
+                    ratings,
+                    section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
+                    include_css=False
+                ))
 
             except Exception as e:
-                context["error"] = "Kunde inte skapa rubriktexter från Excel: " + str(e)[:500]
-                return render(request, "index.html", context)
-
-        # ── Steg 2: Intervju -> uppdatera 7 sektioner (om man vill) ──────────
-        elif "intervju" in request.POST:
-            try:
-                intervjuanteckningar = request.POST.get("intervju", "")
-                base_prompt = Prompt.objects.get(user=request.user, name="intervjuanalys").text
-                final_prompt = settings.STYLE_INSTRUCTION + "\n\n" + base_prompt.replace("{intervjuanteckningar}", intervjuanteckningar)
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[{"role": "user", "content": final_prompt}]
-                )
-                intervju_result = response.choices[0].message.content.strip()
-                context["intervju_text"] = intervjuanteckningar
-                context["intervju_result"] = intervju_result
-
-                # Uppdatera 7 fält med intervju som extra signal
-                P = {p.name: p.text for p in Prompt.objects.filter(user=request.user)}
-                kwargs = dict(excel_text=_trim(context.get("test_text","")), intervju_text=_trim(intervjuanteckningar))
-                for key, name in [
-                    ("tq_fardighet_text","tq_fardighet"),
-                    ("tq_motivation_text","tq_motivation"),
-                    ("leda_text","leda"),
-                    ("mod_text","mod"),
-                    ("sjalkannedom_text","sjalkannedom"),
-                    ("strategi_text","strategi"),
-                    ("kommunikation_text","kommunikation"),
-                ]:
-                    # bara om användaren inte redan manuellt redigerat (valfritt beteende)
-                    if not context.get(key):
-                        context[key] = _run_openai(P[name], settings.STYLE_INSTRUCTION, **kwargs)
-
-            except Exception as e:
-                context["error"] = "Kunde inte hämta intervjuanalys: " + str(e)[:500]
+                context["error"] = "Kunde inte skapa rubriktexter/tabeller från Excel: " + str(e)[:500]
                 return render(request, "index.html", context)
 
         # ── Steg 3a: Generera Styrkor/Utvecklingsområden/Risk ───────────────
@@ -464,7 +518,7 @@ def index(request):
             # (oförändrat, förkortat här för tydlighet)
             # ...
             # Efter att du skapat ratings:
-            table_html_no_header = _ratings_table_html(ratings, show_headers=False)
+            table_html_no_header = _ratings_table_html(ratings)
             context["ratings_table_html"] = mark_safe(table_html_no_header)
             context["ratings_scale_demo_html"] = mark_safe(_scale_demo_html())
 
