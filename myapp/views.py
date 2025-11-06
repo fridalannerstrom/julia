@@ -110,61 +110,63 @@ def _ratings_table_html(
     </style>"""
     return (css if include_css else "") + "\n".join(sections)
 
-def _gen_ratings_from_ai(excel_text: str, intervju_text: str = "") -> dict:
-    tt = _trim(excel_text, 6500)
-    it = _trim(intervju_text, 6500)
+# Vilka rader vi vill hitta och under vilken sektion de hör hemma
+TARGETS = {
+    "leda_utveckla_och_engagera": ["Leda andra", "Engagera andra", "Delegera", "Utveckla andra"],
+    "mod_och_handlingskraft": ["Beslutsamhet", "Integritet", "Hantera konflikter"],
+    "sjalkannedom_och_emotionell_stabilitet": ["Självmedvetenhet", "Uthållighet"],
+    "strategiskt_tankande_och_anpassningsformaga": ["Strategiskt fokus", "Anpassningsförmåga"],
+    "kommunikation_och_samarbete": ["Teamarbete", "Inflytelserik"],
+}
 
-    prompt = f"""
-Du ska bedöma en kandidat på en femgradig skala (1–5) utifrån testdata{' och intervju' if it else ''}.
-Om data inte räcker för en aspekt: välj 3 (God).
-
-Returnera ENBART giltig JSON enligt schema nedan – inga kommentarer, ingen markdown.
-
-TEST:
-{tt}
-
-INTERVJU:
-{it}
-
-SCHEMA:
-{{
-  "leda_utveckla_och_engagera": {{
-    "Leda andra": 3,
-    "Engagera andra": 3,
-    "Delegera": 3,
-    "Utveckla andra": 3
-  }},
-  "mod_och_handlingskraft": {{
-    "Beslutsamhet": 3,
-    "Integritet": 3,
-    "Hantera konflikter": 3
-  }},
-  "sjalkannedom_och_emotionell_stabilitet": {{
-    "Självmedvetenhet": 3,
-    "Uthållighet": 3
-  }},
-  "strategiskt_tankande_och_anpassningsformaga": {{
-    "Strategiskt fokus": 3,
-    "Anpassningsförmåga": 3
-  }},
-  "kommunikation_och_samarbete": {{
-    "Teamarbete": 3,
-    "Inflytelserik": 3
-  }}
-}}
-Skalan: 1=Utrymme för utveckling, 2=Tillräcklig, 3=God, 4=Mycket god, 5=Utmärkt.
-""".strip()
-
+def _map_0_10_to_1_5(x: float) -> int:
+    """Mappa 0–10 (eller 1–10) till 1–5. Ex: 0–1.99 ->1, 2–3.99 ->2, 4–5.99 ->3, 6–7.99 ->4, 8–10 ->5."""
     try:
-        r = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=700,
-            temperature=0.1,
-        )
-        return json.loads(r.choices[0].message.content)
+        v = float(x)
     except Exception:
-        return _default_all_three()
+        return 3
+    v = max(0.0, min(10.0, v))
+    bucket = 1 + int(v // 2.0)   # 0..1 ->1, 2..3 ->2, 4..5 ->3, 6..7 ->4, 8..10 ->5/6
+    return min(5, bucket)
+
+def _ratings_from_excel_dump(excel_dump: str) -> dict:
+    """
+    Försök plocka ut siffror (0–10 eller 1–10) direkt ur den TSV-liknande excel_dump du skapar.
+    Vi letar efter respektive radnamn och tar första talet som följer på samma rad/block.
+    """
+    ratings = _default_all_three()
+    txt = excel_dump or ""
+    # Gör en radlista för enklare matchning
+    lines = [l.strip() for l in txt.splitlines() if l.strip()]
+
+    # 1) Försök rad-för-rad (exakt textmatch på början av raden)
+    found = set()
+    for line in lines:
+        # Hitta första talet i raden (tillåter decimaler)
+        mnum = re.search(r"([0-9]+(?:[.,][0-9]+)?)", line)
+        if not mnum:
+            continue
+        val = mnum.group(1).replace(",", ".")
+        # Kolla om raden innehåller något av våra mål
+        for section, subs in TARGETS.items():
+            for sub in subs:
+                if sub.lower() in line.lower():
+                    ratings[section][sub] = _map_0_10_to_1_5(val)
+                    found.add(sub.lower())
+
+    # 2) Backup: global regex-sökning per sub ifall formatet inte var radvis
+    for section, subs in TARGETS.items():
+        for sub in subs:
+            key = sub.lower()
+            if key in found:
+                continue
+            # Hitta närmsta tal inom t.ex. 100 tecken efter nyckelordet
+            m = re.search(rf"{re.escape(sub)}.*?([0-9]+(?:[.,][0-9]+)?)", txt, flags=re.IGNORECASE | re.DOTALL)
+            if m:
+                val = m.group(1).replace(",", ".")
+                ratings[section][sub] = _map_0_10_to_1_5(val)
+
+    return ratings
 
 
 # ── NYTT: statisk skalförklaring (HTML) med header ───────────────────────────
@@ -266,62 +268,6 @@ def _safe_json_from_text(txt: str):
         return json.loads(block)
     except Exception:
         return None
-
-def _ratings_table_html(ratings: dict) -> str:
-    """Bygger en tabelliknande layout (5 kolumner: 1–5) med bock i vald kolumn."""
-    headers = ["Utrymme för utveckling", "Tillräcklig", "God", "Mycket god", "Utmärkt"]
-    section_order = [
-        ("leda_utveckla_och_engagera", "1. Leda, utveckla och engagera"),
-        ("mod_och_handlingskraft", "2. Mod och handlingskraft"),
-        ("sjalkannedom_och_emotionell_stabilitet", "3. Självkännedom och emotionell stabilitet"),
-        ("strategiskt_tankande_och_anpassningsformaga", "4. Strategiskt tänkande och anpassningsförmåga"),
-        ("kommunikation_och_samarbete", "5. Kommunikation och samarbete"),
-    ]
-
-    def row(name, val):
-        tds = "".join(f'<td class="dn-cell">{"✓" if val==i else ""}</td>' for i in range(1,6))
-        return f'<tr><th class="dn-sub">{name}</th>{tds}</tr>'
-
-    sections = []
-    for key, title in section_order:
-        if key not in ratings:
-            continue
-        rows = []
-        for sub, score in ratings[key].items():
-            try:
-                v = int(score)
-            except Exception:
-                v = 3
-            v = max(1, min(5, v))
-            rows.append(row(sub, v))
-        sections.append(f"""
-        <div class="dn-section">
-          <h3 class="dn-h3">{title}</h3>
-          <table class="dn-table">
-            <thead>
-              <tr>
-                <th class="dn-head dn-first"></th>
-                {''.join(f'<th class="dn-head">{h}</th>' for h in headers)}
-              </tr>
-            </thead>
-            <tbody>{''.join(rows)}</tbody>
-          </table>
-        </div>""")
-
-    css = """
-    <style>
-      .dn-section{margin:24px 0;}
-      .dn-h3{font-size:1.1rem;margin-bottom:8px;}
-      .dn-table{width:100%;border-collapse:separate;border-spacing:0 6px;}
-      .dn-head{font-weight:600;font-size:.9rem;text-align:center;white-space:nowrap;}
-      .dn-first{width:32%;}
-      .dn-sub{font-weight:600;background:#f7f9fc;padding:10px;border-radius:8px 0 0 8px;}
-      .dn-cell{background:#f7f9fc;text-align:center;padding:10px;min-width:110px;
-               border-left:4px solid #fff;border:1px solid #e6ebf2;border-left:0;}
-      tr>th.dn-sub + td{border-left:1px solid #e6ebf2;}
-      tr>td.dn-cell:last-child{border-radius:0 8px 8px 0;}
-    </style>"""
-    return css + "\n".join(sections)
 
 def _default_all_three():
     """Sista fallback — fyll 3:or överallt så UI alltid renderar."""
@@ -439,7 +385,7 @@ def index(request):
                 context["kommunikation_text"] = run("kommunikation")
 
                 # 4) Generera betyg (1–5) enbart från testdata och rendera tabeller per sektion
-                ratings = _gen_ratings_from_ai(excel_text, "")
+                ratings = _ratings_from_excel_dump(excel_text)
                 context["ratings_json"] = json.dumps(ratings)  # om du vill bära vidare
 
                 # visa under respektive rubrik (utan header-rad). CSS läggs bara på första.
