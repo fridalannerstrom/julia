@@ -73,6 +73,13 @@
                                 <h2 class="adminui-subtitle">Automatiskt fördelad testanalys</h2>
                                 <p>Justera innehållet per rubrik. Dessa fält kan uppdateras igen efter intervju.</p>
 
+                                {% if ratings_debug %}
+                                <div class="adminui-assessment-box" style="font-size:0.8rem; white-space:pre-wrap; color:#666;">
+                                    <strong>Debug – tolkade betyg:</strong>
+                                    {{ ratings_debug }}
+                                </div>
+                                {% endif %}
+
                                 <label class="adminui-label">Leda, utveckla och engagera</label>
                                 <textarea name="leda_text" class="adminui-textarea" rows="5">{{ leda_text }}</textarea>
                                 {% if leda_table_html %}<div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>{% endif %}

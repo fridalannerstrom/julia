@@ -54,6 +54,76 @@ def _run_openai(prompt_text: str, style: str, **vars_) -> str:
     )
     return (resp.choices[0].message.content or "").strip()
 
+def _ai_text_and_ratings_for_section(config, base_prompt_text, style, excel_text, intervju_text=""):
+    """
+    Kör en prompt som:
+      - först skriver en kort textbedömning
+      - sedan ger RATINGS_JSON med 1–5 för rätt subskalor för denna sektion.
+    Returnerar (full_text, ratings_dict, debug_str).
+    """
+    section_key = config["section_key"]
+    subscales = config["subscales"]
+
+    # Bygg tydlig instruktion som läggs till befintlig prompttext
+    rating_instr_lines = [
+        "",
+        "Viktigt:",
+        "1. Baserat på testdatan (och intervju om finns), bedöm varje delkompetens på en skala 1–5:",
+        "   1 = Utrymme för utveckling",
+        "   2 = Tillräcklig",
+        "   3 = God",
+        "   4 = Mycket god",
+        "   5 = Utmärkt",
+        "2. Säkerställ att texten du skriver stämmer överens med de poäng du sätter.",
+        "3. Avsluta ALLTID ditt svar med exakt följande format:",
+        "   ### RATINGS_JSON",
+        "   {",
+        f'     "{section_key}": {{'
+    ]
+    rating_instr_lines += [
+        f'       "{sub}": <heltal 1-5>,'
+        for sub in subscales[:-1]
+    ]
+    rating_instr_lines.append(
+        f'       "{subscales[-1]}": <heltal 1-5>'
+    )
+    rating_instr_lines.append("     }")
+    rating_instr_lines.append("   }")
+    rating_instr_lines.append("")
+    rating_instr = "\n".join(rating_instr_lines)
+
+    full_prompt = base_prompt_text.strip() + "\n\n" + rating_instr
+
+    # Kör mot OpenAI
+    full_text = _run_openai(
+        full_prompt,
+        style,
+        excel_text=_trim(excel_text),
+        intervju_text=_trim(intervju_text or ""),
+    )
+
+    # Försök plocka JSON
+    parsed = _safe_json_from_text(full_text) or {}
+    sec_ratings = parsed.get(section_key, {})
+
+    # Fyll in defaults om något saknas
+    cleaned = {}
+    debug_lines = []
+    for sub in subscales:
+        raw = sec_ratings.get(sub)
+        try:
+            v = int(raw)
+        except Exception:
+            v = 3
+            debug_lines.append(
+                f"{section_key}/{sub}: saknade eller ogiltig poäng ('{raw}'), satt till 3"
+            )
+        v = max(1, min(5, v))
+        cleaned[sub] = v
+        debug_lines.append(f"{section_key}/{sub}: {v}")
+
+    return full_text, cleaned, "\n".join(debug_lines)
+
 # ── NYTT: gör _ratings_table_html konfigurerbar (header av/på) ───────────────
 def _ratings_table_html(
     ratings: dict,
@@ -110,64 +180,194 @@ def _ratings_table_html(
     </style>"""
     return (css if include_css else "") + "\n".join(sections)
 
-# Vilka rader vi vill hitta och under vilken sektion de hör hemma
-TARGETS = {
-    "leda_utveckla_och_engagera": ["Leda andra", "Engagera andra", "Delegera", "Utveckla andra"],
-    "mod_och_handlingskraft": ["Beslutsamhet", "Integritet", "Hantera konflikter"],
-    "sjalkannedom_och_emotionell_stabilitet": ["Självmedvetenhet", "Uthållighet"],
-    "strategiskt_tankande_och_anpassningsformaga": ["Strategiskt fokus", "Anpassningsförmåga"],
-    "kommunikation_och_samarbete": ["Teamarbete", "Inflytelserik"],
+# --- Målmönster: vad i Excel-raden betyder vilken skala-rad? -----------------
+# Flera varianter/engelska namn om dina mallar ändras.
+TARGET_PATTERNS = {
+    "leda_utveckla_och_engagera": {
+        "Leda andra":        [r"leda\s+andra", r"leading\s+others"],
+        "Engagera andra":    [r"engagera\s+andra", r"engag(e|era)\w*\s+others"],
+        "Delegera":          [r"delegera", r"delegat\w*"],
+        "Utveckla andra":    [r"utveckla\s+andra", r"develops?\s+others"],
+    },
+    "mod_och_handlingskraft": {
+        "Beslutsamhet":      [r"beslutsamhet", r"decisiv\w*"],
+        "Integritet":        [r"integritet", r"integrit(y|et)"],
+        "Hantera konflikter":[r"hantera\s+konflikter", r"conflict\s+(management|handling)"],
+    },
+    "sjalkannedom_och_emotionell_stabilitet": {
+        "Självmedvetenhet":  [r"självmedvet(enhet)?", r"self[-\s]?awareness"],
+        "Uthållighet":       [r"uthållighet", r"resilien(ce|s)", r"perseverance"],
+    },
+    "strategiskt_tankande_och_anpassningsformaga": {
+        "Strategiskt fokus": [r"strateg(iskt|ic)\s+(fokus|focus|thinking)"],
+        "Anpassningsförmåga":[r"anpassningsf(ö|o)rm(å|a)ga", r"adaptab\w*", r"adapting\s+to\s+change"],
+    },
+    "kommunikation_och_samarbete": {
+        "Teamarbete":        [r"teamarbete", r"team\s*work"],
+        "Inflytelserik":     [r"inflytelserik", r"influenc\w*", r"persuasive"],
+    },
 }
 
-def _map_0_10_to_1_5(x: float) -> int:
-    """Mappa 0–10 (eller 1–10) till 1–5. Ex: 0–1.99 ->1, 2–3.99 ->2, 4–5.99 ->3, 6–7.99 ->4, 8–10 ->5."""
+TARGETS = {
+    "leda_utveckla_och_engagera": [
+        "Leda andra",
+        "Engagera andra",
+        "Delegera",
+        "Utveckla andra",
+    ],
+    "mod_och_handlingskraft": [
+        "Beslutsamhet",
+        "Integritet",
+        "Hantera konflikter",
+    ],
+    "sjalkannedom_och_emotionell_stabilitet": [
+        "Självmedvetenhet",
+        "Uthållighet",
+    ],
+    "strategiskt_tankande_och_anpassningsformaga": [
+        "Strategiskt fokus",
+        "Anpassningsförmåga",
+    ],
+    "kommunikation_och_samarbete": [
+        "Teamarbete",
+        "Inflytelserik",
+    ],
+}
+
+SECTION_AI_CONFIG = [
+    {
+        "prompt_name": "leda",
+        "section_key": "leda_utveckla_och_engagera",
+        "subscales": [
+            "Leda andra",
+            "Engagera andra",
+            "Delegera",
+            "Utveckla andra",
+        ],
+        "label": "Leda, utveckla och engagera",
+        "context_key": "leda_text",
+        "table_context_key": "leda_table_html",
+    },
+    {
+        "prompt_name": "mod",
+        "section_key": "mod_och_handlingskraft",
+        "subscales": [
+            "Beslutsamhet",
+            "Integritet",
+            "Hantera konflikter",
+        ],
+        "label": "Mod och handlingskraft",
+        "context_key": "mod_text",
+        "table_context_key": "mod_table_html",
+    },
+    {
+        "prompt_name": "sjalkannedom",
+        "section_key": "sjalkannedom_och_emotionell_stabilitet",
+        "subscales": [
+            "Självmedvetenhet",
+            "Uthållighet",
+        ],
+        "label": "Självkännedom och emotionell stabilitet",
+        "context_key": "sjalkannedom_text",
+        "table_context_key": "sjalkannedom_table_html",
+    },
+    {
+        "prompt_name": "strategi",
+        "section_key": "strategiskt_tankande_och_anpassningsformaga",
+        "subscales": [
+            "Strategiskt fokus",
+            "Anpassningsförmåga",
+        ],
+        "label": "Strategiskt tänkande och anpassningsförmåga",
+        "context_key": "strategi_text",
+        "table_context_key": "strategi_table_html",
+    },
+    {
+        "prompt_name": "kommunikation",
+        "section_key": "kommunikation_och_samarbete",
+        "subscales": [
+            "Teamarbete",
+            "Inflytelserik",
+        ],
+        "label": "Kommunikation och samarbete",
+        "context_key": "kommunikation_text",
+        "table_context_key": "kommunikation_table_html",
+    },
+]
+
+# För snabb lookup: "leda andra" -> ("leda_utveckla_och_engagera", "Leda andra")
+LABEL_TO_TARGET = {}
+for section, subs in TARGETS.items():
+    for sub in subs:
+        LABEL_TO_TARGET[sub.lower()] = (section, sub)
+
+
+def _map_0_10_to_1_5(x) -> int:
+    """Mappa 0–10 (eller 1–10) till 1–5."""
     try:
-        v = float(x)
+        v = float(str(x).replace(",", "."))
     except Exception:
         return 3
-    v = max(0.0, min(10.0, v))
-    bucket = 1 + int(v // 2.0)   # 0..1 ->1, 2..3 ->2, 4..5 ->3, 6..7 ->4, 8..10 ->5/6
-    return min(5, bucket)
+    # tillåt 0–10 och clamp:a
+    if v < 0:
+        v = 0
+    if v > 10:
+        v = 10
+    # intervall om 2 poäng: 0-1.99=>1, 2-3.99=>2, 4-5.99=>3, 6-7.99=>4, 8-10=>5
+    bucket = 1 + int(v // 2.0)
+    if bucket > 5:
+        bucket = 5
+    if bucket < 1:
+        bucket = 1
+    return bucket
 
-def _ratings_from_excel_dump(excel_dump: str) -> dict:
+
+def _ratings_from_worksheet(ws):
     """
-    Försök plocka ut siffror (0–10 eller 1–10) direkt ur den TSV-liknande excel_dump du skapar.
-    Vi letar efter respektive radnamn och tar första talet som följer på samma rad/block.
+    Läser direkt från Excel-arket:
+    - Förväntar att första kolumnen är rubriken (t.ex. 'Leda andra')
+    - Tar sista numeriska värdet på raden som poäng (0–10 eller 1–10)
+    - Mappar till 1–5 med _map_0_10_to_1_5
+    Om inget hittas för en rad behålls default=3.
     """
     ratings = _default_all_three()
-    txt = excel_dump or ""
-    # Gör en radlista för enklare matchning
-    lines = [l.strip() for l in txt.splitlines() if l.strip()]
+    debug = []
 
-    # 1) Försök rad-för-rad (exakt textmatch på början av raden)
-    found = set()
-    for line in lines:
-        # Hitta första talet i raden (tillåter decimaler)
-        mnum = re.search(r"([0-9]+(?:[.,][0-9]+)?)", line)
-        if not mnum:
+    for row_idx, row in enumerate(ws.iter_rows(values_only=True), start=1):
+        if not row:
             continue
-        val = mnum.group(1).replace(",", ".")
-        # Kolla om raden innehåller något av våra mål
-        for section, subs in TARGETS.items():
-            for sub in subs:
-                if sub.lower() in line.lower():
-                    ratings[section][sub] = _map_0_10_to_1_5(val)
-                    found.add(sub.lower())
 
-    # 2) Backup: global regex-sökning per sub ifall formatet inte var radvis
-    for section, subs in TARGETS.items():
-        for sub in subs:
-            key = sub.lower()
-            if key in found:
+        label = str(row[0] or "").strip()
+        if not label:
+            continue
+
+        key = label.lower()
+        if key not in LABEL_TO_TARGET:
+            continue  # raden är inte en av våra målrader
+
+        sec, sub = LABEL_TO_TARGET[key]
+
+        # hitta sista numeriska cellen i raden
+        raw_score = None
+        for cell in reversed(row):
+            if cell is None:
                 continue
-            # Hitta närmsta tal inom t.ex. 100 tecken efter nyckelordet
-            m = re.search(rf"{re.escape(sub)}.*?([0-9]+(?:[.,][0-9]+)?)", txt, flags=re.IGNORECASE | re.DOTALL)
-            if m:
-                val = m.group(1).replace(",", ".")
-                ratings[section][sub] = _map_0_10_to_1_5(val)
+            s = str(cell).strip().replace(",", ".")
+            try:
+                raw_score = float(s)
+                break
+            except ValueError:
+                continue
 
-    return ratings
+        if raw_score is None:
+            debug.append(f"Rad {row_idx}: {label} -> ingen siffra hittad, behåller 3")
+            continue
 
+        mapped = _map_0_10_to_1_5(raw_score)
+        ratings[sec][sub] = mapped
+        debug.append(f"Rad {row_idx}: {label} -> rå {raw_score} -> {mapped}")
+
+    return ratings, debug
 
 # ── NYTT: statisk skalförklaring (HTML) med header ───────────────────────────
 def _scale_demo_html() -> str:
@@ -385,8 +585,10 @@ def index(request):
                 context["kommunikation_text"] = run("kommunikation")
 
                 # 4) Generera betyg (1–5) enbart från testdata och rendera tabeller per sektion
-                ratings = _ratings_from_excel_dump(excel_text)
-                context["ratings_json"] = json.dumps(ratings)  # om du vill bära vidare
+                ratings, ratings_debug = _ratings_from_worksheet(ws)
+                context["ratings_json"] = json.dumps(ratings, ensure_ascii=False)
+                # enkel debug-sträng att visa i HTML
+                context["ratings_debug"] = "\n".join(ratings_debug)
 
                 # visa under respektive rubrik (utan header-rad). CSS läggs bara på första.
                 context["leda_table_html"] = mark_safe(_ratings_table_html(
