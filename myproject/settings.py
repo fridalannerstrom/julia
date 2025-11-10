@@ -160,7 +160,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 STYLE_INSTRUCTION = """
 Skriv på ett liknande sätt som nedan text. Formulera din text så att det känns som samma person har skrivit den.
-Skriv kandidatens namn genom hela texten.
+Skriv kandidatens förnamn genom hela texten.
 
 "Testresultaten visar att kandidaten har en hög förmåga att hantera stress och en stark
 emotionell stabilitet. Han delegerar sannolikt uppgifter på ett sätt som utvecklar

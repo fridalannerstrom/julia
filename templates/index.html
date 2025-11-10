@@ -10,6 +10,56 @@
     <!-- Core theme CSS (includes Bootstrap)-->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="icon" href="{% static 'img/favicon.ico' %}">
+    <style>
+        /* === LOADING OVERLAY === */
+#loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(17, 24, 39, 0.55); /* mörk tonad bakgrund */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* ovanför allt, även footern */
+}
+
+.loading-box {
+  background: #fff;
+  padding: 22px 30px;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 4px solid #e5e7eb;
+  border-top-color: #7b2cbf; /* din lila */
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#loading-overlay p {
+  font-size: 1rem;
+  color: #111827;
+  margin: 0;
+  font-weight: 500;
+}
+    </style>
 </head>
 <body id="page-top">
     <!-- Navigation-->
@@ -80,7 +130,7 @@
                         <!-- STEG 1 -->
                         {% if step == 1 %}
                             <h3 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h3>
-                            <p>Ladda upp Excelfilen (STIVE-resultat) och klistra in intervjuanteckningar. Klicka på <strong>Nästa</strong> för att skapa TQ Färdighet & TQ Motivation.</p>
+                            <p>Ladda upp Excelfilen och klistra in intervjuanteckningar. Klicka på <strong>Nästa</strong> för att skapa TQ Färdighet & TQ Motivation.</p>
 
                             <div class="adminui-upload-area">
                                 <label for="excel" class="adminui-drop-zone">
@@ -175,50 +225,113 @@
                             <p>Här ser du hela rapporten samlad, utan nya AI-anrop. Kontrollera innan du laddar ner Word.</p>
 
                             <div class="adminui-report-preview">
+
                                 {% if tq_fardighet_text %}
-                                    <h4>TQ Färdighet</h4>
-                                    <p>{{ tq_fardighet_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>TQ Färdighet</h3>
+                                    <div class="report-body">
+                                        {{ tq_fardighet_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
 
                                 {% if sur_text %}
-                                    <h4>Styrkor / Utvecklingsområden / Riskbeteenden</h4>
-                                    <p>{{ sur_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>Styrkor / Utvecklingsområden / Riskbeteenden</h3>
+                                    <div class="report-body">
+                                        {{ sur_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
 
                                 {% if tq_motivation_text %}
-                                    <h4>TQ Motivation – främsta drivkrafter</h4>
-                                    <p>{{ tq_motivation_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>TQ Motivation – främsta drivkrafter</h3>
+                                    <div class="report-body">
+                                        {{ tq_motivation_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
 
                                 {% if leda_text %}
-                                    <h4>Leda, utveckla och engagera</h4>
-                                    <p>{{ leda_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>Leda, utveckla och engagera</h3>
+                                    {% if leda_table_html %}
+                                        <div class="report-table">
+                                            {{ leda_table_html|safe }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="report-body">
+                                        {{ leda_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
 
                                 {% if mod_text %}
-                                    <h4>Mod och handlingskraft</h4>
-                                    <p>{{ mod_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>Mod och handlingskraft</h3>
+                                    {% if mod_table_html %}
+                                        <div class="report-table">
+                                            {{ mod_table_html|safe }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="report-body">
+                                        {{ mod_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
 
                                 {% if sjalkannedom_text %}
-                                    <h4>Självkännedom och emotionell stabilitet</h4>
-                                    <p>{{ sjalkannedom_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>Självkännedom och emotionell stabilitet</h3>
+                                    {% if sjalkannedom_table_html %}
+                                        <div class="report-table">
+                                            {{ sjalkannedom_table_html|safe }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="report-body">
+                                        {{ sjalkannedom_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
 
                                 {% if strategi_text %}
-                                    <h4>Strategiskt tänkande och anpassningsförmåga</h4>
-                                    <p>{{ strategi_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>Strategiskt tänkande och anpassningsförmåga</h3>
+                                    {% if strategi_table_html %}
+                                        <div class="report-table">
+                                            {{ strategi_table_html|safe }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="report-body">
+                                        {{ strategi_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
 
                                 {% if kommunikation_text %}
-                                    <h4>Kommunikation och samarbete</h4>
-                                    <p>{{ kommunikation_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>Kommunikation och samarbete</h3>
+                                    {% if kommunikation_table_html %}
+                                        <div class="report-table">
+                                            {{ kommunikation_table_html|safe }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="report-body">
+                                        {{ kommunikation_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
 
                                 {% if slutsats_text %}
-                                    <h4>Sammanfattande slutsats</h4>
-                                    <p>{{ slutsats_text|linebreaksbr }}</p>
+                                <div class="report-section">
+                                    <h3>Sammanfattande slutsats</h3>
+                                    <div class="report-body">
+                                        {{ slutsats_text|linebreaksbr }}
+                                    </div>
+                                </div>
                                 {% endif %}
+
                             </div>
                         {% endif %}
 
@@ -264,9 +377,59 @@
             document.getElementById("filename").textContent = "Vald fil: " + fileName;
         }
     </script>
+
+<script>
+function showFilename(input) {
+  const fileName = input.files[0] ? input.files[0].name : "Ingen fil vald";
+  const el = document.getElementById("filename");
+  if (el) el.textContent = "Vald fil: " + fileName;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const forms = document.querySelectorAll("form");
+  const overlay = document.getElementById("loading-overlay");
+
+  if (!overlay) return;
+
+  forms.forEach(form => {
+    form.addEventListener("submit", function (e) {
+      const btn = e.submitter;
+      if (!btn) return;
+
+      const heavyActions = [
+        "next",
+        "gen_tq_fardighet",
+        "gen_tq_motivation",
+        "gen_leda",
+        "gen_mod",
+        "gen_sjalkannedom",
+        "gen_strategi",
+        "gen_kommunikation",
+        "gen_sur",
+        "gen_slutsats",
+        "generate_analysis"
+      ];
+
+      if (heavyActions.includes(btn.name)) {
+        overlay.style.display = "flex";
+      }
+      // build_doc kör utan overlay 👍
+    });
+  });
+});
+</script>
+
     <!-- Bootstrap core JS-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Core theme JS-->
     <script src="{% static 'js/script.js' %}"></script>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <p>🧠 AI tänker... snart klar!</p>
+  </div>
+</div>
 </body>
 </html>

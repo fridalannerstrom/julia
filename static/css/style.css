@@ -93,6 +93,74 @@
 
 /* Egen CSS */
 
+.adminui-report-preview {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8f9fc;
+    border-radius: 12px;
+    border: 1px solid #e2e6f0;
+}
+
+.report-section {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e6f0;
+}
+
+.report-section:last-child {
+    border-bottom: none;
+}
+
+.report-section h3 {
+    font-size: 1.15rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #222;
+}
+
+.report-table {
+    margin-bottom: 8px;
+}
+
+.report-body p {
+    margin: 0 0 6px;
+}
+
+#loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-box {
+    background: #ffffff;
+    padding: 18px 26px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+.loading-spinner {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 3px solid #e5e7eb;
+    border-top-color: #2563eb;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 .adminui-container {
   max-width: 700px;
   margin: auto;
