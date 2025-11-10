@@ -28,7 +28,11 @@ load_dotenv()
 if os.path.exists("env.py"):
     import env  # noqa: F401
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    timeout=20,        # max 20 sekunder
+    max_retries=2,     # valfritt men bra
+)
 
 # ── NYTT: gemensamma rubriknycklar i rätt ordning ────────────────────────────
 SECTION_KEYS = [
@@ -111,17 +115,37 @@ HEADER_TO_TARGET = {
 
 # ── NYTT: liten wrapper för OpenAI-anrop per rubrik ───────────────────────────
 def _run_openai(prompt_text: str, style: str, **vars_) -> str:
-    # säkra ersättningar – bara våra två taggar
-    pt = prompt_text.replace("{excel_text}", vars_.get("excel_text", ""))
-    pt = pt.replace("{intervju_text}", vars_.get("intervju_text", ""))
-    filled = (style or "") + "\n\n" + pt
-    resp = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": filled}],
-        temperature=0.2,
-        max_tokens=900,
-    )
-    return (resp.choices[0].message.content or "").strip()
+    """
+    Kör en OpenAI-prompt med säkra timeout- och felhanteringsinställningar.
+    Returnerar alltid en sträng (även vid fel) för att undvika att krascha appen.
+    """
+    try:
+        # Bygg prompten och ersätt taggar
+        pt = prompt_text.replace("{excel_text}", vars_.get("excel_text", ""))
+        pt = pt.replace("{intervju_text}", vars_.get("intervju_text", ""))
+        filled = (style or "") + "\n\n" + pt
+
+        # Kör OpenAI med timeout och låg temperatur
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": filled}],
+            temperature=0.2,
+            max_tokens=900,
+            timeout=20,          # stoppa efter 20 sekunder
+            max_retries=2,        # försök två gånger vid nätverksfel
+        )
+
+        return (resp.choices[0].message.content or "").strip()
+
+    except Exception as e:
+        # Logga felet i terminalen / Heroku-loggen
+        print("⚠️ OpenAI error:", e)
+
+        # Returnera ett användarvänligt fallback-svar
+        return (
+            "Tyvärr tog AI-svaret för lång tid eller gick inte att hämta just nu. "
+            "Försök igen om en liten stund."
+        )
 
 def _normalize_header_cell(value: str) -> str:
     """
