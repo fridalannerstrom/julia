@@ -928,14 +928,19 @@ def index(request):
             H("Beskrivning av poängskala")
             P("1 = Utrymme för utveckling · 2 = Tillräcklig · 3 = God · 4 = Mycket god · 5 = Utmärkt")
 
-            # TQ-delar
+            # 1️⃣ TQ Färdighet
             H("TQ Färdighet")
             P(context.get("tq_fardighet_text", ""))
 
+            # 2️⃣ Styrkor, utvecklingsområden, riskbeteenden
+            H("Styrkor, utvecklingsområden, riskbeteenden")
+            P(context.get("sur_text", ""))
+
+            # 3️⃣ TQ Motivation
             H("Definition av kandidatens 3 främsta motivationsfaktorer")
             P(context.get("tq_motivation_text", ""))
 
-            # Områden
+            # 4️⃣ Områden
             H("Leda, utveckla och engagera")
             P(context.get("leda_text", ""))
 
@@ -951,13 +956,11 @@ def index(request):
             H("Kommunikation och samarbete")
             P(context.get("kommunikation_text", ""))
 
-            # Sammanställningar
-            H("Styrkor, utvecklingsområden, riskbeteenden")
-            P(context.get("sur_text", ""))
-
+            # 5️⃣ Sammanfattande slutsats
             H("Sammanfattande slutsats")
             P(context.get("slutsats_text", ""))
 
+            # Spara och returnera dokumentet
             bio = io.BytesIO()
             doc.save(bio)
             bio.seek(0)
