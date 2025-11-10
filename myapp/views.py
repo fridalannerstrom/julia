@@ -82,6 +82,32 @@ HEADER_TO_TARGET = {
     "Learning focus": ("strategiskt_tankande_och_anpassningsformaga", "Learning focus"),
 }
 
+# ── Koppling från STIVE-kompetenser -> (sektion_key, svensk_rad) ────────────
+HEADER_TO_TARGET = {
+    # Leda, utveckla och engagera
+    "Leading others":        ("leda_utveckla_och_engagera", "Leda andra"),
+    "Engaging others":       ("leda_utveckla_och_engagera", "Engagera andra"),
+    "Delegating":            ("leda_utveckla_och_engagera", "Delegera"),
+    "Developing others":     ("leda_utveckla_och_engagera", "Utveckla andra"),
+
+    # Mod och handlingskraft
+    "Decisiveness":          ("mod_och_handlingskraft", "Beslutsamhet"),
+    "Integrity":             ("mod_och_handlingskraft", "Integritet"),
+    "Managing conflict":     ("mod_och_handlingskraft", "Hantera konflikter"),
+
+    # Självkännedom och emotionell stabilitet
+    "Self-awareness":        ("sjalkannedom_och_emotionell_stabilitet", "Självmedvetenhet"),
+    "Resilience":            ("sjalkannedom_och_emotionell_stabilitet", "Uthållighet"),
+
+    # Strategiskt tänkande och anpassningsförmåga
+    "Strategic thinking":    ("strategiskt_tankande_och_anpassningsformaga", "Strategiskt fokus"),
+    "Adaptability":          ("strategiskt_tankande_och_anpassningsformaga", "Anpassningsförmåga"),
+
+    # Kommunikation och samarbete
+    "Teamwork":              ("kommunikation_och_samarbete", "Teamarbete"),
+    "Influencing":           ("kommunikation_och_samarbete", "Inflytelserik"),
+}
+
 
 # ── NYTT: liten wrapper för OpenAI-anrop per rubrik ───────────────────────────
 def _run_openai(prompt_text: str, style: str, **vars_) -> str:
@@ -204,58 +230,103 @@ def _ai_text_and_ratings_for_section(config, base_prompt_text, style, excel_text
 # ── NYTT: gör _ratings_table_html konfigurerbar (header av/på) ───────────────
 def _ratings_table_html(
     ratings: dict,
-    section_filter=None,         # lista av (key,title) om du vill rendera 1..n sektioner
-    include_css: bool = True     # sätt False när du redan lagt in CSS en gång
+    section_filter=None,
+    include_css: bool = True
 ) -> str:
+    # Ordning på sektionerna
     default_order = [
-        ("leda_utveckla_och_engagera", "1. Leda, utveckla och engagera"),
-        ("mod_och_handlingskraft", "2. Mod och handlingskraft"),
-        ("sjalkannedom_och_emotionell_stabilitet", "3. Självkännedom och emotionell stabilitet"),
-        ("strategiskt_tankande_och_anpassningsformaga", "4. Strategiskt tänkande och anpassningsförmåga"),
-        ("kommunikation_och_samarbete", "5. Kommunikation och samarbete"),
+        ("leda_utveckla_och_engagera", "Leda, utveckla och engagera"),
+        ("mod_och_handlingskraft", "Mod och handlingskraft"),
+        ("sjalkannedom_och_emotionell_stabilitet", "Självkännedom och emotionell stabilitet"),
+        ("strategiskt_tankande_och_anpassningsformaga", "Strategiskt tänkande och anpassningsförmåga"),
+        ("kommunikation_och_samarbete", "Kommunikation och samarbete"),
     ]
     section_order = section_filter or default_order
 
-    def row(name, val):
-        tds = "".join(f'<td class="dn-cell">{"✓" if val == i else ""}</td>' for i in range(1, 6))
-        return f'<tr><th class="dn-sub">{name}</th>{tds}</tr>'
+    def row(label, val: int):
+        # 5 cirklar, en fylld
+        cells = []
+        for i in range(1, 6):
+            active_class = " dn-dot--active" if val == i else ""
+            cells.append(
+                f'<td class="dn-cell"><span class="dn-dot{active_class}"></span></td>'
+            )
+        return f'<tr><th class="dn-sub">{label}</th>{"".join(cells)}</tr>'
 
-    sections = []
+    sections_html = []
+
     for key, title in section_order:
         if key not in ratings:
             continue
-        rows = []
-        for sub, score in ratings[key].items():
-            try:
-                v = int(score)
-            except Exception:
-                v = 3
-            v = max(1, min(5, v))
-            rows.append(row(sub, v))
 
-        sections.append(f"""
-        <div class="dn-section">
-          <h3 class="dn-h3">{title}</h3>
-          <table class="dn-table">
-            <thead></thead>  <!-- inga headers alls -->
-            <tbody>{''.join(rows)}</tbody>
-          </table>
-        </div>""")
+        section_ratings = ratings.get(key, {})
+        rows_html = []
+
+        # använd fasta rader från TARGETS om de finns
+        target_labels = TARGETS.get(key)
+        if target_labels:
+            for label in target_labels:
+                raw_score = section_ratings.get(label, 3)
+                try:
+                    v = int(raw_score)
+                except Exception:
+                    v = 3
+                v = max(1, min(5, v))
+                rows_html.append(row(label, v))
+        else:
+            # fallback om ingen TARGETS finns
+            for label, raw_score in section_ratings.items():
+                try:
+                    v = int(raw_score)
+                except Exception:
+                    v = 3
+                v = max(1, min(5, v))
+                rows_html.append(row(label, v))
+
+        if rows_html:
+            sections_html.append(f"""
+            <div class="dn-section">
+              <h3 class="dn-h3">{title}</h3>
+              <table class="dn-table">
+                <tbody>
+                  {''.join(rows_html)}
+                </tbody>
+              </table>
+            </div>
+            """)
 
     css = """
     <style>
       .dn-section{margin:24px 0;}
-      .dn-h3{font-size:1.1rem;margin-bottom:8px;}
+      .dn-h3{font-size:1.1rem;margin-bottom:8px;font-weight:600;}
       .dn-table{width:100%;border-collapse:separate;border-spacing:0 6px;}
-      .dn-head{font-weight:600;font-size:.9rem;text-align:center;white-space:nowrap;}
-      .dn-first{width:32%;}
-      .dn-sub{font-weight:600;background:#f7f9fc;padding:10px;border-radius:8px 0 0 8px;}
-      .dn-cell{background:#f7f9fc;text-align:center;padding:10px;min-width:110px;
-               border-left:4px solid #fff;border:1px solid #e6ebf2;border-left:0;}
-      tr>th.dn-sub + td{border-left:1px solid #e6ebf2;}
-      tr>td.dn-cell:last-child{border-radius:0 8px 8px 0;}
-    </style>"""
-    return (css if include_css else "") + "\n".join(sections)
+      .dn-sub{
+        font-weight:600;
+        padding:10px 12px;
+        white-space:nowrap;
+        background:#ffffff;
+      }
+      .dn-cell{
+        text-align:center;
+        padding:10px 6px;
+        background:#ffffff;
+      }
+      .dn-dot{
+        display:inline-block;
+        width:14px;
+        height:14px;
+        border-radius:50%;
+        border:2px solid #d4d7e2;
+        background:#f5f6fa;
+      }
+      .dn-dot--active{
+        background:#7b2cbf; /* justera till Domarnämndens lila om du vill */
+        border-color:#7b2cbf;
+      }
+    </style>
+    """
+
+    return (css if include_css else "") + "\n".join(sections_html)
 
 # --- Målmönster: vad i Excel-raden betyder vilken skala-rad? -----------------
 # Flera varianter/engelska namn om dina mallar ändras.
@@ -399,15 +470,27 @@ def _map_0_10_to_1_5(x) -> int:
     return bucket
 
 
+def _normalize_header_cell(value: str) -> str:
+    """
+    Tar t.ex. 'Competency Score: Leading others (STIVE)'
+    -> 'Leading others'
+    """
+    if not value:
+        return ""
+    text = str(value)
+    if "Competency Score" in text:
+        text = text.split("Competency Score:")[-1]
+    if "(" in text:
+        text = text.split("(")[0]
+    return text.strip()
+
+
 def _ratings_from_worksheet(ws):
     """
-    Läser STIVE-export:
-      - Rad 1: rubriker ('Competency Score: XXX (STIVE)')
-      - Rad 2: värden (1-5, kan vara decimaler)
-    Mappar utvalda kompetenser till dina sektioner via HEADER_TO_TARGET.
-    Returnerar:
-      - ratings: {sektion_key: {sub_label: 1-5}}
-      - debug: lista med text-rader
+    STIVE-format:
+      - Rad 1: rubriker ('Competency Score: Leading others (STIVE)')
+      - Rad 2: värden (1–5, ev. decimal)
+    Mappar med HEADER_TO_TARGET till svenska etiketter per sektion.
     """
     rows = list(ws.iter_rows(values_only=True))
     debug = []
@@ -417,13 +500,12 @@ def _ratings_from_worksheet(ws):
         return _default_all_three(), debug
 
     header = rows[0]
-    data = rows[1]  # vi utgår från första kandidaten i filen
+    data = rows[1]
 
-    # Börja med defaults så tabellerna alltid renderar
     ratings = _default_all_three()
 
     for col_idx, raw_header in enumerate(header):
-        # hoppa över förnamn / efternamn
+        # hoppa över förnamn/efternamn om de ligger först
         if col_idx < 2:
             continue
 
@@ -433,29 +515,27 @@ def _ratings_from_worksheet(ws):
 
         mapping = HEADER_TO_TARGET.get(comp_name)
         if not mapping:
-            debug.append(f"Kolumn {col_idx+1}: '{raw_header}' ignoreras (ingen mapping definierad).")
+            debug.append(f"Kolumn {col_idx+1}: '{raw_header}' ignoreras (ingen mapping).")
             continue
 
         sec_key, sub_label = mapping
 
-        # Hämta värde i rad 2 för denna kolumn
         raw_value = data[col_idx] if col_idx < len(data) else None
         if raw_value is None or raw_value == "":
-            debug.append(f"{comp_name}: inget värde i rad 2, behåller ev. default.")
+            debug.append(f"{comp_name}: inget värde i rad 2, behåller default.")
             continue
 
         score = _round_to_1_5(raw_value)
+        score = max(1, min(5, score))
 
-        # Se till att sektion/sub-label finns i dict
         if sec_key not in ratings:
             ratings[sec_key] = {}
-        if sub_label not in ratings[sec_key]:
-            ratings[sec_key][sub_label] = 3  # init
-
         ratings[sec_key][sub_label] = score
-        debug.append(f"{comp_name}: rå={raw_value} -> {score}")
+
+        debug.append(f"{comp_name} -> {sub_label}: rå={raw_value} -> {score}")
 
     return ratings, debug
+
 
 # ── NYTT: statisk skalförklaring (HTML) med header ───────────────────────────
 def _scale_demo_html() -> str:
