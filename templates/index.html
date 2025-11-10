@@ -78,49 +78,70 @@
                     <!-- STEG 2: Visa/justera områdesanalyser + tabeller -->
                     {% if test_text and intervju_text %}
                     <hr>
-                    <h2 class="adminui-subtitle">Testanalys per område</h2>
-                    <p>Justera texterna vid behov. Betygstabellerna är AI-genererade (1–5) utifrån test + intervju.</p>
+                    <h2 class="adminui-subtitle">Testbaserade sammanfattningar</h2>
+                    <p>Här kan du justera de övergripande TQ-sammanfattningarna och områdesanalyserna innan du skapar styrkor/svagheter och slutsats.</p>
 
                     <form method="post">
                         {% csrf_token %}
 
+                        <!-- TQ Färdighet -->
+                        <label class="adminui-label">TQ Färdighet</label>
+                        <textarea
+                            name="tq_fardighet_text"
+                            class="adminui-textarea"
+                            rows="4"
+                        >{{ tq_fardighet_text }}</textarea>
+
+                        <!-- TQ Motivation -->
+                        <label class="adminui-label">TQ Motivation – främsta motivationsfaktorer</label>
+                        <textarea
+                            name="tq_motivation_text"
+                            class="adminui-textarea"
+                            rows="4"
+                        >{{ tq_motivation_text }}</textarea>
+
+                        <hr>
+
+                        <h2 class="adminui-subtitle">Testanalys per område</h2>
+
                         <!-- Leda -->
                         <label class="adminui-label">Leda, utveckla och engagera</label>
-                        {% if leda_table_html %}<div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>{% endif %}
                         <textarea name="leda_text" class="adminui-textarea" rows="5">{{ leda_text }}</textarea>
-
+                        {% if leda_table_html %}
+                            <div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>
+                        {% endif %}
 
                         <!-- Mod -->
                         <label class="adminui-label">Mod och handlingskraft</label>
-                        {% if mod_table_html %}<div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>{% endif %}
                         <textarea name="mod_text" class="adminui-textarea" rows="5">{{ mod_text }}</textarea>
+                        {% if mod_table_html %}
+                            <div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>
+                        {% endif %}
 
                         <!-- Självkännedom -->
                         <label class="adminui-label">Självkännedom och emotionell stabilitet</label>
-                        {% if sjalkannedom_table_html %}<div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>{% endif %}
                         <textarea name="sjalkannedom_text" class="adminui-textarea" rows="5">{{ sjalkannedom_text }}</textarea>
+                        {% if sjalkannedom_table_html %}
+                            <div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>
+                        {% endif %}
 
                         <!-- Strategi -->
                         <label class="adminui-label">Strategiskt tänkande och anpassningsförmåga</label>
-                        {% if strategi_table_html %}<div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>{% endif %}
                         <textarea name="strategi_text" class="adminui-textarea" rows="5">{{ strategi_text }}</textarea>
-
+                        {% if strategi_table_html %}
+                            <div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>
+                        {% endif %}
 
                         <!-- Kommunikation -->
                         <label class="adminui-label">Kommunikation och samarbete</label>
-                        {% if kommunikation_table_html %}<div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>{% endif %}
                         <textarea name="kommunikation_text" class="adminui-textarea" rows="5">{{ kommunikation_text }}</textarea>
+                        {% if kommunikation_table_html %}
+                            <div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>
+                        {% endif %}
 
-                        <!-- Bär med allt för nästa steg -->
+                        <!-- Bär med allt vidare till Styrkor/Utvecklingsområden/Risk -->
                         <input type="hidden" name="test_text" value="{{ test_text|escape }}">
                         <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
-                        <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
-                        <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text|escape }}">
-                        <input type="hidden" name="leda_text" value="{{ leda_text|escape }}">
-                        <input type="hidden" name="mod_text" value="{{ mod_text|escape }}">
-                        <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text|escape }}">
-                        <input type="hidden" name="strategi_text" value="{{ strategi_text|escape }}">
-                        <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text|escape }}">
 
                         <button class="adminui-button" type="submit" name="gen_sur" value="1">
                             Skapa Styrkor/Utvecklingsområden/Risk

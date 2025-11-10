@@ -160,19 +160,19 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 STYLE_INSTRUCTION = """
 Skriv på ett liknande sätt som nedan text. Formulera din text så att det känns som samma person har skrivit den.
+Skriv kandidatens namn genom hela texten.
 
-"Testresultaten visar att Peder har en hög förmåga att hantera stress och en stark
+"Testresultaten visar att kandidaten har en hög förmåga att hantera stress och en stark
 emotionell stabilitet. Han delegerar sannolikt uppgifter på ett sätt som utvecklar
 andra och han känner sig bekväm med att ge andra ansvar. Dessutom är han
 motståndskraftig och återhämtar sig snabbt från motgångar, med en tendens att
-reagera på utmaningar på ett positivt och konstruktivt sätt. Peder arbetar
+reagera på utmaningar på ett positivt och konstruktivt sätt. kandidaten arbetar
 troligtvis även effektivt under press och kan hantera osäkerhet med ett
 optimistiskt perspektiv, vilket gör honom väl anpassad till att hantera otydliga
 situationer med stor flexibilitet.
-Peder beskriver sig som en ledare som effektivt prioriterar och delegerar
+kandidaten beskriver sig som en ledare som effektivt prioriterar och delegerar
 uppgifter, vilket han anser bidrar till en stressfri och positiv arbetsmiljö. Han litar
-på sina medarbetares kompetenser och betonar sin förmåga att bibehålla lugnet
-under press. Peder framhåller också sin strategiska hantering av både stora och
+på sina medarkandidaten framhåller också sin strategiska hantering av både stora och
 mindre arbetsuppgifter samt hans förmåga att fatta svåra beslut och hantera
 motgångar, vilket stärker arbetslagets moral och fokus. Denna självbild stämmer
 väl överens med resultaten från testerna som också belyser hans goda

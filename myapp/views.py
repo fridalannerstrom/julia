@@ -729,11 +729,12 @@ def index(request):
     sur_text = request.POST.get("sur_text", "")
     slutsats_text = request.POST.get("slutsats_text", "")
 
-    # Sektionstexter
+    # Sektionstexter (leda/mod/...)
     for cfg in SECTION_AI_CONFIG:
         context_key = cfg["context_key"]
         context[context_key] = request.POST.get(context_key, "")
 
+    # TQ-fält
     context["tq_fardighet_text"] = request.POST.get("tq_fardighet_text", "")
     context["tq_motivation_text"] = request.POST.get("tq_motivation_text", "")
 
@@ -748,14 +749,17 @@ def index(request):
 
         # ── STEG 1: Skapa analys (Excel + intervju i samma submit) ───────────
         if "generate_analysis" in request.POST:
-            # 1) Läs excel_text
             excel_text = ""
+            ws = None
+
+            # 1) Läs Excel (om skickad nu)
             if "excel" in request.FILES:
                 try:
                     file = request.FILES["excel"]
                     wb = openpyxl.load_workbook(file)
                     ws = wb.active
 
+                    # Bygg råtext för prompts
                     output = io.StringIO()
                     for row in ws.iter_rows(values_only=True):
                         output.write(
@@ -764,16 +768,18 @@ def index(request):
                             ) + "\n"
                         )
                     excel_text = output.getvalue()
+                    context["test_text"] = excel_text
                 except Exception as e:
                     context["error"] = "Kunde inte läsa excelfilen: " + str(e)[:500]
+                    return render(request, "index.html", context)
             else:
-                # fallback om vi redan har sparad test_text
+                # Om ingen ny fil skickas, försök använda befintlig text
                 excel_text = test_text
 
             # 2) Läs intervjuanteckningar
             intervju_raw = (request.POST.get("intervju") or "").strip()
 
-            # 3) Validera
+            # 3) Validera indata
             if not excel_text:
                 context["error"] = "Ladda upp en Excelfil för att skapa analys."
                 return render(request, "index.html", context)
@@ -787,6 +793,45 @@ def index(request):
             context["test_text"] = excel_text
             context["intervju_text"] = intervju_raw
 
+            # 5) Betygstabeller ENDAST från Excel
+            if ws is not None:
+                try:
+                    ratings, ratings_debug = _ratings_from_worksheet(ws)
+                    context["ratings_json"] = json.dumps(ratings, ensure_ascii=False)
+                    context["ratings_debug"] = "\n".join(ratings_debug)
+
+                    # Tabeller per sektion (ingen AI inblandad)
+                    context["leda_table_html"] = mark_safe(_ratings_table_html(
+                        ratings,
+                        section_filter=[("leda_utveckla_och_engagera", "Leda, utveckla och engagera")],
+                        include_css=True,
+                    ))
+                    context["mod_table_html"] = mark_safe(_ratings_table_html(
+                        ratings,
+                        section_filter=[("mod_och_handlingskraft", "Mod och handlingskraft")],
+                        include_css=False,
+                    ))
+                    context["sjalkannedom_table_html"] = mark_safe(_ratings_table_html(
+                        ratings,
+                        section_filter=[("sjalkannedom_och_emotionell_stabilitet", "Självkännedom och emotionell stabilitet")],
+                        include_css=False,
+                    ))
+                    context["strategi_table_html"] = mark_safe(_ratings_table_html(
+                        ratings,
+                        section_filter=[("strategiskt_tankande_och_anpassningsformaga", "Strategiskt tänkande och anpassningsförmåga")],
+                        include_css=False,
+                    ))
+                    context["kommunikation_table_html"] = mark_safe(_ratings_table_html(
+                        ratings,
+                        section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
+                        include_css=False,
+                    ))
+                except Exception as e:
+                    context["error"] = "Kunde inte tolka betyg från Excel: " + str(e)[:500]
+                    return render(request, "index.html", context)
+            # Om ws är None (t.ex. återanvändning), behåll ev. befintliga tabeller i context.
+
+            # 6) AI-texter (baserat på både excel + intervju)
             try:
                 P = {p.name: p.text for p in Prompt.objects.filter(user=request.user)}
 
@@ -808,58 +853,19 @@ def index(request):
                         intervju_text=_trim(intervju_raw),
                     )
 
-                # Per-rubrik: text + betyg
-                all_ratings = {}
-                debug_all = []
-
+                # Per-rubrik: endast TEXT (betyg redan från Excel)
                 for cfg in SECTION_AI_CONFIG:
                     base_prompt = P.get(cfg["prompt_name"], "")
                     if not base_prompt:
                         continue
 
-                    full_text, sec_ratings, dbg = _ai_text_and_ratings_for_section(
-                        cfg,
+                    txt = _run_openai(
                         base_prompt,
                         settings.STYLE_INSTRUCTION,
-                        excel_text=excel_text,
-                        intervju_text=intervju_raw,
+                        excel_text=_trim(excel_text),
+                        intervju_text=_trim(intervju_raw),
                     )
-
-                    context[cfg["context_key"]] = full_text
-                    all_ratings[cfg["section_key"]] = sec_ratings
-                    if dbg:
-                        debug_all.append(dbg)
-
-                if all_ratings:
-                    context["ratings_json"] = json.dumps(all_ratings, ensure_ascii=False)
-                    context["ratings_debug"] = "\n".join(debug_all)
-
-                    # Tabeller per sektion
-                    context["leda_table_html"] = mark_safe(_ratings_table_html(
-                        all_ratings,
-                        section_filter=[("leda_utveckla_och_engagera", "Leda, utveckla och engagera")],
-                        include_css=True,
-                    ))
-                    context["mod_table_html"] = mark_safe(_ratings_table_html(
-                        all_ratings,
-                        section_filter=[("mod_och_handlingskraft", "Mod och handlingskraft")],
-                        include_css=False,
-                    ))
-                    context["sjalkannedom_table_html"] = mark_safe(_ratings_table_html(
-                        all_ratings,
-                        section_filter=[("sjalkannedom_och_emotionell_stabilitet", "Självkännedom och emotionell stabilitet")],
-                        include_css=False,
-                    ))
-                    context["strategi_table_html"] = mark_safe(_ratings_table_html(
-                        all_ratings,
-                        section_filter=[("strategiskt_tankande_och_anpassningsformaga", "Strategiskt tänkande och anpassningsförmåga")],
-                        include_css=False,
-                    ))
-                    context["kommunikation_table_html"] = mark_safe(_ratings_table_html(
-                        all_ratings,
-                        section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
-                        include_css=False,
-                    ))
+                    context[cfg["context_key"]] = txt
 
             except Exception as e:
                 context["error"] = "Kunde inte skapa analys från test + intervju: " + str(e)[:500]
@@ -918,20 +924,39 @@ def index(request):
                 para = doc.add_paragraph(txt or "")
                 para.style.font.size = Pt(11)
 
+            # Skalförklaring
             H("Beskrivning av poängskala")
             P("1 = Utrymme för utveckling · 2 = Tillräcklig · 3 = God · 4 = Mycket god · 5 = Utmärkt")
 
-            H("TQ Färdighet"); P(context.get("tq_fardighet_text", ""))
-            H("Definition av kandidatens 3 främsta motivationsfaktorer"); P(context.get("tq_motivation_text", ""))
+            # TQ-delar
+            H("TQ Färdighet")
+            P(context.get("tq_fardighet_text", ""))
 
-            H("Leda, utveckla och engagera"); P(context.get("leda_text", ""))
-            H("Mod och handlingskraft"); P(context.get("mod_text", ""))
-            H("Självkännedom och emotionell stabilitet"); P(context.get("sjalkannedom_text", ""))
-            H("Strategiskt tänkande och anpassningsförmåga"); P(context.get("strategi_text", ""))
-            H("Kommunikation och samarbete"); P(context.get("kommunikation_text", ""))
+            H("Definition av kandidatens 3 främsta motivationsfaktorer")
+            P(context.get("tq_motivation_text", ""))
 
-            H("Styrkor, utvecklingsområden, riskbeteenden"); P(context.get("sur_text", ""))
-            H("Sammanfattande slutsats"); P(context.get("slutsats_text", ""))
+            # Områden
+            H("Leda, utveckla och engagera")
+            P(context.get("leda_text", ""))
+
+            H("Mod och handlingskraft")
+            P(context.get("mod_text", ""))
+
+            H("Självkännedom och emotionell stabilitet")
+            P(context.get("sjalkannedom_text", ""))
+
+            H("Strategiskt tänkande och anpassningsförmåga")
+            P(context.get("strategi_text", ""))
+
+            H("Kommunikation och samarbete")
+            P(context.get("kommunikation_text", ""))
+
+            # Sammanställningar
+            H("Styrkor, utvecklingsområden, riskbeteenden")
+            P(context.get("sur_text", ""))
+
+            H("Sammanfattande slutsats")
+            P(context.get("slutsats_text", ""))
 
             bio = io.BytesIO()
             doc.save(bio)
@@ -940,10 +965,11 @@ def index(request):
                 bio.getvalue(),
                 content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             )
-            resp["Content-Disposition"] = 'attachment; filename=\"rapport.docx\"'
+            resp["Content-Disposition"] = 'attachment; filename="rapport.docx"'
             return resp
 
     return render(request, "index.html", context)
+
 
 
 
