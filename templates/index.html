@@ -35,225 +35,153 @@
             </div>
         </header>
         <!-- About section-->
-        <section id="about">
-            {% if error %}
-            <div style="background:#ffecec;border:1px solid #f5c2c2;color:#b94a48;padding:12px;border-radius:8px;margin-bottom:16px;">
-                {{ error }}
-            </div>
-            {% endif %}
-            <div class="container px-4">
-                <div class="row gx-4 justify-content-center">
-                    <div class="col-lg-8">
+            <section id="about">
+    {% if error %}
+    <div style="background:#ffecec;border:1px solid #f5c2c2;color:#b94a48;padding:12px;border-radius:8px;margin-bottom:16px;">
+        {{ error }}
+    </div>
+    {% endif %}
 
-                        <div class="adminui-container">
-                            <h2 class="adminui-title">Ladda upp Excel</h2><br>
-                            <p>Ladda upp indikatorerna i en .xlsx fil. Vänta en stund efter att du klickat på knappen så verktyget får tid att tänka :)</p>
-                        
-                            <!-- Excel Upload -->
-                            <form method="post" enctype="multipart/form-data">
-                                {% csrf_token %}
-                                <div class="adminui-upload-area">
-                                  <label for="excel" class="adminui-drop-zone">
-                                    <input type="file" name="excel" id="excel" hidden onchange="showFilename(this)">
-                                    <div class="adminui-icon">📂</div>
-                                    <p>Klicka för att ladda upp fil</p>
-                                  </label>
-                                  
-                                  <!-- Här visas det valda filnamnet -->
-                                  <p id="filename" style="margin-top: 10px; color: #666; font-style: italic;"></p>
-                              
-                                  <button class="adminui-button" type="submit">Analysera testresultat</button>
-                                </div>
-                              </form>
-                        
-                                {% if test_text %}
-                                <form method="post">
-                                {% csrf_token %}
+    <div class="container px-4">
+        <div class="row gx-4 justify-content-center">
+            <div class="col-lg-8">
+                <div class="adminui-container">
 
-                                <h2 class="adminui-subtitle">Automatiskt fördelad testanalys</h2>
-                                <p>Justera innehållet per rubrik. Dessa fält kan uppdateras igen efter intervju.</p>
+                    <!-- STEG 1: Excel + intervju i samma form -->
+                    <h2 class="adminui-title">Skapa analys</h2><br>
+                    <p>Ladda upp Excelfilen och klistra in intervjuanteckningar. Verktyget skapar analysen per område baserat på båda underlagen.</p>
 
-                                <label class="adminui-label">Leda, utveckla och engagera</label>
-                                <textarea name="leda_text" class="adminui-textarea" rows="5">{{ leda_text }}</textarea>
-                                {% if leda_table_html %}<div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>{% endif %}
-
-                                <label class="adminui-label">Mod och handlingskraft</label>
-                                <textarea name="mod_text" class="adminui-textarea" rows="5">{{ mod_text }}</textarea>
-                                {% if mod_table_html %}<div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>{% endif %}
-
-                                <label class="adminui-label">Självkännedom och emotionell stabilitet</label>
-                                <textarea name="sjalkannedom_text" class="adminui-textarea" rows="5">{{ sjalkannedom_text }}</textarea>
-                                {% if sjalkannedom_table_html %}<div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>{% endif %}
-
-                                <label class="adminui-label">Strategiskt tänkande och anpassningsförmåga</label>
-                                <textarea name="strategi_text" class="adminui-textarea" rows="5">{{ strategi_text }}</textarea>
-                                {% if strategi_table_html %}<div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>{% endif %}
-
-                                <label class="adminui-label">Kommunikation och samarbete</label>
-                                <textarea name="kommunikation_text" class="adminui-textarea" rows="5">{{ kommunikation_text }}</textarea>
-                                {% if kommunikation_table_html %}<div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>{% endif %}
-
-
-                                <!-- Bär med gamla fält vidare -->
-                                <input type="hidden" name="test_text" value="{{ test_text }}">
-                                <input type="hidden" name="intervju_text" value="{{ intervju_text }}">
-                                <input type="hidden" name="intervju_result" value="{{ intervju_result }}">
-                                <button class="adminui-button" type="submit" name="noop" value="1">💾 Spara utkast</button>
-                                </form>
-
-                                <hr>
-                                <form method="post">
-                                {% csrf_token %}
-                                <h2 class="adminui-subtitle">Klistra in intervjuanteckningar</h2>
-                                <textarea name="intervju" class="adminui-textarea" rows="6" placeholder="Skriv eller klistra in..."></textarea>
-
-                                <!-- Bär med rubrikerna vidare när vi uppdaterar efter intervju -->
-                                {% for key, _ in SECTION_KEYS %}
-                                {% endfor %}
-                                <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text }}">
-                                <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text }}">
-                                <input type="hidden" name="leda_text" value="{{ leda_text }}">
-                                <input type="hidden" name="mod_text" value="{{ mod_text }}">
-                                <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text }}">
-                                <input type="hidden" name="strategi_text" value="{{ strategi_text }}">
-                                <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text }}">
-
-                                <button class="adminui-button" type="submit">Analysera intervju</button>
-                                </form>
-                                {% endif %}
-                        
-                            {% if intervju_result %}
-                            <form method="post">
-                              {% csrf_token %}
-                              <h2 class="adminui-subtitle">Intervjuanalys</h2><br><p>Justera texten om du vill. När du är klar, klicka på "skapa helhetsbedömning".</p>
-                              <textarea name="intervju_text" class="adminui-textarea" rows="6">{{ intervju_result }}</textarea>
-                              <input type="hidden" name="test_text" value="{{ test_text }}">
-                              <button name="generate" value="true" class="adminui-button" type="submit">Skapa helhetsbedömning</button>
-                            </form>
-                            {% endif %}
-
-                            {% if tq_fardighet_text or leda_text %}
-                                <form method="post">
-                                {% csrf_token %}
-                                <h2 class="adminui-subtitle">Sammanställningar</h2>
-                                <p>Klicka för att skapa redigerbara utkast.</p>
-
-                                <!-- Hidden: bär med allt som input -->
-                                <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text }}">
-                                <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text }}">
-                                <input type="hidden" name="leda_text" value="{{ leda_text }}">
-                                <input type="hidden" name="mod_text" value="{{ mod_text }}">
-                                <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text }}">
-                                <input type="hidden" name="strategi_text" value="{{ strategi_text }}">
-                                <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text }}">
-                                <input type="hidden" name="test_text" value="{{ test_text }}">
-                                <input type="hidden" name="intervju_text" value="{{ intervju_text }}">
-                                <input type="hidden" name="intervju_result" value="{{ intervju_result }}">
-
-                                <button class="adminui-button" name="gen_sur" value="1" type="submit">Skapa Styrkor/Utvecklingsområden/Risk</button>
-                                </form>
-                                {% endif %}
-
-                                {% if sur_text %}
-                                <form method="post">
-                                {% csrf_token %}
-                                <h3>Styrkor / Utvecklingsområden / Riskbeteenden</h3>
-                                <textarea name="sur_text" class="adminui-textarea" rows="8">{{ sur_text }}</textarea>
-
-                                <!-- bär allt -->
-                                <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text }}">
-                                <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text }}">
-                                <input type="hidden" name="leda_text" value="{{ leda_text }}">
-                                <input type="hidden" name="mod_text" value="{{ mod_text }}">
-                                <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text }}">
-                                <input type="hidden" name="strategi_text" value="{{ strategi_text }}">
-                                <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text }}">
-                                <input type="hidden" name="test_text" value="{{ test_text }}">
-                                <input type="hidden" name="intervju_text" value="{{ intervju_text }}">
-                                <input type="hidden" name="intervju_result" value="{{ intervju_result }}">
-
-                                <button class="adminui-button" name="gen_slutsats" value="1" type="submit">Skapa sammanfattande slutsats</button>
-                                </form>
-                                {% endif %}
-
-                                {% if slutsats_text %}
-                                <form method="post">
-                                {% csrf_token %}
-                                <h3>Sammanfattande slutsats</h3>
-                                <textarea name="slutsats_text" class="adminui-textarea" rows="6">{{ slutsats_text }}</textarea>
-
-                                <!-- bär allt -->
-                                <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text }}">
-                                <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text }}">
-                                <input type="hidden" name="leda_text" value="{{ leda_text }}">
-                                <input type="hidden" name="mod_text" value="{{ mod_text }}">
-                                <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text }}">
-                                <input type="hidden" name="strategi_text" value="{{ strategi_text }}">
-                                <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text }}">
-                                <input type="hidden" name="sur_text" value="{{ sur_text }}">
-                                <input type="hidden" name="test_text" value="{{ test_text }}">
-                                <input type="hidden" name="intervju_text" value="{{ intervju_text }}">
-                                <input type="hidden" name="intervju_result" value="{{ intervju_result }}">
-
-                                <button class="adminui-button" name="build_doc" value="1" type="submit">📄 Skapa dokument (Word)</button>
-                                </form>
-                                {% endif %}
-                        
-                            {% if helhetsbedomning %}
-                                <h2 class="adminui-subtitle">✅ Helhetsbedömning</h2>
-
-                                {% if ratings_scale_demo_html %}
-                                    <div class="adminui-assessment-box">
-                                    <h3>Poängskala – förklaring</h3>
-                                    {{ ratings_scale_demo_html|safe }}
-                                    </div>
-                                {% endif %}
-
-                                {% if ratings_table_html %}
-                                    <div class="adminui-assessment-box">
-                                    <h3>Kompetensgradering</h3>
-                                    {{ ratings_table_html|safe }}
-                                    <p style="font-size:.9rem;color:#666;margin-top:8px">
-                                        Skala: 1&nbsp;= Utrymme för utveckling · 2&nbsp;= Tillräcklig · 3&nbsp;= God · 4&nbsp;= Mycket god · 5&nbsp;= Utmärkt
-                                    </p>
-                                    </div>
-                                {% endif %}
-
-                                <div class="adminui-assessment-box">{{ helhetsbedomning|safe }}</div>
-                                {% endif %}
-                          </div>
-                    
-                    <!--<form method="POST" enctype="multipart/form-data">
+                    <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <input type="file" name="pdf" accept="application/pdf" required>
-                        <button type="submit">Analysera</button>
+                        <div class="adminui-upload-area">
+                            <label for="excel" class="adminui-drop-zone">
+                                <input type="file" name="excel" id="excel" hidden onchange="showFilename(this)">
+                                <div class="adminui-icon">📂</div>
+                                <p>Klicka för att välja Excelfil</p>
+                            </label>
+                            <p id="filename" style="margin-top: 10px; color: #666; font-style: italic;"></p>
+                        </div>
+
+                        <label class="adminui-label" style="margin-top:16px;">Intervjuanteckningar</label>
+                        <textarea name="intervju" class="adminui-textarea" rows="6" placeholder="Skriv eller klistra in intervjuanteckningar här...">{{ intervju_text }}</textarea>
+
+                        <!-- Om användaren redan har en sparad test_text (t.ex. vid omladdning), bär med den -->
+                        {% if test_text %}
+                        <input type="hidden" name="test_text" value="{{ test_text|escape }}">
+                        {% endif %}
+
+                        <button class="adminui-button" type="submit" name="generate_analysis" value="1" style="margin-top:16px;">
+                            Skapa analys
+                        </button>
                     </form>
-                
-                     {% if result %}
-                        <h2 class="mt-4">Extraherad text:</h2>
-                        <pre>{{ result }}</pre>
-                    {% endif %} -->
-                
-                    <!-- {% if analysis %}
-                        <h2 class="mt-4">AI-baserad analys:</h2>
-                        <pre>{{ analysis }}</pre>
+
+                    <!-- STEG 2: Visa/justera områdesanalyser + tabeller -->
+                    {% if test_text and intervju_text %}
+                    <hr>
+                    <h2 class="adminui-subtitle">Testanalys per område</h2>
+                    <p>Justera texterna vid behov. Betygstabellerna är AI-genererade (1–5) utifrån test + intervju.</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Leda -->
+                        <label class="adminui-label">Leda, utveckla och engagera</label>
+                        <textarea name="leda_text" class="adminui-textarea" rows="5">{{ leda_text }}</textarea>
+                        {% if leda_table_html %}<div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>{% endif %}
+
+                        <!-- Mod -->
+                        <label class="adminui-label">Mod och handlingskraft</label>
+                        <textarea name="mod_text" class="adminui-textarea" rows="5">{{ mod_text }}</textarea>
+                        {% if mod_table_html %}<div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>{% endif %}
+
+                        <!-- Självkännedom -->
+                        <label class="adminui-label">Självkännedom och emotionell stabilitet</label>
+                        <textarea name="sjalkannedom_text" class="adminui-textarea" rows="5">{{ sjalkannedom_text }}</textarea>
+                        {% if sjalkannedom_table_html %}<div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>{% endif %}
+
+                        <!-- Strategi -->
+                        <label class="adminui-label">Strategiskt tänkande och anpassningsförmåga</label>
+                        <textarea name="strategi_text" class="adminui-textarea" rows="5">{{ strategi_text }}</textarea>
+                        {% if strategi_table_html %}<div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>{% endif %}
+
+                        <!-- Kommunikation -->
+                        <label class="adminui-label">Kommunikation och samarbete</label>
+                        <textarea name="kommunikation_text" class="adminui-textarea" rows="5">{{ kommunikation_text }}</textarea>
+                        {% if kommunikation_table_html %}<div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>{% endif %}
+
+                        <!-- Bär med allt för nästa steg -->
+                        <input type="hidden" name="test_text" value="{{ test_text|escape }}">
+                        <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
+                        <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
+                        <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text|escape }}">
+                        <input type="hidden" name="leda_text" value="{{ leda_text|escape }}">
+                        <input type="hidden" name="mod_text" value="{{ mod_text|escape }}">
+                        <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text|escape }}">
+                        <input type="hidden" name="strategi_text" value="{{ strategi_text|escape }}">
+                        <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text|escape }}">
+
+                        <button class="adminui-button" type="submit" name="gen_sur" value="1">
+                            Skapa Styrkor/Utvecklingsområden/Risk
+                        </button>
+                    </form>
                     {% endif %}
-                
-                    {% if pdf_images %}
-                    <h2>Bilder från PDF (PDF.co):</h2>
-                    {% for url in pdf_images %}
-                        <img src="{{ url }}" alt="PDF-bild" style="max-width: 100%; margin-bottom: 20px;">
-                    {% endfor %}
-                {% endif %}
-                {% if vision_table %}
-                <h2>AI-bedömning (skala 1–10):</h2>
-                <div class="ai-table">
-                    {{ vision_table|safe }}
-                </div>
-            {% endif %} -->
+
+                    <!-- STEG 3: Styrkor / Utvecklingsområden / Risk -->
+                    {% if sur_text %}
+                    <hr>
+                    <form method="post">
+                        {% csrf_token %}
+                        <h3>Styrkor / Utvecklingsområden / Riskbeteenden</h3>
+                        <textarea name="sur_text" class="adminui-textarea" rows="8">{{ sur_text }}</textarea>
+
+                        <input type="hidden" name="test_text" value="{{ test_text|escape }}">
+                        <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
+                        <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
+                        <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text|escape }}">
+                        <input type="hidden" name="leda_text" value="{{ leda_text|escape }}">
+                        <input type="hidden" name="mod_text" value="{{ mod_text|escape }}">
+                        <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text|escape }}">
+                        <input type="hidden" name="strategi_text" value="{{ strategi_text|escape }}">
+                        <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text|escape }}">
+
+                        <button class="adminui-button" name="gen_slutsats" value="1" type="submit">
+                            Skapa sammanfattande slutsats
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- STEG 4: Sammanfattande slutsats + Word -->
+                    {% if slutsats_text %}
+                    <hr>
+                    <form method="post">
+                        {% csrf_token %}
+                        <h3>Sammanfattande slutsats</h3>
+                        <textarea name="slutsats_text" class="adminui-textarea" rows="6">{{ slutsats_text }}</textarea>
+
+                        <input type="hidden" name="test_text" value="{{ test_text|escape }}">
+                        <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
+                        <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
+                        <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text|escape }}">
+                        <input type="hidden" name="leda_text" value="{{ leda_text|escape }}">
+                        <input type="hidden" name="mod_text" value="{{ mod_text|escape }}">
+                        <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text|escape }}">
+                        <input type="hidden" name="strategi_text" value="{{ strategi_text|escape }}">
+                        <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text|escape }}">
+                        <input type="hidden" name="sur_text" value="{{ sur_text|escape }}">
+
+                        <button class="adminui-button" name="build_doc" value="1" type="submit">
+                            📄 Skapa dokument (Word)
+                        </button>
+                    </form>
+                    {% endif %}
+
                 </div>
             </div>
-        </section>
+        </div>
+    </div>
+</section>
+
+
         <!-- Footer-->
         <footer class="py-5 bg-dark">
             <div class="container px-4"><p class="m-0 text-center text-white">Copyright &copy; TQ Nordic</p></div>
