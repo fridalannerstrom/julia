@@ -30,8 +30,8 @@ if os.path.exists("env.py"):
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
-    timeout=20,        # max 20 sekunder
-    max_retries=2,     # valfritt men bra
+    timeout=20,      # global timeout per request
+    max_retries=2,   # här är den OK
 )
 
 # ── NYTT: gemensamma rubriknycklar i rätt ordning ────────────────────────────
@@ -115,37 +115,34 @@ HEADER_TO_TARGET = {
 
 # ── NYTT: liten wrapper för OpenAI-anrop per rubrik ───────────────────────────
 def _run_openai(prompt_text: str, style: str, **vars_) -> str:
-    """
-    Kör en OpenAI-prompt med säkra timeout- och felhanteringsinställningar.
-    Returnerar alltid en sträng (även vid fel) för att undvika att krascha appen.
-    """
     try:
-        # Bygg prompten och ersätt taggar
         pt = prompt_text.replace("{excel_text}", vars_.get("excel_text", ""))
         pt = pt.replace("{intervju_text}", vars_.get("intervju_text", ""))
+        # stöd för fler placeholders utan att krascha
+        for k, v in vars_.items():
+            placeholder = "{" + k + "}"
+            pt = pt.replace(placeholder, v or "")
         filled = (style or "") + "\n\n" + pt
 
-        # Kör OpenAI med timeout och låg temperatur
         resp = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": filled}],
             temperature=0.2,
             max_tokens=900,
-            timeout=20,          # stoppa efter 20 sekunder
-            max_retries=2,        # försök två gånger vid nätverksfel
+            timeout=20,
         )
-
-        return (resp.choices[0].message.content or "").strip()
+        content = resp.choices[0].message.content
+        if not content:
+            raise ValueError("Tomt svar från OpenAI")
+        return content.strip()
 
     except Exception as e:
-        # Logga felet i terminalen / Heroku-loggen
-        print("⚠️ OpenAI error:", e)
-
-        # Returnera ett användarvänligt fallback-svar
+        print("⚠️ OpenAI error in _run_openai:", repr(e))
         return (
             "Tyvärr tog AI-svaret för lång tid eller gick inte att hämta just nu. "
             "Försök igen om en liten stund."
         )
+    
 
 def _normalize_header_cell(value: str) -> str:
     """
@@ -745,257 +742,302 @@ def prompt_editor(request):
 @csrf_exempt
 def index(request):
     ensure_default_prompts_exist(request.user)
-    context = {}
 
-    # Plocka in ev. befintliga värden (för fortsatta steg)
-    test_text = request.POST.get("test_text", "")
-    intervju_text = request.POST.get("intervju_text", "")
-    sur_text = request.POST.get("sur_text", "")
-    slutsats_text = request.POST.get("slutsats_text", "")
+    # ---------- 1) Läs nuvarande steg ----------
+    try:
+        step = int(request.POST.get("step", "1"))
+    except ValueError:
+        step = 1
 
-    # Sektionstexter (leda/mod/...)
-    for cfg in SECTION_AI_CONFIG:
-        context_key = cfg["context_key"]
-        context[context_key] = request.POST.get(context_key, "")
+    # ---------- 2) Plocka in state från POST ----------
+    context = {
+        "step": step,
+        "test_text": request.POST.get("test_text", ""),
+        "intervju_text": request.POST.get("intervju_text", ""),
+        "tq_fardighet_text": request.POST.get("tq_fardighet_text", ""),
+        "tq_motivation_text": request.POST.get("tq_motivation_text", ""),
+        "leda_text": request.POST.get("leda_text", ""),
+        "mod_text": request.POST.get("mod_text", ""),
+        "sjalkannedom_text": request.POST.get("sjalkannedom_text", ""),
+        "strategi_text": request.POST.get("strategi_text", ""),
+        "kommunikation_text": request.POST.get("kommunikation_text", ""),
+        "sur_text": request.POST.get("sur_text", ""),
+        "slutsats_text": request.POST.get("slutsats_text", ""),
+        "error": "",
+    }
 
-    # TQ-fält
-    context["tq_fardighet_text"] = request.POST.get("tq_fardighet_text", "")
-    context["tq_motivation_text"] = request.POST.get("tq_motivation_text", "")
+    ratings_json_str = request.POST.get("ratings_json", "")
+    ratings = None
+    if ratings_json_str:
+        try:
+            ratings = json.loads(ratings_json_str)
+        except Exception:
+            ratings = None
 
-    context.update({
-        "test_text": test_text,
-        "intervju_text": intervju_text,
-        "sur_text": sur_text,
-        "slutsats_text": slutsats_text,
-    })
+    # ---------- 3) Bygg tabeller (CSS alltid med) ----------
+    if ratings:
+        context["ratings_json"] = ratings_json_str
 
+        context["leda_table_html"] = mark_safe(_ratings_table_html(
+            ratings,
+            section_filter=[("leda_utveckla_och_engagera", "Leda, utveckla och engagera")],
+            include_css=True,
+        ))
+        context["mod_table_html"] = mark_safe(_ratings_table_html(
+            ratings,
+            section_filter=[("mod_och_handlingskraft", "Mod och handlingskraft")],
+            include_css=True,
+        ))
+        context["sjalkannedom_table_html"] = mark_safe(_ratings_table_html(
+            ratings,
+            section_filter=[("sjalkannedom_och_emotionell_stabilitet", "Självkännedom och emotionell stabilitet")],
+            include_css=True,
+        ))
+        context["strategi_table_html"] = mark_safe(_ratings_table_html(
+            ratings,
+            section_filter=[("strategiskt_tankande_och_anpassningsformaga", "Strategiskt tänkande och anpassningsförmåga")],
+            include_css=True,
+        ))
+        context["kommunikation_table_html"] = mark_safe(_ratings_table_html(
+            ratings,
+            section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
+            include_css=True,
+        ))
+
+    # ---------- 4) POST-actions ----------
     if request.method == "POST":
 
-        # ── STEG 1: Skapa analys (Excel + intervju i samma submit) ───────────
-        if "generate_analysis" in request.POST:
-            excel_text = ""
-            ws = None
+        # Föregående
+        if "prev" in request.POST:
+            step = max(1, step - 1)
 
-            # 1) Läs Excel (om skickad nu)
-            if "excel" in request.FILES:
-                try:
-                    file = request.FILES["excel"]
-                    wb = openpyxl.load_workbook(file)
-                    ws = wb.active
-
-                    # Bygg råtext för prompts
-                    output = io.StringIO()
-                    for row in ws.iter_rows(values_only=True):
-                        output.write(
-                            "\t".join(
-                                [str(cell) if cell is not None else "" for cell in row]
-                            ) + "\n"
-                        )
-                    excel_text = output.getvalue()
-                    context["test_text"] = excel_text
-                except Exception as e:
-                    context["error"] = "Kunde inte läsa excelfilen: " + str(e)[:500]
-                    return render(request, "index.html", context)
-            else:
-                # Om ingen ny fil skickas, försök använda befintlig text
-                excel_text = test_text
-
-            # 2) Läs intervjuanteckningar
-            intervju_raw = (request.POST.get("intervju") or "").strip()
-
-            # 3) Validera indata
-            if not excel_text:
-                context["error"] = "Ladda upp en Excelfil för att skapa analys."
-                return render(request, "index.html", context)
-
-            if not intervju_raw:
-                context["error"] = "Klistra in intervjuanteckningar för att skapa analys."
-                context["test_text"] = excel_text
-                return render(request, "index.html", context)
-
-            # 4) Spara in i context
-            context["test_text"] = excel_text
-            context["intervju_text"] = intervju_raw
-
-            # 5) Betygstabeller ENDAST från Excel
-            if ws is not None:
-                try:
-                    ratings, ratings_debug = _ratings_from_worksheet(ws)
-                    context["ratings_json"] = json.dumps(ratings, ensure_ascii=False)
-                    context["ratings_debug"] = "\n".join(ratings_debug)
-
-                    # Tabeller per sektion (ingen AI inblandad)
-                    context["leda_table_html"] = mark_safe(_ratings_table_html(
-                        ratings,
-                        section_filter=[("leda_utveckla_och_engagera", "Leda, utveckla och engagera")],
-                        include_css=True,
-                    ))
-                    context["mod_table_html"] = mark_safe(_ratings_table_html(
-                        ratings,
-                        section_filter=[("mod_och_handlingskraft", "Mod och handlingskraft")],
-                        include_css=False,
-                    ))
-                    context["sjalkannedom_table_html"] = mark_safe(_ratings_table_html(
-                        ratings,
-                        section_filter=[("sjalkannedom_och_emotionell_stabilitet", "Självkännedom och emotionell stabilitet")],
-                        include_css=False,
-                    ))
-                    context["strategi_table_html"] = mark_safe(_ratings_table_html(
-                        ratings,
-                        section_filter=[("strategiskt_tankande_och_anpassningsformaga", "Strategiskt tänkande och anpassningsförmåga")],
-                        include_css=False,
-                    ))
-                    context["kommunikation_table_html"] = mark_safe(_ratings_table_html(
-                        ratings,
-                        section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
-                        include_css=False,
-                    ))
-                except Exception as e:
-                    context["error"] = "Kunde inte tolka betyg från Excel: " + str(e)[:500]
-                    return render(request, "index.html", context)
-            # Om ws är None (t.ex. återanvändning), behåll ev. befintliga tabeller i context.
-
-            # 6) AI-texter (baserat på både excel + intervju)
-            try:
-                P = {p.name: p.text for p in Prompt.objects.filter(user=request.user)}
-
-                # TQ Färdighet
-                if P.get("tq_fardighet"):
-                    context["tq_fardighet_text"] = _run_openai(
-                        P["tq_fardighet"],
-                        settings.STYLE_INSTRUCTION,
-                        excel_text=_trim(excel_text),
-                        intervju_text=_trim(intervju_raw),
-                    )
-
-                # TQ Motivation
-                if P.get("tq_motivation"):
-                    context["tq_motivation_text"] = _run_openai(
-                        P["tq_motivation"],
-                        settings.STYLE_INSTRUCTION,
-                        excel_text=_trim(excel_text),
-                        intervju_text=_trim(intervju_raw),
-                    )
-
-                # Per-rubrik: endast TEXT (betyg redan från Excel)
-                for cfg in SECTION_AI_CONFIG:
-                    base_prompt = P.get(cfg["prompt_name"], "")
-                    if not base_prompt:
-                        continue
-
-                    txt = _run_openai(
-                        base_prompt,
-                        settings.STYLE_INSTRUCTION,
-                        excel_text=_trim(excel_text),
-                        intervju_text=_trim(intervju_raw),
-                    )
-                    context[cfg["context_key"]] = txt
-
-            except Exception as e:
-                context["error"] = "Kunde inte skapa analys från test + intervju: " + str(e)[:500]
-
-        # ── STEG 2: Skapa Styrkor/Utvecklingsområden/Risk ───────────────────
-        elif "gen_sur" in request.POST:
-            try:
-                P = Prompt.objects.get(user=request.user, name="styrkor_utveckling_risk").text
-                sur = _run_openai(
-                    P,
-                    settings.STYLE_INSTRUCTION,
-                    tq_fardighet_text=context.get("tq_fardighet_text", ""),
-                    tq_motivation_text=context.get("tq_motivation_text", ""),
-                    leda_text=context.get("leda_text", ""),
-                    mod_text=context.get("mod_text", ""),
-                    sjalkannedom_text=context.get("sjalkannedom_text", ""),
-                    strategi_text=context.get("strategi_text", ""),
-                    kommunikation_text=context.get("kommunikation_text", ""),
-                )
-                context["sur_text"] = sur
-            except Exception as e:
-                context["error"] = "Kunde inte skapa Styrkor/Utvecklingsområden/Risk: " + str(e)[:500]
-
-        # ── STEG 3: Skapa sammanfattande slutsats ────────────────────────────
-        elif "gen_slutsats" in request.POST:
-            try:
-                P = Prompt.objects.get(user=request.user, name="sammanfattande_slutsats").text
-                sl = _run_openai(
-                    P,
-                    settings.STYLE_INSTRUCTION,
-                    sur_text=context.get("sur_text", ""),
-                    tq_fardighet_text=context.get("tq_fardighet_text", ""),
-                    tq_motivation_text=context.get("tq_motivation_text", ""),
-                    leda_text=context.get("leda_text", ""),
-                    mod_text=context.get("mod_text", ""),
-                    sjalkannedom_text=context.get("sjalkannedom_text", ""),
-                    strategi_text=context.get("strategi_text", ""),
-                    kommunikation_text=context.get("kommunikation_text", ""),
-                )
-                context["slutsats_text"] = sl
-            except Exception as e:
-                context["error"] = "Kunde inte skapa Sammanfattande slutsats: " + str(e)[:500]
-
-        # ── STEG 4: Skapa Word-dokument ──────────────────────────────────────
-        elif "build_doc" in request.POST:
+        # Skapa Word endast på sista steget
+        elif "build_doc" in request.POST and step == 10:
             from docx import Document
-            from docx.shared import Pt
             from django.http import HttpResponse
 
             doc = Document()
 
-            def H(txt):
-                doc.add_heading(txt, level=1)
+            # Enkel rubrikstruktur – använd dina egna formatmallar om du vill
+            def add_section(title, text):
+                if text:
+                    doc.add_heading(title, level=2)
+                    for line in (text or "").split("\n"):
+                        line = line.strip()
+                        if line:
+                            doc.add_paragraph(line)
 
-            def P(txt):
-                para = doc.add_paragraph(txt or "")
-                para.style.font.size = Pt(11)
+            # Ordning: allt du gått igenom
+            add_section("TQ Färdighet", context["tq_fardighet_text"])
+            add_section("Styrkor / Utvecklingsområden / Riskbeteenden", context["sur_text"])
+            add_section("TQ Motivation – främsta drivkrafter", context["tq_motivation_text"])
+            add_section("Leda, utveckla och engagera", context["leda_text"])
+            add_section("Mod och handlingskraft", context["mod_text"])
+            add_section("Självkännedom och emotionell stabilitet", context["sjalkannedom_text"])
+            add_section("Strategiskt tänkande och anpassningsförmåga", context["strategi_text"])
+            add_section("Kommunikation och samarbete", context["kommunikation_text"])
+            add_section("Sammanfattande slutsats", context["slutsats_text"])
 
-            # Skalförklaring
-            H("Beskrivning av poängskala")
-            P("1 = Utrymme för utveckling · 2 = Tillräcklig · 3 = God · 4 = Mycket god · 5 = Utmärkt")
-
-            # 1️⃣ TQ Färdighet
-            H("TQ Färdighet")
-            P(context.get("tq_fardighet_text", ""))
-
-            # 2️⃣ Styrkor, utvecklingsområden, riskbeteenden
-            H("Styrkor, utvecklingsområden, riskbeteenden")
-            P(context.get("sur_text", ""))
-
-            # 3️⃣ TQ Motivation
-            H("Definition av kandidatens 3 främsta motivationsfaktorer")
-            P(context.get("tq_motivation_text", ""))
-
-            # 4️⃣ Områden
-            H("Leda, utveckla och engagera")
-            P(context.get("leda_text", ""))
-
-            H("Mod och handlingskraft")
-            P(context.get("mod_text", ""))
-
-            H("Självkännedom och emotionell stabilitet")
-            P(context.get("sjalkannedom_text", ""))
-
-            H("Strategiskt tänkande och anpassningsförmåga")
-            P(context.get("strategi_text", ""))
-
-            H("Kommunikation och samarbete")
-            P(context.get("kommunikation_text", ""))
-
-            # 5️⃣ Sammanfattande slutsats
-            H("Sammanfattande slutsats")
-            P(context.get("slutsats_text", ""))
-
-            # Spara och returnera dokumentet
-            bio = io.BytesIO()
-            doc.save(bio)
-            bio.seek(0)
-            resp = HttpResponse(
-                bio.getvalue(),
-                content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            response = HttpResponse(
+                content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-            resp["Content-Disposition"] = 'attachment; filename="rapport.docx"'
-            return resp
+            response["Content-Disposition"] = 'attachment; filename="bedomning.docx"'
+            doc.save(response)
+            return response
 
+        # Nästa (inkl AI där det behövs)
+        elif "next" in request.POST:
+
+            style = getattr(settings, "STYLE_INSTRUCTION", "")
+
+            # STEG 1 -> 2: Läs Excel + intervju, ratings + TQ F/M
+            if step == 1:
+                excel_text = ""
+                ws = None
+
+                if "excel" in request.FILES:
+                    try:
+                        file = request.FILES["excel"]
+                        wb = openpyxl.load_workbook(file)
+                        ws = wb.active
+
+                        out = io.StringIO()
+                        for row in ws.iter_rows(values_only=True):
+                            out.write("\t".join([str(c) if c is not None else "" for c in row]) + "\n")
+                        excel_text = out.getvalue()
+                    except Exception as e:
+                        context["error"] = "Kunde inte läsa excelfilen: " + str(e)[:400]
+                else:
+                    context["error"] = "Ladda upp en Excelfil."
+
+                intervju_raw = (request.POST.get("intervju") or "").strip()
+                if not intervju_raw and not context["error"]:
+                    context["error"] = "Klistra in intervjuanteckningar."
+
+                if context["error"]:
+                    step = 1
+                else:
+                    context["test_text"] = excel_text
+                    context["intervju_text"] = intervju_raw
+
+                    # Ratings
+                    try:
+                        ratings, dbg = _ratings_from_worksheet(ws)
+                        context["ratings_json"] = json.dumps(ratings, ensure_ascii=False)
+
+                        context["leda_table_html"] = mark_safe(_ratings_table_html(
+                            ratings,
+                            section_filter=[("leda_utveckla_och_engagera", "Leda, utveckla och engagera")],
+                            include_css=True,
+                        ))
+                        context["mod_table_html"] = mark_safe(_ratings_table_html(
+                            ratings,
+                            section_filter=[("mod_och_handlingskraft", "Mod och handlingskraft")],
+                            include_css=True,
+                        ))
+                        context["sjalkannedom_table_html"] = mark_safe(_ratings_table_html(
+                            ratings,
+                            section_filter=[("sjalkannedom_och_emotionell_stabilitet", "Självkännedom och emotionell stabilitet")],
+                            include_css=True,
+                        ))
+                        context["strategi_table_html"] = mark_safe(_ratings_table_html(
+                            ratings,
+                            section_filter=[("strategiskt_tankande_och_anpassningsformaga", "Strategiskt tänkande och anpassningsförmåga")],
+                            include_css=True,
+                        ))
+                        context["kommunikation_table_html"] = mark_safe(_ratings_table_html(
+                            ratings,
+                            section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
+                            include_css=True,
+                        ))
+                    except Exception as e:
+                        context["error"] = "Kunde inte tolka betyg från Excel: " + str(e)[:400]
+                        step = 1
+
+                    # TQ Färdighet & Motivation (endast om tomt)
+                    if not context["error"]:
+                        if not context["tq_fardighet_text"]:
+                            P = Prompt.objects.get(user=request.user, name="tq_fardighet").text
+                            context["tq_fardighet_text"] = _run_openai(
+                                P,
+                                style,
+                                excel_text=_trim(excel_text),
+                                intervju_text=_trim(intervju_raw),
+                            )
+                        if not context["tq_motivation_text"]:
+                            P = Prompt.objects.get(user=request.user, name="tq_motivation").text
+                            context["tq_motivation_text"] = _run_openai(
+                                P,
+                                style,
+                                excel_text=_trim(excel_text),
+                                intervju_text=_trim(intervju_raw),
+                            )
+                        step = 2
+
+            # 2 -> 3: Leda
+            elif step == 2:
+                if not context["leda_text"]:
+                    P = Prompt.objects.get(user=request.user, name="leda").text
+                    context["leda_text"] = _run_openai(
+                        P,
+                        style,
+                        excel_text=_trim(context["test_text"]),
+                        intervju_text=_trim(context["intervju_text"]),
+                    )
+                step = 3
+
+            # 3 -> 4: Mod
+            elif step == 3:
+                if not context["mod_text"]:
+                    P = Prompt.objects.get(user=request.user, name="mod").text
+                    context["mod_text"] = _run_openai(
+                        P,
+                        style,
+                        excel_text=_trim(context["test_text"]),
+                        intervju_text=_trim(context["intervju_text"]),
+                    )
+                step = 4
+
+            # 4 -> 5: Självkännedom
+            elif step == 4:
+                if not context["sjalkannedom_text"]:
+                    P = Prompt.objects.get(user=request.user, name="sjalkannedom").text
+                    context["sjalkannedom_text"] = _run_openai(
+                        P,
+                        style,
+                        excel_text=_trim(context["test_text"]),
+                        intervju_text=_trim(context["intervju_text"]),
+                    )
+                step = 5
+
+            # 5 -> 6: Strategi
+            elif step == 5:
+                if not context["strategi_text"]:
+                    P = Prompt.objects.get(user=request.user, name="strategi").text
+                    context["strategi_text"] = _run_openai(
+                        P,
+                        style,
+                        excel_text=_trim(context["test_text"]),
+                        intervju_text=_trim(context["intervju_text"]),
+                    )
+                step = 6
+
+            # 6 -> 7: Kommunikation
+            elif step == 6:
+                if not context["kommunikation_text"]:
+                    P = Prompt.objects.get(user=request.user, name="kommunikation").text
+                    context["kommunikation_text"] = _run_openai(
+                        P,
+                        style,
+                        excel_text=_trim(context["test_text"]),
+                        intervju_text=_trim(context["intervju_text"]),
+                    )
+                step = 7
+
+            # 7 -> 8: SUR
+            elif step == 7:
+                if not context["sur_text"]:
+                    P = Prompt.objects.get(user=request.user, name="styrkor_utveckling_risk").text
+                    context["sur_text"] = _run_openai(
+                        P,
+                        style,
+                        tq_fardighet_text=context["tq_fardighet_text"],
+                        tq_motivation_text=context["tq_motivation_text"],
+                        leda_text=context["leda_text"],
+                        mod_text=context["mod_text"],
+                        sjalkannedom_text=context["sjalkannedom_text"],
+                        strategi_text=context["strategi_text"],
+                        kommunikation_text=context["kommunikation_text"],
+                    )
+                step = 8
+
+            # 8 -> 9: Sammanfattande slutsats
+            elif step == 8:
+                if not context["slutsats_text"]:
+                    P = Prompt.objects.get(user=request.user, name="sammanfattande_slutsats").text
+                    context["slutsats_text"] = _run_openai(
+                        P,
+                        style,
+                        sur_text=context["sur_text"],
+                        tq_fardighet_text=context["tq_fardighet_text"],
+                        tq_motivation_text=context["tq_motivation_text"],
+                        leda_text=context["leda_text"],
+                        mod_text=context["mod_text"],
+                        sjalkannedom_text=context["sjalkannedom_text"],
+                        strategi_text=context["strategi_text"],
+                        kommunikation_text=context["kommunikation_text"],
+                    )
+                step = 9
+
+            # 9 -> 10: Sammanställning (ingen AI)
+            elif step == 9:
+                step = 10
+
+        context["step"] = step
+
+    # ---------- 5) Render ----------
     return render(request, "index.html", context)
+
 
 
 

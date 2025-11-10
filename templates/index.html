@@ -1,41 +1,41 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
-        <title>Julia</title>
-        <!-- Core theme CSS (includes Bootstrap)-->
-        <link rel="stylesheet" href="{% static 'css/style.css' %}">
-        <link rel="icon" href="{% static 'img/favicon.ico' %}">
-    </head>
-    <body id="page-top">
-        <!-- Navigation-->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
-            <div class="container px-4">
-                <a class="navbar-brand" href="#page-top">Julia AI</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                <div class="collapse navbar-collapse" id="navbarResponsive">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a class="nav-link active text-white" href="{% url 'index' %}">Verktyget</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'prompt_editor' %}">Ändra prompts</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'chat_home' %}">Chatt</a></li>
-                    </ul> 
-                </div>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Julia</title>
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" href="{% static 'img/favicon.ico' %}">
+</head>
+<body id="page-top">
+    <!-- Navigation-->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
+        <div class="container px-4">
+            <a class="navbar-brand" href="#page-top">Julia AI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active text-white" href="{% url 'index' %}">Verktyget</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'prompt_editor' %}">Ändra prompts</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'chat_home' %}">Chatt</a></li>
+                </ul>
             </div>
-        </nav>
-        <!-- Header-->
-        <header class="bg-primary bg-gradient text-white">
-            <div class="container px-4 text-center">
-                <h1 class="fw-bolder">Domarnämnden</h1>
-                <!-- <p class="lead">A functional Bootstrap 5 boilerplate for one page scrolling websites</p>
-                <a class="btn btn-lg btn-light" href="#about">Start scrolling!</a> -->
-            </div>
-        </header>
-        <!-- About section-->
-            <section id="about">
+        </div>
+    </nav>
+
+    <!-- Header-->
+    <header class="bg-primary bg-gradient text-white">
+        <div class="container px-4 text-center">
+            <h1 class="fw-bolder">Domarnämnden</h1>
+        </div>
+    </header>
+
+    <!-- Main -->
+<section id="about">
     {% if error %}
     <div style="background:#ffecec;border:1px solid #f5c2c2;color:#b94a48;padding:12px;border-radius:8px;margin-bottom:16px;">
         {{ error }}
@@ -47,140 +47,21 @@
             <div class="col-lg-8">
                 <div class="adminui-container">
 
-                    <!-- STEG 1: Excel + intervju i samma form -->
-                    <h2 class="adminui-title">Skapa analys</h2><br>
-                    <p>Ladda upp Excelfilen och klistra in intervjuanteckningar. Verktyget skapar analysen per område baserat på båda underlagen.</p>
+                    <h2 class="adminui-title">Domarnämnden – Stegvis analys</h2>
+                    <p class="adminui-help">
+                        Följ stegen i ordning. Varje steg använder bara den information som behövs,
+                        så AI-belastningen hålls nere och du kan justera texten längs vägen.
+                    </p>
+
+                    <p class="adminui-step-indicator">
+                        Steg {{ step }} av 10
+                    </p>
 
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <div class="adminui-upload-area">
-                            <label for="excel" class="adminui-drop-zone">
-                                <input type="file" name="excel" id="excel" hidden onchange="showFilename(this)">
-                                <div class="adminui-icon">📂</div>
-                                <p>Klicka för att välja Excelfil</p>
-                            </label>
-                            <p id="filename" style="margin-top: 10px; color: #666; font-style: italic;"></p>
-                        </div>
 
-                        <label class="adminui-label" style="margin-top:16px;">Intervjuanteckningar</label>
-                        <textarea name="intervju" class="adminui-textarea" rows="6" placeholder="Skriv eller klistra in intervjuanteckningar här...">{{ intervju_text }}</textarea>
-
-                        <!-- Om användaren redan har en sparad test_text (t.ex. vid omladdning), bär med den -->
-                        {% if test_text %}
-                        <input type="hidden" name="test_text" value="{{ test_text|escape }}">
-                        {% endif %}
-
-                        <button class="adminui-button" type="submit" name="generate_analysis" value="1" style="margin-top:16px;">
-                            Skapa analys
-                        </button>
-                    </form>
-
-                    <!-- STEG 2: Visa/justera områdesanalyser + tabeller -->
-                    {% if test_text and intervju_text %}
-                    <hr>
-                    <h2 class="adminui-subtitle">Testbaserade sammanfattningar</h2>
-                    <p>Här kan du justera de övergripande TQ-sammanfattningarna och områdesanalyserna innan du skapar styrkor/svagheter och slutsats.</p>
-
-                    <form method="post">
-                        {% csrf_token %}
-
-                        <!-- TQ Färdighet -->
-                        <label class="adminui-label">TQ Färdighet</label>
-                        <textarea
-                            name="tq_fardighet_text"
-                            class="adminui-textarea"
-                            rows="4"
-                        >{{ tq_fardighet_text }}</textarea>
-
-                        <!-- TQ Motivation -->
-                        <label class="adminui-label">TQ Motivation – främsta motivationsfaktorer</label>
-                        <textarea
-                            name="tq_motivation_text"
-                            class="adminui-textarea"
-                            rows="4"
-                        >{{ tq_motivation_text }}</textarea>
-
-                        <hr>
-
-                        <h2 class="adminui-subtitle">Testanalys per område</h2>
-
-                        <!-- Leda -->
-                        <label class="adminui-label">Leda, utveckla och engagera</label>
-                        <textarea name="leda_text" class="adminui-textarea" rows="5">{{ leda_text }}</textarea>
-                        {% if leda_table_html %}
-                            <div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>
-                        {% endif %}
-
-                        <!-- Mod -->
-                        <label class="adminui-label">Mod och handlingskraft</label>
-                        <textarea name="mod_text" class="adminui-textarea" rows="5">{{ mod_text }}</textarea>
-                        {% if mod_table_html %}
-                            <div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>
-                        {% endif %}
-
-                        <!-- Självkännedom -->
-                        <label class="adminui-label">Självkännedom och emotionell stabilitet</label>
-                        <textarea name="sjalkannedom_text" class="adminui-textarea" rows="5">{{ sjalkannedom_text }}</textarea>
-                        {% if sjalkannedom_table_html %}
-                            <div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>
-                        {% endif %}
-
-                        <!-- Strategi -->
-                        <label class="adminui-label">Strategiskt tänkande och anpassningsförmåga</label>
-                        <textarea name="strategi_text" class="adminui-textarea" rows="5">{{ strategi_text }}</textarea>
-                        {% if strategi_table_html %}
-                            <div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>
-                        {% endif %}
-
-                        <!-- Kommunikation -->
-                        <label class="adminui-label">Kommunikation och samarbete</label>
-                        <textarea name="kommunikation_text" class="adminui-textarea" rows="5">{{ kommunikation_text }}</textarea>
-                        {% if kommunikation_table_html %}
-                            <div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>
-                        {% endif %}
-
-                        <!-- Bär med allt vidare till Styrkor/Utvecklingsområden/Risk -->
-                        <input type="hidden" name="test_text" value="{{ test_text|escape }}">
-                        <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
-
-                        <button class="adminui-button" type="submit" name="gen_sur" value="1">
-                            Skapa Styrkor/Utvecklingsområden/Risk
-                        </button>
-                    </form>
-                    {% endif %}
-
-                    <!-- STEG 3: Styrkor / Utvecklingsområden / Risk -->
-                    {% if sur_text %}
-                    <hr>
-                    <form method="post">
-                        {% csrf_token %}
-                        <h3>Styrkor / Utvecklingsområden / Riskbeteenden</h3>
-                        <textarea name="sur_text" class="adminui-textarea" rows="8">{{ sur_text }}</textarea>
-
-                        <input type="hidden" name="test_text" value="{{ test_text|escape }}">
-                        <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
-                        <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
-                        <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text|escape }}">
-                        <input type="hidden" name="leda_text" value="{{ leda_text|escape }}">
-                        <input type="hidden" name="mod_text" value="{{ mod_text|escape }}">
-                        <input type="hidden" name="sjalkannedom_text" value="{{ sjalkannedom_text|escape }}">
-                        <input type="hidden" name="strategi_text" value="{{ strategi_text|escape }}">
-                        <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text|escape }}">
-
-                        <button class="adminui-button" name="gen_slutsats" value="1" type="submit">
-                            Skapa sammanfattande slutsats
-                        </button>
-                    </form>
-                    {% endif %}
-
-                    <!-- STEG 4: Sammanfattande slutsats + Word -->
-                    {% if slutsats_text %}
-                    <hr>
-                    <form method="post">
-                        {% csrf_token %}
-                        <h3>Sammanfattande slutsats</h3>
-                        <textarea name="slutsats_text" class="adminui-textarea" rows="6">{{ slutsats_text }}</textarea>
-
+                        <!-- HIDDEN STATE -->
+                        <input type="hidden" name="step" value="{{ step }}">
                         <input type="hidden" name="test_text" value="{{ test_text|escape }}">
                         <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
                         <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
@@ -191,12 +72,180 @@
                         <input type="hidden" name="strategi_text" value="{{ strategi_text|escape }}">
                         <input type="hidden" name="kommunikation_text" value="{{ kommunikation_text|escape }}">
                         <input type="hidden" name="sur_text" value="{{ sur_text|escape }}">
+                        <input type="hidden" name="slutsats_text" value="{{ slutsats_text|escape }}">
+                        {% if ratings_json %}
+                            <input type="hidden" name="ratings_json" value="{{ ratings_json|escape }}">
+                        {% endif %}
 
-                        <button class="adminui-button" name="build_doc" value="1" type="submit">
-                            📄 Skapa dokument (Word)
-                        </button>
+                        <!-- STEG 1 -->
+                        {% if step == 1 %}
+                            <h3 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h3>
+                            <p>Ladda upp Excelfilen (STIVE-resultat) och klistra in intervjuanteckningar. Klicka på <strong>Nästa</strong> för att skapa TQ Färdighet & TQ Motivation.</p>
+
+                            <div class="adminui-upload-area">
+                                <label for="excel" class="adminui-drop-zone">
+                                    <input type="file" name="excel" id="excel" hidden onchange="showFilename(this)">
+                                    <div class="adminui-icon">📂</div>
+                                    <p>Klicka för att välja Excelfil</p>
+                                </label>
+                                <p id="filename" style="margin-top: 10px; color: #666; font-style: italic;"></p>
+                            </div>
+
+                            <label class="adminui-label" style="margin-top:16px;">Intervjuanteckningar</label>
+                            <textarea name="intervju" class="adminui-textarea" rows="6">{{ intervju_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 2: TQ F/M -->
+                        {% if step == 2 %}
+                            <h3 class="adminui-subtitle">Steg 2 – TQ Färdighet & TQ Motivation</h3>
+                            <label class="adminui-label">TQ Färdighet</label>
+                            <textarea class="adminui-textarea" rows="5" name="tq_fardighet_text">{{ tq_fardighet_text }}</textarea>
+
+                            <label class="adminui-label">TQ Motivation – tre främsta drivkrafter</label>
+                            <textarea class="adminui-textarea" rows="5" name="tq_motivation_text">{{ tq_motivation_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 3: Leda -->
+                        {% if step == 3 %}
+                            <h3 class="adminui-subtitle">Steg 3 – Leda, utveckla och engagera</h3>
+                            {% if leda_table_html %}
+                                <div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>
+                            {% endif %}
+                            <label class="adminui-label">Text</label>
+                            <textarea class="adminui-textarea" rows="6" name="leda_text">{{ leda_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 4: Mod -->
+                        {% if step == 4 %}
+                            <h3 class="adminui-subtitle">Steg 4 – Mod och handlingskraft</h3>
+                            {% if mod_table_html %}
+                                <div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>
+                            {% endif %}
+                            <label class="adminui-label">Text</label>
+                            <textarea class="adminui-textarea" rows="6" name="mod_text">{{ mod_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 5: Självkännedom -->
+                        {% if step == 5 %}
+                            <h3 class="adminui-subtitle">Steg 5 – Självkännedom och emotionell stabilitet</h3>
+                            {% if sjalkannedom_table_html %}
+                                <div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>
+                            {% endif %}
+                            <label class="adminui-label">Text</label>
+                            <textarea class="adminui-textarea" rows="6" name="sjalkannedom_text">{{ sjalkannedom_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 6: Strategi -->
+                        {% if step == 6 %}
+                            <h3 class="adminui-subtitle">Steg 6 – Strategiskt tänkande och anpassningsförmåga</h3>
+                            {% if strategi_table_html %}
+                                <div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>
+                            {% endif %}
+                            <label class="adminui-label">Text</label>
+                            <textarea class="adminui-textarea" rows="6" name="strategi_text">{{ strategi_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 7: Kommunikation -->
+                        {% if step == 7 %}
+                            <h3 class="adminui-subtitle">Steg 7 – Kommunikation och samarbete</h3>
+                            {% if kommunikation_table_html %}
+                                <div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>
+                            {% endif %}
+                            <label class="adminui-label">Text</label>
+                            <textarea class="adminui-textarea" rows="6" name="kommunikation_text">{{ kommunikation_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 8: SUR -->
+                        {% if step == 8 %}
+                            <h3 class="adminui-subtitle">Steg 8 – Styrkor / Utvecklingsområden / Riskbeteenden</h3>
+                            <p>Här sammanfattas allt ovan till tre tydliga listor. Justera fritt.</p>
+                            <textarea class="adminui-textarea" rows="8" name="sur_text">{{ sur_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 9: Slutsats -->
+                        {% if step == 9 %}
+                            <h3 class="adminui-subtitle">Steg 9 – Sammanfattande slutsats</h3>
+                            <p>Skriv eller justera slutbedömningen baserat på hela bilden.</p>
+                            <textarea class="adminui-textarea" rows="8" name="slutsats_text">{{ slutsats_text }}</textarea>
+                        {% endif %}
+
+                        <!-- STEG 10: Sammanställning -->
+                        {% if step == 10 %}
+                            <h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
+                            <p>Här ser du hela rapporten samlad, utan nya AI-anrop. Kontrollera innan du laddar ner Word.</p>
+
+                            <div class="adminui-report-preview">
+                                {% if tq_fardighet_text %}
+                                    <h4>TQ Färdighet</h4>
+                                    <p>{{ tq_fardighet_text|linebreaksbr }}</p>
+                                {% endif %}
+
+                                {% if sur_text %}
+                                    <h4>Styrkor / Utvecklingsområden / Riskbeteenden</h4>
+                                    <p>{{ sur_text|linebreaksbr }}</p>
+                                {% endif %}
+
+                                {% if tq_motivation_text %}
+                                    <h4>TQ Motivation – främsta drivkrafter</h4>
+                                    <p>{{ tq_motivation_text|linebreaksbr }}</p>
+                                {% endif %}
+
+                                {% if leda_text %}
+                                    <h4>Leda, utveckla och engagera</h4>
+                                    <p>{{ leda_text|linebreaksbr }}</p>
+                                {% endif %}
+
+                                {% if mod_text %}
+                                    <h4>Mod och handlingskraft</h4>
+                                    <p>{{ mod_text|linebreaksbr }}</p>
+                                {% endif %}
+
+                                {% if sjalkannedom_text %}
+                                    <h4>Självkännedom och emotionell stabilitet</h4>
+                                    <p>{{ sjalkannedom_text|linebreaksbr }}</p>
+                                {% endif %}
+
+                                {% if strategi_text %}
+                                    <h4>Strategiskt tänkande och anpassningsförmåga</h4>
+                                    <p>{{ strategi_text|linebreaksbr }}</p>
+                                {% endif %}
+
+                                {% if kommunikation_text %}
+                                    <h4>Kommunikation och samarbete</h4>
+                                    <p>{{ kommunikation_text|linebreaksbr }}</p>
+                                {% endif %}
+
+                                {% if slutsats_text %}
+                                    <h4>Sammanfattande slutsats</h4>
+                                    <p>{{ slutsats_text|linebreaksbr }}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <!-- NAVIGATION -->
+                        <div class="adminui-button-row" style="margin-top:24px;">
+                            {% if step > 1 %}
+                                <button class="adminui-button adminui-button-secondary" type="submit" name="prev" value="1">
+                                    ⬅ Föregående
+                                </button>
+                            {% endif %}
+
+                            {% if step < 9 %}
+                                <button class="adminui-button" type="submit" name="next" value="1">
+                                    Nästa ➜
+                                </button>
+                            {% elif step == 9 %}
+                                <button class="adminui-button" type="submit" name="next" value="1">
+                                    Sammanställ ➜
+                                </button>
+                            {% elif step == 10 %}
+                                <button class="adminui-button" type="submit" name="build_doc" value="1">
+                                    📄 Ladda ner som Word
+                                </button>
+                            {% endif %}
+                        </div>
+
                     </form>
-                    {% endif %}
 
                 </div>
             </div>
@@ -204,20 +253,20 @@
     </div>
 </section>
 
+    <!-- Footer-->
+    <footer class="py-5 bg-dark">
+        <div class="container px-4"><p class="m-0 text-center text-white">Copyright &copy; TQ Nordic</p></div>
+    </footer>
 
-        <!-- Footer-->
-        <footer class="py-5 bg-dark">
-            <div class="container px-4"><p class="m-0 text-center text-white">Copyright &copy; TQ Nordic</p></div>
-        </footer>
-        <script>
-            function showFilename(input) {
-              const fileName = input.files[0] ? input.files[0].name : "Ingen fil vald";
-              document.getElementById("filename").textContent = `Vald fil: ${fileName}`;
-            }
-          </script>
-        <!-- Bootstrap core JS-->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-        <!-- Core theme JS-->
-        <script src="{% static 'js/script.js' %}"></script>
-    </body>
+    <script>
+        function showFilename(input) {
+            const fileName = input.files[0] ? input.files[0].name : "Ingen fil vald";
+            document.getElementById("filename").textContent = "Vald fil: " + fileName;
+        }
+    </script>
+    <!-- Bootstrap core JS-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Core theme JS-->
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
 </html>
