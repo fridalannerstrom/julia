@@ -86,28 +86,30 @@
 
                         <!-- Leda -->
                         <label class="adminui-label">Leda, utveckla och engagera</label>
-                        <textarea name="leda_text" class="adminui-textarea" rows="5">{{ leda_text }}</textarea>
                         {% if leda_table_html %}<div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>{% endif %}
+                        <textarea name="leda_text" class="adminui-textarea" rows="5">{{ leda_text }}</textarea>
+
 
                         <!-- Mod -->
                         <label class="adminui-label">Mod och handlingskraft</label>
-                        <textarea name="mod_text" class="adminui-textarea" rows="5">{{ mod_text }}</textarea>
                         {% if mod_table_html %}<div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>{% endif %}
+                        <textarea name="mod_text" class="adminui-textarea" rows="5">{{ mod_text }}</textarea>
 
                         <!-- Självkännedom -->
                         <label class="adminui-label">Självkännedom och emotionell stabilitet</label>
-                        <textarea name="sjalkannedom_text" class="adminui-textarea" rows="5">{{ sjalkannedom_text }}</textarea>
                         {% if sjalkannedom_table_html %}<div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>{% endif %}
+                        <textarea name="sjalkannedom_text" class="adminui-textarea" rows="5">{{ sjalkannedom_text }}</textarea>
 
                         <!-- Strategi -->
                         <label class="adminui-label">Strategiskt tänkande och anpassningsförmåga</label>
-                        <textarea name="strategi_text" class="adminui-textarea" rows="5">{{ strategi_text }}</textarea>
                         {% if strategi_table_html %}<div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>{% endif %}
+                        <textarea name="strategi_text" class="adminui-textarea" rows="5">{{ strategi_text }}</textarea>
+
 
                         <!-- Kommunikation -->
                         <label class="adminui-label">Kommunikation och samarbete</label>
-                        <textarea name="kommunikation_text" class="adminui-textarea" rows="5">{{ kommunikation_text }}</textarea>
                         {% if kommunikation_table_html %}<div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>{% endif %}
+                        <textarea name="kommunikation_text" class="adminui-textarea" rows="5">{{ kommunikation_text }}</textarea>
 
                         <!-- Bär med allt för nästa steg -->
                         <input type="hidden" name="test_text" value="{{ test_text|escape }}">
