@@ -5,6 +5,7 @@ import json
 import textwrap
 import openpyxl
 import markdown2
+import math
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -40,6 +41,48 @@ SECTION_KEYS = [
     ("kommunikation_text", "Kommunikation och samarbete"),
 ]
 
+# ── Koppling från STIVE-kompetenser -> (sektion_key, radnamn) ────────────────
+# Anpassa vid behov, detta är ett förslag.
+HEADER_TO_TARGET = {
+    "Teamwork": ("kommunikation_och_samarbete", "Teamwork"),
+    "Networking": ("kommunikation_och_samarbete", "Networking"),
+    "Developing relationships": ("kommunikation_och_samarbete", "Developing relationships"),
+    "Developing others": ("leda_utveckla_och_engagera", "Developing others"),
+    "Supporting others": ("leda_utveckla_och_engagera", "Supporting others"),
+    "Influencing": ("kommunikation_och_samarbete", "Influencing"),
+    "Directing others": ("leda_utveckla_och_engagera", "Directing others"),
+    "Delegating": ("leda_utveckla_och_engagera", "Delegating"),
+    "Engaging others": ("leda_utveckla_och_engagera", "Engaging others"),
+    "Managing conflict": ("mod_och_handlingskraft", "Managing conflict"),
+    "Interpersonal communication": ("kommunikation_och_samarbete", "Interpersonal communication"),
+    "Written communication": ("kommunikation_och_samarbete", "Written communication"),
+    "Negotiating": ("kommunikation_och_samarbete", "Negotiating"),
+    "Customer Focus": ("kommunikation_och_samarbete", "Customer Focus"),
+
+    "Planning and organising": ("strategiskt_tankande_och_anpassningsformaga", "Planning and organising"),
+    "Problem solving and analysis": ("strategiskt_tankande_och_anpassningsformaga", "Problem solving and analysis"),
+    "Decision making": ("mod_och_handlingskraft", "Decision making"),
+    "Strategic thinking": ("strategiskt_tankande_och_anpassningsformaga", "Strategic thinking"),
+    "Organisational awareness": ("strategiskt_tankande_och_anpassningsformaga", "Organisational awareness"),
+    "Commercial thinking": ("strategiskt_tankande_och_anpassningsformaga", "Commercial thinking"),
+    "Innovating": ("strategiskt_tankande_och_anpassningsformaga", "Innovating"),
+    "Adaptability": ("strategiskt_tankande_och_anpassningsformaga", "Adaptability"),
+    "Embracing diversity": ("kommunikation_och_samarbete", "Embracing diversity"),
+
+    "Decisiveness": ("mod_och_handlingskraft", "Decisiveness"),
+    "Technical knowledge and skill": ("leda_utveckla_och_engagera", "Technical knowledge and skill"),
+    "Resilience": ("sjalkannedom_och_emotionell_stabilitet", "Resilience"),
+    "Drive": ("mod_och_handlingskraft", "Drive"),
+    "Results orientation": ("mod_och_handlingskraft", "Results orientation"),
+    "Reliability": ("sjalkannedom_och_emotionell_stabilitet", "Reliability"),
+    "Integrity": ("mod_och_handlingskraft", "Integrity"),
+    "Initiative": ("mod_och_handlingskraft", "Initiative"),
+    "Self-awareness": ("sjalkannedom_och_emotionell_stabilitet", "Self-awareness"),
+    "Dealing with ambiguity": ("sjalkannedom_och_emotionell_stabilitet", "Dealing with ambiguity"),
+    "Learning focus": ("strategiskt_tankande_och_anpassningsformaga", "Learning focus"),
+}
+
+
 # ── NYTT: liten wrapper för OpenAI-anrop per rubrik ───────────────────────────
 def _run_openai(prompt_text: str, style: str, **vars_) -> str:
     # säkra ersättningar – bara våra två taggar
@@ -53,6 +96,40 @@ def _run_openai(prompt_text: str, style: str, **vars_) -> str:
         max_tokens=900,
     )
     return (resp.choices[0].message.content or "").strip()
+
+def _normalize_header_cell(value: str) -> str:
+    """
+    Tar t.ex. 'Competency Score: Teamwork (STIVE)'
+    -> 'Teamwork'
+    """
+    if not value:
+        return ""
+    text = str(value)
+    if "Competency Score" in text:
+        text = text.split("Competency Score:")[-1]
+    if "(" in text:
+        text = text.split("(")[0]
+    return text.strip()
+
+def _round_to_1_5(x) -> int:
+    """
+    Runda till heltal mellan 1-5.
+    Ex:
+      2.2 -> 2
+      2.7 -> 3
+    (klassisk .5 uppåt, inte bankers rounding)
+    """
+    try:
+        v = float(str(x).replace(",", "."))
+    except Exception:
+        return 3
+
+    if v < 1:
+        v = 1
+    if v > 5:
+        v = 5
+
+    return int(math.floor(v + 0.5))
 
 def _ai_text_and_ratings_for_section(config, base_prompt_text, style, excel_text, intervju_text=""):
     """
@@ -324,48 +401,59 @@ def _map_0_10_to_1_5(x) -> int:
 
 def _ratings_from_worksheet(ws):
     """
-    Läser direkt från Excel-arket:
-    - Förväntar att första kolumnen är rubriken (t.ex. 'Leda andra')
-    - Tar sista numeriska värdet på raden som poäng (0–10 eller 1–10)
-    - Mappar till 1–5 med _map_0_10_to_1_5
-    Om inget hittas för en rad behålls default=3.
+    Läser STIVE-export:
+      - Rad 1: rubriker ('Competency Score: XXX (STIVE)')
+      - Rad 2: värden (1-5, kan vara decimaler)
+    Mappar utvalda kompetenser till dina sektioner via HEADER_TO_TARGET.
+    Returnerar:
+      - ratings: {sektion_key: {sub_label: 1-5}}
+      - debug: lista med text-rader
     """
-    ratings = _default_all_three()
+    rows = list(ws.iter_rows(values_only=True))
     debug = []
 
-    for row_idx, row in enumerate(ws.iter_rows(values_only=True), start=1):
-        if not row:
+    if len(rows) < 2:
+        debug.append("Excel behöver minst två rader (rubriker + en rad med resultat).")
+        return _default_all_three(), debug
+
+    header = rows[0]
+    data = rows[1]  # vi utgår från första kandidaten i filen
+
+    # Börja med defaults så tabellerna alltid renderar
+    ratings = _default_all_three()
+
+    for col_idx, raw_header in enumerate(header):
+        # hoppa över förnamn / efternamn
+        if col_idx < 2:
             continue
 
-        label = str(row[0] or "").strip()
-        if not label:
+        comp_name = _normalize_header_cell(raw_header)
+        if not comp_name:
             continue
 
-        key = label.lower()
-        if key not in LABEL_TO_TARGET:
-            continue  # raden är inte en av våra målrader
-
-        sec, sub = LABEL_TO_TARGET[key]
-
-        # hitta sista numeriska cellen i raden
-        raw_score = None
-        for cell in reversed(row):
-            if cell is None:
-                continue
-            s = str(cell).strip().replace(",", ".")
-            try:
-                raw_score = float(s)
-                break
-            except ValueError:
-                continue
-
-        if raw_score is None:
-            debug.append(f"Rad {row_idx}: {label} -> ingen siffra hittad, behåller 3")
+        mapping = HEADER_TO_TARGET.get(comp_name)
+        if not mapping:
+            debug.append(f"Kolumn {col_idx+1}: '{raw_header}' ignoreras (ingen mapping definierad).")
             continue
 
-        mapped = _map_0_10_to_1_5(raw_score)
-        ratings[sec][sub] = mapped
-        debug.append(f"Rad {row_idx}: {label} -> rå {raw_score} -> {mapped}")
+        sec_key, sub_label = mapping
+
+        # Hämta värde i rad 2 för denna kolumn
+        raw_value = data[col_idx] if col_idx < len(data) else None
+        if raw_value is None or raw_value == "":
+            debug.append(f"{comp_name}: inget värde i rad 2, behåller ev. default.")
+            continue
+
+        score = _round_to_1_5(raw_value)
+
+        # Se till att sektion/sub-label finns i dict
+        if sec_key not in ratings:
+            ratings[sec_key] = {}
+        if sub_label not in ratings[sec_key]:
+            ratings[sec_key][sub_label] = 3  # init
+
+        ratings[sec_key][sub_label] = score
+        debug.append(f"{comp_name}: rå={raw_value} -> {score}")
 
     return ratings, debug
 
