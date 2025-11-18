@@ -578,7 +578,7 @@ def ensure_default_prompts_exist(user):
         # NYTT — tolkning av Excelfil
         "tolka_excel_resultat": (
             "Du är en analytiker som ska tolka en Excelfil med testresultat. "
-            "Varje kolumn representerar en kompetens och en poäng mellan 1 och 5 (eller 1–10). "
+            "Varje kolumn representerar en kompetens och en poäng mellan 1 och 5. "
             "Din uppgift är att identifiera varje kompetens och tilldela ett betyg mellan 1 och 5. "
             "Om du ser decimaltal, avrunda 2,2 till 2 och 2,7 till 3. "
             "Returnera endast JSON i följande format:\n\n"
@@ -598,6 +598,35 @@ def ensure_default_prompts_exist(user):
             "Skriv *endast* JSON, ingen förklarande text."
         ),
 
+        "betygsskala_forklaring": (
+            "1 = Tydligt utvecklingsområde. Beteendet stödjer inte kraven i rollen.\n"
+            "2 = Acceptabel nivå, men med tydliga utvecklingsbehov i mer komplexa situationer.\n"
+            "3 = God nivå. Räcker för de flesta vardagliga krav.\n"
+            "4 = Stark nivå. Personen visar ofta beteenden som stödjer rollen väl.\n"
+            "5 = Mycket stark nivå. Personen ligger konsekvent högt och fungerar som förebild.\n\n"
+            "Specifika beskrivningar per kompetens:\n"
+            "- Leda andra: 1 = Den här personen är..., 3 = Den här personen är..., 5 = Den här personen är...\n"
+            "- Beslutsamhet: 1 = …, 3 = …, 5 = …\n"
+        ),
+
+        # Exempel: uppdatera 'leda'-prompten direkt här också (mer om det nedan)
+        "leda": (
+            "Du är HR-psykolog. Du ska bedöma kompetensområdet "
+            "'Leda, utveckla och engagera'.\n\n"
+            "Du får:\n"
+            "1) En JSON-tabell med betyg 1–5 per delkompetens i detta område.\n"
+            "2) En beskrivning av vad betyg 1–5 betyder.\n"
+            "3) Intervjuanteckningar.\n\n"
+            "Använd skalan konsekvent. Om betygen ligger högt/lågt, beskriv vad det innebär "
+            "i beteenden i rollen, koppla gärna till typiska styrkor och utvecklingsområden.\n\n"
+            "Betygsskala och förklaringar:\n"
+            "{betygsskala_forklaring}\n\n"
+            "Testbetyg (JSON):\n"
+            "{ratings_json}\n\n"
+            "Intervjuanteckningar:\n"
+            "{intervju_text}\n"
+        ),
+
         # befintliga
         #"testanalys": """Du är en psykolog specialiserad på testtolkning...
 #{excel_text}
@@ -614,13 +643,13 @@ def ensure_default_prompts_exist(user):
 #""",
 
         # per-rubrik
-        "tq_fardighet": "Skriv TQ Färdighet baserat på testdata.\n\n{excel_text}\n\n(Intervju, om finns)\n{intervju_text}",
-        "tq_motivation": "Identifiera de tre främsta motivationsfaktorerna och beskriv kort.\n\n{excel_text}\n\n{intervju_text}",
-        "leda": "Skriv bedömning för 'Leda, utveckla och engagera' med fokus på testdata och komplettera med intervju.\n\n{excel_text}\n\n{intervju_text}",
-        "mod": "Skriv bedömning för 'Mod och handlingskraft'.\n\n{excel_text}\n\n{intervju_text}",
-        "sjalkannedom": "Skriv bedömning för 'Självkännedom och emotionell stabilitet'.\n\n{excel_text}\n\n{intervju_text}",
-        "strategi": "Skriv bedömning för 'Strategiskt tänkande och anpassningsförmåga'.\n\n{excel_text}\n\n{intervju_text}",
-        "kommunikation": "Skriv bedömning för 'Kommunikation och samarbete'.\n\n{excel_text}\n\n{intervju_text}",
+        "tq_fardighet": "Skriv TQ Färdighet baserat på testdata.\n\n{ratings_json}\n\n{intervju_text}",
+        "tq_motivation": "Identifiera de tre främsta motivationsfaktorerna och beskriv kort.\n\n{ratings_json}\n\n{intervju_text}\n\n{betygsskala_forklaring}",
+        "leda": "Skriv bedömning för 'Leda, utveckla och engagera' med fokus på testdata och komplettera med intervju.\n\n{excel_text}\n\n{intervju_text}\n\n{betygsskala_forklaring}",
+        "mod": "Skriv bedömning för 'Mod och handlingskraft'.\n\n{ratings_json}\n\n{intervju_text}\n\n{betygsskala_forklaring}",
+        "sjalkannedom": "Skriv bedömning för 'Självkännedom och emotionell stabilitet'.\n\n{ratings_json}\n\n{intervju_text}\n\n{betygsskala_forklaring}",
+        "strategi": "Skriv bedömning för 'Strategiskt tänkande och anpassningsförmåga'.\n\n{ratings_json}\n\n{intervju_text}\n\n{betygsskala_forklaring}",
+        "kommunikation": "Skriv bedömning för 'Kommunikation och samarbete'.\n\n{ratings_json}\n\n{intervju_text}\n\n{betygsskala_forklaring}",
 
         # sammanställningar
         "styrkor_utveckling_risk": (
@@ -766,6 +795,7 @@ def index(request):
         "error": "",
     }
 
+    # Ratings JSON (som string + ev. dict för tabeller)
     ratings_json_str = request.POST.get("ratings_json", "")
     ratings = None
     if ratings_json_str:
@@ -850,6 +880,17 @@ def index(request):
 
             style = getattr(settings, "STYLE_INSTRUCTION", "")
 
+            # hämtar förklaringen till betygsskalan (ny prompt)
+            try:
+                betygsskala_prompt = Prompt.objects.get(
+                    user=request.user, name="betygsskala_forklaring"
+                ).text
+            except Prompt.DoesNotExist:
+                betygsskala_prompt = ""
+
+            # se till att vi har den senaste ratings_json-strängen i context
+            ratings_json_str = context.get("ratings_json", ratings_json_str or "")
+
             # STEG 1 -> 2: Läs Excel + intervju, ratings + TQ F/M
             if step == 1:
                 excel_text = ""
@@ -880,10 +921,11 @@ def index(request):
                     context["test_text"] = excel_text
                     context["intervju_text"] = intervju_raw
 
-                    # Ratings
+                    # Ratings (Python-baserad tolkning av Excel)
                     try:
                         ratings, dbg = _ratings_from_worksheet(ws)
-                        context["ratings_json"] = json.dumps(ratings, ensure_ascii=False)
+                        ratings_json_str = json.dumps(ratings, ensure_ascii=False)
+                        context["ratings_json"] = ratings_json_str
 
                         context["leda_table_html"] = mark_safe(_ratings_table_html(
                             ratings,
@@ -934,7 +976,7 @@ def index(request):
                             )
                         step = 2
 
-            # 2 -> 3: Leda
+            # 2 -> 3: Leda, utveckla och engagera
             elif step == 2:
                 if not context["leda_text"]:
                     P = Prompt.objects.get(user=request.user, name="leda").text
@@ -943,10 +985,12 @@ def index(request):
                         style,
                         excel_text=_trim(context["test_text"]),
                         intervju_text=_trim(context["intervju_text"]),
+                        ratings_json=ratings_json_str,
+                        betygsskala_forklaring=betygsskala_prompt,
                     )
                 step = 3
 
-            # 3 -> 4: Mod
+            # 3 -> 4: Mod och handlingskraft
             elif step == 3:
                 if not context["mod_text"]:
                     P = Prompt.objects.get(user=request.user, name="mod").text
@@ -955,10 +999,12 @@ def index(request):
                         style,
                         excel_text=_trim(context["test_text"]),
                         intervju_text=_trim(context["intervju_text"]),
+                        ratings_json=ratings_json_str,
+                        betygsskala_forklaring=betygsskala_prompt,
                     )
                 step = 4
 
-            # 4 -> 5: Självkännedom
+            # 4 -> 5: Självkännedom och emotionell stabilitet
             elif step == 4:
                 if not context["sjalkannedom_text"]:
                     P = Prompt.objects.get(user=request.user, name="sjalkannedom").text
@@ -967,10 +1013,12 @@ def index(request):
                         style,
                         excel_text=_trim(context["test_text"]),
                         intervju_text=_trim(context["intervju_text"]),
+                        ratings_json=ratings_json_str,
+                        betygsskala_forklaring=betygsskala_prompt,
                     )
                 step = 5
 
-            # 5 -> 6: Strategi
+            # 5 -> 6: Strategiskt tänkande och anpassningsförmåga
             elif step == 5:
                 if not context["strategi_text"]:
                     P = Prompt.objects.get(user=request.user, name="strategi").text
@@ -979,10 +1027,12 @@ def index(request):
                         style,
                         excel_text=_trim(context["test_text"]),
                         intervju_text=_trim(context["intervju_text"]),
+                        ratings_json=ratings_json_str,
+                        betygsskala_forklaring=betygsskala_prompt,
                     )
                 step = 6
 
-            # 6 -> 7: Kommunikation
+            # 6 -> 7: Kommunikation och samarbete
             elif step == 6:
                 if not context["kommunikation_text"]:
                     P = Prompt.objects.get(user=request.user, name="kommunikation").text
@@ -991,10 +1041,12 @@ def index(request):
                         style,
                         excel_text=_trim(context["test_text"]),
                         intervju_text=_trim(context["intervju_text"]),
+                        ratings_json=ratings_json_str,
+                        betygsskala_forklaring=betygsskala_prompt,
                     )
                 step = 7
 
-            # 7 -> 8: SUR
+            # 7 -> 8: SUR (styrkor/utvecklingsområden/risk)
             elif step == 7:
                 if not context["sur_text"]:
                     P = Prompt.objects.get(user=request.user, name="styrkor_utveckling_risk").text
@@ -1037,8 +1089,6 @@ def index(request):
 
     # ---------- 5) Render ----------
     return render(request, "index.html", context)
-
-
 
 
 
