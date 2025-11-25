@@ -1,144 +1,307 @@
 /* =========================================
-   DESIGN TOKENS
+   BAS / TOKENS
    ========================================= */
+
 :root {
   --brand-primary: #2563eb;
   --brand-secondary: #7c3aed;
-  --brand-bg: #eef2f7;
+  --bg-app: #f3f4f8;
   --surface: #ffffff;
   --border-subtle: #e5e7eb;
   --text-main: #111827;
   --text-muted: #6b7280;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
 }
 
-/* =========================================
-   BASLAYOUT
-   ========================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 html, body {
   height: 100%;
 }
 
 body {
-  background: var(--brand-bg);
-  padding-top: 64px;            /* plats för fixed navbar */
+  margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, #e0f2fe, #f5f5f9 45%, #eef2ff 90%);
   color: var(--text-main);
 }
 
-/* Ta bort stora blå bannern – vi använder bara cardets rubrik */
-header.bg-primary.bg-gradient {
-  display: none;
-}
-
-/* Main-sektion runt kortet */
-#about {
-  padding: 32px 0 80px;
-}
-
-/* Se till att bootstrap-container inte blir för bred */
-#about .container,
-footer .container,
-#mainNav .container {
-  max-width: 1100px;
-}
-
 /* =========================================
-   NAVBAR / TOPBAR
+   APP-LAYOUT
    ========================================= */
 
-#mainNav {
-  background: rgba(15, 23, 42, 0.78);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  padding: 10px 0;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+.app-shell {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 320px;
+  min-height: 100vh;
 }
 
-/* Brand */
-#mainNav .navbar-brand {
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  color: #ffffff !important;
-  opacity: 0.9;
-  transition: opacity 0.15s ease;
+/* På mindre skärmar döljer vi högerpanelen, sidebar blir topp */
+@media (max-width: 992px) {
+  .app-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .right-panel {
+    display: none;
+  }
 }
 
-#mainNav .navbar-brand:hover {
-  opacity: 1;
-}
-
-/* Nav-länkar */
-#mainNav .nav-link {
-  font-size: 0.92rem;
-  padding: 0.25rem 0.9rem;
-  color: #e2e8f0 !important;
-  opacity: 0.75;
-  border-radius: 6px;
-  transition: all 0.18s ease;
-}
-
-/* Hover / aktiv */
-#mainNav .nav-link:hover {
-  opacity: 1;
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-#mainNav .nav-link.active {
-  opacity: 1 !important;
-  background: linear-gradient(90deg, #2563eb33, #7c3aed33);
-  color: #ffffff !important;
-}
-
-/* Mobilmeny */
-.navbar-toggler {
-  border: none;
-  filter: invert(1) brightness(1.4);
-}
-
-.navbar-toggler:focus {
-  box-shadow: none;
-}
-
-@media (max-width: 991px) {
-  #mainNav .navbar-collapse {
-    background: rgba(15, 23, 42, 0.96);
-    backdrop-filter: blur(12px);
-    padding: 10px 12px;
-    margin-top: 10px;
-    border-radius: 8px;
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
   }
 }
 
 /* =========================================
-   FOOTER
+   SIDEBAR
    ========================================= */
 
-footer.bg-dark {
-  background: #020617 !important;
-  padding: 24px 0 30px;
-  border-top: 1px solid #111827;
-  margin-top: 40px;
+.sidebar {
+  background: rgba(250, 250, 252, 0.98);
+  border-right: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 18px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-footer.bg-dark p {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #e5e7eb;
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  color: #0f172a;
+}
+
+.brand-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: conic-gradient(from 160deg, #2563eb, #7c3aed, #f97316, #2563eb);
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.35);
+}
+
+.sidebar-nav {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #4b5563;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+
+.sidebar-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.sidebar-link:hover {
+  background: #e5edff;
+  color: #111827;
+  transform: translateX(1px);
+}
+
+.sidebar-link-active {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.sidebar-link-active .sidebar-icon {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #f3f4ff;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.user-meta span {
+  display: block;
+  font-size: 0.74rem;
+  color: #6b7280;
+}
+
+.user-meta strong {
+  font-size: 0.82rem;
+}
+
+.logout-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: #fee2e2;
+  color: #b91c1c;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.15s ease;
+}
+
+.logout-btn:hover {
+  background: #fecaca;
+}
+
+.sidebar-copy {
+  font-size: 0.72rem;
+  color: #9ca3af;
 }
 
 /* =========================================
-   ADMIN UI – CARD / INNEHÅLL
+   MAIN AREA
    ========================================= */
+
+
+   
+.main-area {
+  padding: 32px 40px 40px;   /* mer luft runt verktyget */
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.55rem;
+}
+
+.page-header p {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.page-header-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pill {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.pill-soft {
+  background: #eef2ff;
+  border-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+/* =========================================
+   RIGHT PANEL
+   ========================================= */
+
+.right-panel {
+  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 249, 253, 0.98);
+  padding: 20px 18px;
+}
+
+.right-panel-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+  font-size: 0.9rem;
+}
+
+.right-panel-card h3 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.right-panel-card ul {
+  padding-left: 18px;
+  margin: 8px 0 14px;
+}
+
+.right-panel-placeholder-input {
+  border-radius: 999px;
+  border: 1px dashed #cbd5f5;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* =========================================
+   INNEHÅLLSSEKTION (DIN ADMIN UI)
+   ========================================= */
+
+
+#about {
+  padding: 4px 0 0;
+}
+
+/* Layout runt kortet (så att cardet inte blir FÖR brett på stora skärmar) */
+.adminui-layout {
+  width: 100%;
+  max-width: 1180px;         /* maxbredd på stora skärmar */
+  margin: 0 auto;            /* centrera i mittenkolumnen */
+}
 
 /* Felmeddelande */
 .adminui-alert {
@@ -147,8 +310,7 @@ footer.bg-dark p {
   color: #b91c1c;
   padding: 12px 14px;
   border-radius: 12px;
-  margin: 0 auto 16px;
-  max-width: 720px;
+  margin-bottom: 16px;
   font-size: 0.95rem;
 }
 
@@ -157,9 +319,9 @@ footer.bg-dark p {
   position: relative;
   background: var(--surface);
   border-radius: var(--radius-xl);
-  padding: 28px 28px 26px;
+  padding: 26px 26px 24px;
   box-shadow:
-    0 24px 60px rgba(15, 23, 42, 0.18),
+    0 20px 50px rgba(15, 23, 42, 0.16),
     0 0 0 1px rgba(15, 23, 42, 0.03);
   overflow: hidden;
 }
@@ -169,27 +331,27 @@ footer.bg-dark p {
   content: "";
   position: absolute;
   inset: 0;
-  height: 6px;
+  height: 4px;
   background: linear-gradient(90deg, #1d4ed8, #2563eb, #7c3aed);
 }
 
-/* Header i cardet */
+/* Header i kortet */
 .adminui-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-top: 10px;
+  margin-top: 8px;
   margin-bottom: 18px;
 }
 
 .adminui-title {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   margin-bottom: 4px;
 }
 
 .adminui-help {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--text-muted);
   margin-bottom: 0;
 }
@@ -237,7 +399,7 @@ footer.bg-dark p {
   transition: width 0.35s ease-out;
 }
 
-/* Formlayout */
+/* Form */
 .adminui-form {
   display: flex;
   flex-direction: column;
@@ -245,12 +407,12 @@ footer.bg-dark p {
 }
 
 .adminui-subtitle {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   margin-bottom: 4px;
 }
 
 .adminui-intro {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
   margin-bottom: 14px;
 }
@@ -331,52 +493,12 @@ footer.bg-dark p {
   font-style: italic;
 }
 
-/* Assessment-tabeller */
-.adminui-assessment-box {
-  border-radius: 14px;
-  border: 1px solid var(--border-subtle);
-  background: #f9fafb;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  overflow-x: auto;
-}
-
-/* Rapportförhandsvisning */
-.adminui-report-preview {
-  border-radius: 16px;
-  border: 1px solid var(--border-subtle);
-  background: #f9fafb;
-  padding: 18px 18px 12px;
-  max-height: 520px;
-  overflow-y: auto;
-}
-
-.report-section + .report-section {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.report-section h3 {
-  font-size: 1rem;
-  margin-bottom: 4px;
-}
-
-.report-body {
-  font-size: 0.92rem;
-  color: #111827;
-}
-
-.report-table {
-  margin-bottom: 8px;
-}
-
 /* Knappar */
 .adminui-button-row {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
 .adminui-button {
@@ -417,26 +539,17 @@ footer.bg-dark p {
   background: #f9fafb;
 }
 
-/* =========================================
-   RESPONSIVITET
-   ========================================= */
-
-@media (max-width: 767.98px) {
-  #about {
-    padding-top: 20px;
+/* Responsivitet för kortet */
+@media (max-width: 768px) {
+  .main-area {
+    padding: 18px 16px 26px;
   }
-
   .adminui-container {
-    padding: 22px 18px 20px;
+    padding: 20px 16px 18px;
     border-radius: 18px;
   }
-
   .adminui-header {
     flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .adminui-step-box {
     align-items: flex-start;
   }
 }
