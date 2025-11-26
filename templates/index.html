@@ -193,34 +193,31 @@
                       <!-- Hidden field för att bära med sammanfogad text mellan stegen -->
                       <input type="hidden" name="uploaded_files_text" value="{{ uploaded_files_text|default_if_none:'' }}">
 
-                      <h3 class="adminui-label">2. Övrigt underlag (PDF, max 5 st)</h3>
+                      <h3 class="adminui-label">2. CV (PDF)</h3>
                       <p class="adminui-intro">
-                        Ladda upp t.ex. CV, jobbannons eller övriga rapporter som kan hjälpa AI:n i bedömningen.
+                        Ladda upp kandidatens CV i PDF-format. Texten används som stöd i analysen.
                       </p>
 
                       <label class="adminui-drop-zone adminui-drop-zone-extra">
                         <input
-                          id="extra_files"
-                          name="extra_files"
+                          id="cv_file"
+                          name="cv_file"
                           type="file"
                           accept=".pdf"
-                          multiple
                           hidden
                           onchange="updateExtraFiles(this)">
-                          <div class="adminui-drop-icon">📎</div>
-                          <div class="adminui-drop-text">
-                            <span>Släpp PDF filer här eller klicka för att välja (max 5 filer)</span>
-                            <small>PDF format (.pdf)</small>
-                          </div>
-
+                        <div class="adminui-drop-icon">📝</div>
+                        <div class="adminui-drop-text">
+                          <span>Släpp CV här eller klicka för att välja</span>
+                          <small>PDF-format (.pdf)</small>
+                        </div>
                       </label>
 
                       <div id="extra-files-list" class="adminui-filelist">
                         {% if uploaded_files_text %}
-                          <!-- Vi visar bara en generisk text, inte hela innehållet -->
-                          <span class="adminui-filename">Filer uppladdade (text används i analysen).</span>
+                          <span class="adminui-filename">CV uppladdat (text används i analysen).</span>
                         {% else %}
-                          <span class="adminui-filename">Inga filer valda</span>
+                          <span class="adminui-filename">Inget CV uppladdat</span>
                         {% endif %}
                       </div>
 

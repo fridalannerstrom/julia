@@ -976,25 +976,18 @@ def index(request):
 
                 # 3) Extra PDF-filer (övrigt underlag)
                 uploaded_files_text = context.get("uploaded_files_text", "")
-                extra_files = request.FILES.getlist("extra_files")
-                if extra_files:
-                    snippets = []
-                    for i, f in enumerate(extra_files):
-                        if i >= 5:
-                            break  # max 5 filer
-                        name = f.name.lower()
-                        if not name.endswith(".pdf"):
-                            continue
-                        try:
-                            reader = PdfReader(f)
-                            text = "\n".join((page.extract_text() or "") for page in reader.pages)
-                        except Exception as e:
-                            text = f"(Kunde inte läsa {f.name}: {e})"
-                        text = _trim(text, max_chars=12000)
-                        snippets.append(f"FIL: {f.name}\n{text}")
+                cv_file = request.FILES.get("cv_file")
 
-                    if snippets:
-                        uploaded_files_text = "\n\n---\n".join(snippets)
+                if cv_file:
+                    try:
+                        reader = PdfReader(cv_file)
+                        text = "\n".join((page.extract_text() or "") for page in reader.pages)
+                    except Exception as e:
+                        text = f"(Kunde inte läsa {cv_file.name}: {e})"
+
+                    # Här kan du välja hur hårt du vill trimma
+                    text = _trim(text, max_chars=8000)  # lite generösare för CV
+                    uploaded_files_text = text
 
                     context["uploaded_files_text"] = uploaded_files_text
 
