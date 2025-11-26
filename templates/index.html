@@ -112,7 +112,7 @@
     <main class="main-area">
       <header class="page-header">
         <div>
-          <h1>Hej {{ user.first_name|default:"kollega" }} 👋</h1>
+          <h1>Hej {{ user.first_name|default:user.username }} 👋</h1>
           <p>Kom igång med din rapport för Domarnämnden.</p>
         </div>
         <div class="page-header-meta">
