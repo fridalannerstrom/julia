@@ -18,33 +18,23 @@
   // ─────────────────────────────────────────────
   // 2) Extra PDF-filer (max 5)
   // ─────────────────────────────────────────────
-  window.updateExtraFiles = function (input) {
+    window.updateExtraFiles = function (input) {
     var list = document.getElementById("extra-files-list");
     if (!list) return;
 
     list.innerHTML = "";
 
     if (!input.files || input.files.length === 0) {
-      list.textContent = "Inga filer valda";
-      return;
+        list.textContent = "Inget CV uppladdat";
+        return;
     }
 
-    var files = Array.from(input.files);
-    var maxFiles = 5;
-
-    if (files.length > maxFiles) {
-      // Vi visar en liten varning, backend kommer ändå bara använda de första 5
-      alert("Max 5 filer. Endast de första 5 kommer att användas.");
-      files = files.slice(0, maxFiles);
-    }
-
-    files.forEach(function (file) {
-      var item = document.createElement("div");
-      item.className = "adminui-filelist-item";
-      item.textContent = file.name;
-      list.appendChild(item);
-    });
-  };
+    var file = input.files[0];  // bara första filen används
+    var item = document.createElement("div");
+    item.className = "adminui-filelist-item";
+    item.textContent = file.name;
+    list.appendChild(item);
+    };
 
   // ─────────────────────────────────────────────
   // 4) Drag & drop – Excel
@@ -79,35 +69,41 @@
   // ─────────────────────────────────────────────
   // 5) Drag & drop – extra PDF-filer
   // ─────────────────────────────────────────────
-  var dropZoneExtra = document.querySelector(".adminui-drop-zone-extra");
-  var extraInput = document.getElementById("extra_files");
+var dropZoneExtra = document.querySelector(".adminui-drop-zone-extra");
+var extraInput = document.getElementById("cv_file");
 
-  if (dropZoneExtra && extraInput) {
-    ["dragenter", "dragover"].forEach(function (eventName) {
-      dropZoneExtra.addEventListener(eventName, function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZoneExtra.classList.add("is-dragover");
-      });
+if (dropZoneExtra && extraInput) {
+  ["dragenter", "dragover"].forEach(function (eventName) {
+    dropZoneExtra.addEventListener(eventName, function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZoneExtra.classList.add("is-dragover");
     });
+  });
 
-    ["dragleave", "drop"].forEach(function (eventName) {
-      dropZoneExtra.addEventListener(eventName, function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZoneExtra.classList.remove("is-dragover");
-      });
+  ["dragleave", "drop"].forEach(function (eventName) {
+    dropZoneExtra.addEventListener(eventName, function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZoneExtra.classList.remove("is-dragover");
     });
+  });
 
-    dropZoneExtra.addEventListener("drop", function (e) {
-      if (!e.dataTransfer || !e.dataTransfer.files.length) return;
-      extraInput.files = e.dataTransfer.files;
-      window.updateExtraFiles(extraInput);
-    });
+  dropZoneExtra.addEventListener("drop", function (e) {
+    if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+    // ta bara första filen som CV
+    var dtFiles = e.dataTransfer.files;
+    if (dtFiles.length > 0) {
+      var dataTransfer = new DataTransfer();
+      dataTransfer.items.add(dtFiles[0]);
+      extraInput.files = dataTransfer.files;
+    }
+    window.updateExtraFiles(extraInput);
+  });
 
-    // Klick på zonen -> öppna filväljare
-    dropZoneExtra.addEventListener("click", function () {
-      extraInput.click();
-    });
-  }
+  // Klick på zonen -> öppna filväljare
+  dropZoneExtra.addEventListener("click", function () {
+    extraInput.click();
+  });
+}
 })();

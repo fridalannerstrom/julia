@@ -986,7 +986,7 @@ def index(request):
                         text = f"(Kunde inte läsa {cv_file.name}: {e})"
 
                     # Här kan du välja hur hårt du vill trimma
-                    text = _trim(text, max_chars=8000)  # lite generösare för CV
+                    text = _trim(text)  # lite generösare för CV
                     uploaded_files_text = text
 
                     context["uploaded_files_text"] = uploaded_files_text

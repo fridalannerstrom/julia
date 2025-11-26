@@ -221,9 +221,10 @@
                         {% endif %}
                       </div>
 
-                  <h3 class="adminui-label">3. Anteckningar</h3>
+                  <h3 class="adminui-label">3. Anteckningar, jobbannons och annat</h3>
                   <p class="adminui-intro">
-                      Klistra in dina anteckningar, t ex från intervjun eller annat.
+                      Klistra in textbaserad information, till exempel anteckningar från intervju, 
+                      jobbannons eller annan relevant information.
                   </p>
 
                   <textarea name="intervju" class="adminui-textarea" rows="6">{{ intervju_text }}</textarea>
@@ -477,7 +478,7 @@
             {% endif %}
 
 {% if uploaded_files_clean %}
-  <button type="button" class="btn btn-outline-secondary btn-sm" id="showPdfTextBtn">
+  <button type="button" class="adminui-button" id="showPdfTextBtn">
     Visa text från PDF-uppladdning
   </button>
 {% endif %}
