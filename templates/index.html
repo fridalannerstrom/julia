@@ -168,6 +168,11 @@
                     Klicka på <strong>Nästa</strong> för att skapa din rapport.
                   </p>
 
+                  <h3 class="adminui-label">1. Excelfil</h3>
+                  <p class="adminui-intro">
+                      Ladda upp din excelfil med data från testresultaten.
+                  </p>
+
                   <div class="adminui-upload-area">
                         <label for="excel" class="adminui-drop-zone">
                           <!-- VIKTIGT: name="excel" och INNE I FORMEN -->
@@ -187,8 +192,8 @@
                       <!-- Hidden field för att bära med sammanfogad text mellan stegen -->
                       <input type="hidden" name="uploaded_files_text" value="{{ uploaded_files_text|default_if_none:'' }}">
 
-                      <h3 class="adminui-label">Övrigt underlag (PDF, max 5 st)</h3>
-                      <p class="adminui-helptext">
+                      <h3 class="adminui-label">2. Övrigt underlag (PDF, max 5 st)</h3>
+                      <p class="adminui-intro">
                         Ladda upp t.ex. CV, jobbannons eller övriga rapporter som kan hjälpa AI:n i bedömningen.
                       </p>
 
@@ -200,25 +205,21 @@
                           accept=".pdf"
                           multiple
                           hidden
-                          onchange="updateExtraFiles(this)"
-                        >
-                        <div class="adminui-drop-zone-inner">
+                          onchange="updateExtraFiles(this)">
                           <div class="adminui-drop-icon">📎</div>
                           <div class="adminui-drop-text">
-                            Släpp filer här eller klicka för att välja (PDF)
+                            <span>Släpp PDF filer här eller klicka för att välja (max 5 filer)</span>
+                            <small>PDF format (.pdf)</small>
                           </div>
-                          <div class="adminui-drop-subtext">
-                            Max 5 filer.
-                          </div>
-                        </div>
+
                       </label>
 
                       <div id="extra-files-list" class="adminui-filelist">
                         {% if uploaded_files_text %}
                           <!-- Vi visar bara en generisk text, inte hela innehållet -->
-                          <span>Filer uppladdade (text används i analysen).</span>
+                          <span class="adminui-filename">Filer uppladdade (text används i analysen).</span>
                         {% else %}
-                          <span>Inga filer valda</span>
+                          <span class="adminui-filename">Inga filer valda</span>
                         {% endif %}
                       </div>
 

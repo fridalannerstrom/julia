@@ -437,9 +437,9 @@ body {
 
 /* Labels & textfält */
 .adminui-label {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: -10px;
   color: #374151;
 }
 
