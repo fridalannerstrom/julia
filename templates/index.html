@@ -146,7 +146,8 @@
                 <!-- HIDDEN STATE -->
                 <input type="hidden" name="step" value="{{ step }}">
                 <input type="hidden" name="test_text" value="{{ test_text|escape }}">
-                <input type="hidden" name="uploaded_files_clean" value="{{ uploaded_files_clean }}">
+                <input type="hidden" name="uploaded_files_markdown"
+                          value="{{ uploaded_files_markdown|default_if_none:''|escape }}">
                 <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
                 <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
                 <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text|escape }}">
@@ -213,13 +214,13 @@
                         </div>
                       </label>
 
-                      <div id="extra-files-list" class="adminui-filelist">
+                      <p id="cv-filename" class="adminui-filename">
                         {% if uploaded_files_text %}
-                          <span class="adminui-filename">CV uppladdat (text används i analysen).</span>
+                          CV uppladdat (text används i analysen).
                         {% else %}
-                          <span class="adminui-filename">Inget CV uppladdat</span>
+                          Inget CV uppladdat
                         {% endif %}
-                      </div>
+                      </p>
 
                   <h3 class="adminui-label">3. Anteckningar, jobbannons och annat</h3>
                   <p class="adminui-intro">
@@ -477,9 +478,9 @@
               <p class="assistant-empty">När du laddat upp material kommer det hamna här.</p>
             {% endif %}
 
-{% if uploaded_files_clean %}
-  <button type="button" class="adminui-button" id="showPdfTextBtn">
-    Visa text från PDF-uppladdning
+{% if uploaded_files_markdown %}
+  <button type="button" class="adminui-button-secondary" id="showPdfTextBtn">
+    Visa CV
   </button>
 {% endif %}
       </div>
@@ -546,13 +547,16 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
   </div>
 
-  {% if uploaded_files_clean %}
+{% if uploaded_files_html %}
 <div id="pdfTextModal" class="dn-modal">
   <div class="dn-modal-backdrop"></div>
   <div class="dn-modal-content">
     <button type="button" id="closePdfTextModal" class="dn-modal-close">×</button>
     <h3>Text från PDF-uppladdning</h3>
-    <pre class="dn-modal-pre">{{ uploaded_files_clean }}</pre>
+
+    <div class="dn-modal-body markdown-body">
+      {{ uploaded_files_html|safe }}
+    </div>
   </div>
 </div>
 {% endif %}

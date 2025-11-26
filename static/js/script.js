@@ -16,25 +16,20 @@
   };
 
   // ─────────────────────────────────────────────
-  // 2) Extra PDF-filer (max 5)
+  // 2) Extra PDF-filer
   // ─────────────────────────────────────────────
-    window.updateExtraFiles = function (input) {
-    var list = document.getElementById("extra-files-list");
-    if (!list) return;
+window.updateExtraFiles = function (input) {
+  var label = document.getElementById("cv-filename");
+  if (!label) return;
 
-    list.innerHTML = "";
+  if (!input.files || input.files.length === 0) {
+    label.textContent = "Inget CV uppladdat";
+    return;
+  }
 
-    if (!input.files || input.files.length === 0) {
-        list.textContent = "Inget CV uppladdat";
-        return;
-    }
-
-    var file = input.files[0];  // bara första filen används
-    var item = document.createElement("div");
-    item.className = "adminui-filelist-item";
-    item.textContent = file.name;
-    list.appendChild(item);
-    };
+  var file = input.files[0];      // vi använder bara första filen
+  label.textContent = file.name;  // samma stil som Excel
+};
 
   // ─────────────────────────────────────────────
   // 4) Drag & drop – Excel
