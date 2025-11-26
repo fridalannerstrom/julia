@@ -82,25 +82,6 @@
                 rapportens olika delar formuleras. Uppdelat i tre tydliga sektioner.
               </p>
 
-              <div class="adminui-assessment-box" style="font-size:0.9rem; margin-bottom:24px;">
-                <b>Tillgängliga taggar:</b><br>
-                <code>{excel_text}</code> – rådata/utdrag från Excelfilen (använd helst inte denna)<br>
-                <code>{intervju_text}</code> – intervjuanteckningar (rensade/samlade).<br>
-                <code>{ratings_json}</code> – Alla betyg 1–5 från testet (rensade/samlade).<br>
-                <code>{betygsskala_forklaring}</code> – din definition av vad nivåerna betyder.<br><br>
-
-                <code>{tq_fardighet_text}</code>, <code>{tq_motivation_text}</code>,
-                <code>{leda_text}</code>, <code>{mod_text}</code>,
-                <code>{sjalkannedom_text}</code>, <code>{strategi_text}</code>,
-                <code>{kommunikation_text}</code> – texter som genererats i tidigare steg.<br>
-
-                <code>{sur_text}</code> – listan med styrkor/utvecklingsområden/riskbeteenden.
-                <br><br>
-
-                <b>Viktigt:</b> Ta inte bort taggarna i klamrar om du vill att rätt information ska
-                föras in automatiskt.
-              </div>
-
               <form method="post">
                 {% csrf_token %}
 
@@ -191,20 +172,185 @@
       </section>
     </main>
 
-    <!-- HÖGERSPALT / PLATS FÖR INFO -->
+    <!-- HÖGERSPALT -->
     <aside class="right-panel">
-      <div class="right-panel-card">
-        <h3 class="assistant-title">Tips för prompts</h3>
-        <p class="assistant-empty">
-          Håll en konsekvent ton, behåll taggarna i klamrar och testa ändringar i verktyget
-          efter att du sparat.
+        <h3 class="assistant-title">Tillgängliga taggar</h3>
+        <p class="assistant-help">
+          Klistra in dessa i dina prompts där du vill att data ska ersättas automatiskt.
         </p>
-      </div>
+
+  <h3 class="assistant-title">Grunddata</h3>
+
+<div class="tag-box">
+  <div class="tag-box-left">
+    <code>{excel_text}</code>
+    <p>Rådata från Excel</p>
+  </div>
+
+  <button class="tag-example-btn" data-modal="modal-excel">
+    Se exempel
+  </button>
+</div>
+
+  <div class="tag-box">
+    <code>{intervju_text}</code>
+    <p>Intervjuanteckningar</p>
+  </div>
+
+  <div class="tag-box">
+    <code>{ratings_json}</code>
+    <p>Betyg 1–5</p>
+  </div>
+
+  <div class="tag-box">
+    <code>{betygsskala_forklaring}</code>
+    <p>Definition av nivåerna</p>
+  </div>
+
+        <div class="assistant-section">
+          <h4 class="assistant-section-title">Tidigare texter</h4>
+          <p class="assistant-help" style="margin-bottom:0.5rem;">
+            TQ-texter som genereras i andra steg och kan återanvändas här:
+          </p>
+          <ul class="assistant-list">
+            <li class="assistant-list-item">
+              <span class="assistant-label"><code>{tq_fardighet_text}</code></span>
+            </li>
+            <li class="assistant-list-item">
+              <span class="assistant-label"><code>{tq_motivation_text}</code></span>
+            </li>
+            <li class="assistant-list-item">
+              <span class="assistant-label"><code>{leda_text}</code></span>
+            </li>
+            <li class="assistant-list-item">
+              <span class="assistant-label"><code>{mod_text}</code></span>
+            </li>
+            <li class="assistant-list-item">
+              <span class="assistant-label"><code>{sjalkannedom_text}</code></span>
+            </li>
+            <li class="assistant-list-item">
+              <span class="assistant-label"><code>{strategi_text}</code></span>
+            </li>
+            <li class="assistant-list-item">
+              <span class="assistant-label"><code>{kommunikation_text}</code></span>
+            </li>
+            <li class="assistant-list-item">
+              <span class="assistant-label"><code>{sur_text}</code></span>
+              <span class="assistant-value">Styrkor / Utvecklingsområden / Riskbeteenden.</span>
+            </li>
+          </ul>
+        </div>
+
+        <p class="assistant-empty" style="margin-top:1rem;">
+          Ta inte bort taggarna i klamrar om du vill att rätt info ska fyllas i automatiskt.
+        </p>
     </aside>
+
   </div>
 
   <!-- JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'js/script.js' %}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+  
+  // Öppna popup
+  document.querySelectorAll(".tag-example-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const modalId = btn.dataset.modal;
+      document.getElementById(modalId).classList.add("is-open");
+    });
+  });
+
+  // Stäng popup (alla stäng-knappar)
+  document.querySelectorAll(".dn-modal-close").forEach(btn => {
+    btn.addEventListener("click", () => {
+      btn.closest(".dn-modal").classList.remove("is-open");
+    });
+  });
+
+  // Stäng popup genom att klicka på mörka bakgrunden
+  document.querySelectorAll(".dn-modal").forEach(modal => {
+    modal.addEventListener("click", e => {
+      if (e.target.classList.contains("dn-modal-backdrop")) {
+        modal.classList.remove("is-open");
+      }
+    });
+  });
+
+});
+  </script>
+
+  <!-- ===== Popup: Excel ===== -->
+<div id="modal-excel" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {excel_text}</h3>
+    <div class="dn-modal-body">
+      <pre>
+Kolumn A: Kompetens
+Kolumn B: Poäng (1–10)
+Kolumn C: Färgade rutor
+...
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Popup: Intervju ===== -->
+<div id="modal-intervju" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {intervju_text}</h3>
+    <div class="dn-modal-body">
+      <pre>
+Kandidaten beskriver sig som driven och strukturerad.
+Har lett två team och ansvarat för onboarding.
+Styrkor: analys, kommunikation.
+Utmaningar: tidspress och snabba deadlines.
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Popup: Ratings JSON ===== -->
+<div id="modal-ratings" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {ratings_json}</h3>
+    <div class="dn-modal-body">
+      <pre>
+{
+  "Planning & Organising": 4,
+  "Resilience": 3,
+  "Analysis": 5,
+  "Collaboration": 4
+}
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Popup: Betygsskala ===== -->
+<div id="modal-betygsskala" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {betygsskala_forklaring}</h3>
+    <div class="dn-modal-body">
+      <pre>
+1 = Begränsad nivå, kräver nära stöd.
+2 = Tillräcklig nivå i enklare situationer.
+3 = God nivå i de flesta situationer.
+4 = Mycket god nivå, visar konsekvent styrka.
+5 = Exceptionell nivå, förebildligt beteende.
+      </pre>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -102,3 +102,32 @@ if (dropZoneExtra && extraInput) {
   });
 }
 })();
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  
+  // Öppna popup
+  document.querySelectorAll(".tag-example-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const modalId = btn.dataset.modal;
+      document.getElementById(modalId).classList.add("is-open");
+    });
+  });
+
+  // Stäng popup (alla stäng-knappar)
+  document.querySelectorAll(".dn-modal-close").forEach(btn => {
+    btn.addEventListener("click", () => {
+      btn.closest(".dn-modal").classList.remove("is-open");
+    });
+  });
+
+  // Stäng popup genom att klicka på mörka bakgrunden
+  document.querySelectorAll(".dn-modal").forEach(modal => {
+    modal.addEventListener("click", e => {
+      if (e.target.classList.contains("dn-modal-backdrop")) {
+        modal.classList.remove("is-open");
+      }
+    });
+  });
+
+});

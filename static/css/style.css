@@ -35,6 +35,67 @@ body {
    APP-LAYOUT
    ========================================= */
 
+   .tag-box {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+
+.tag-box code {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #bd0f83;
+    font-weight: 600;
+}
+
+.tag-box p {
+    font-size: 0.75rem;
+    margin: 4px 0 0;
+    color: #444;
+}
+
+.tag-example-btn {
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 100px;
+  background: #f0f0f0;
+  border: 1px solid #7b2cbf33;
+  color: #3a3a3a;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.tag-example-btn:hover {
+  background: #d0cdd6;
+}
+
+.tag-box {
+    background: #fafafa;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;   /* ← Knappen till höger */
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.tag-box-left code {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #B026FF; /* eller din lila */
+}
+
+.tag-box-left p {
+    font-size: 0.75rem;
+    color: #444;
+    margin: 2px 0 0;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr) 320px;
@@ -695,6 +756,7 @@ body {
 .adminui-report-preview .report-section {
   margin-bottom: 32px;
 }
+
 
 /* Responsivitet för kortet */
 @media (max-width: 768px) {
