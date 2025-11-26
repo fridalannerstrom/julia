@@ -433,7 +433,7 @@
     <!-- HÖGERSPALT / PLATS FÖR CHATT -->
     <aside class="right-panel">
       <div class="right-panel-card">
-          <h3 class="assistant-title">Uppladdad data</h3>
+          <h3 class="assistant-title">Din data</h3>
 
             {% if ratings_sidebar %}
               {% for section_title, items in ratings_sidebar.items %}
@@ -462,12 +462,7 @@
     </aside>
   </div>
 
-      <script>
-        function showFilename(input) {
-            const fileName = input.files[0] ? input.files[0].name : "Ingen fil vald";
-            document.getElementById("filename").textContent = "Vald fil: " + fileName;
-        }
-    </script>
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

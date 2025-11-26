@@ -1,170 +1,210 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
-        <title>Julia</title>
-        <!-- Core theme CSS (includes Bootstrap)-->
-        <link rel="stylesheet" href="{% static 'css/style.css' %}">
-        <link rel="icon" type="image/x-icon" href="{% static 'assets/favicon.ico' %}">
-    </head>
-    <body id="page-top">
-        <!-- Navigation-->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
-            <div class="container px-4">
-                <a class="navbar-brand" href="#page-top">Julia AI</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarResponsive">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Verktyget</a></li>
-                        <li class="nav-item"><a class="nav-link active text-white" href="{% url 'prompt_editor' %}">Ändra prompts</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'chat_home' %}">Chatt</a></li>
-                    </ul> 
-                </div>
-            </div>
-        </nav>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Julia</title>
 
-        <!-- Header-->
-        <header class="bg-primary bg-gradient text-white">
-            <div class="container px-4 text-center">
-                <h1 class="fw-bolder">Domarnämnden – Prompts</h1>
-            </div>
-        </header>
+    <!-- Bootstrap CSS (samma som på verktygssidan) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        <!-- Content -->
-        <section id="about">
-    <div class="container px-4">
-        <div class="row gx-4 justify-content-center">
-            <div class="col-lg-8">
+    <!-- Din egna styles -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" href="{% static 'img/favicon.ico' %}">
+</head>
 
-                <h2 class="adminui-title" style="margin-top:24px;">Redigera AI-instruktioner</h2>
-                <p>
-                    Här styr du hur Julia AI tolkar testresultat, intervjuanteckningar och hur
-                    rapportens olika delar formuleras. Uppdelat i tre tydliga sektioner.
-                </p>
+<body id="page-top">
+  <div class="app-shell">
 
-                <div class="adminui-assessment-box" style="font-size:0.9rem; margin-bottom:24px;">
-                    <b>Tillgängliga taggar:</b><br>
-                    <code>{excel_text}</code> – rådata/utdrag från Excelfilen (använd helst inte denna)<br>
-                    <code>{intervju_text}</code> – intervjuanteckningar (rensade/samlade).<br>
-                    <code>{ratings_json}</code> – Alla betyg 1–5 från testet (rensade/samlade).<br>
-                    <code>{betygsskala_forklaring}</code> – din definition av vad nivåerna betyder.<br><br>
+    <!-- SIDEBAR (samma som på verktygssidan, men med aktiv länk på Ändra prompts) -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-dot"></span>
+        <span class="brand-text">Julia AI</span>
+      </div>
 
-                    <code>{tq_fardighet_text}</code>, <code>{tq_motivation_text}</code>,
-                    <code>{leda_text}</code>, <code>{mod_text}</code>,
-                    <code>{sjalkannedom_text}</code>, <code>{strategi_text}</code>,
-                    <code>{kommunikation_text}</code> – texter som genererats i tidigare steg.<br>
+      <nav class="sidebar-nav">
+        <a href="{% url 'index' %}" class="sidebar-link">
+          <span class="sidebar-icon">⚙️</span>
+          <span>Verktyget</span>
+        </a>
+        <a href="{% url 'prompt_editor' %}" class="sidebar-link sidebar-link-active">
+          <span class="sidebar-icon">📝</span>
+          <span>Ändra prompts</span>
+        </a>
+        <a href="{% url 'chat_home' %}" class="sidebar-link">
+          <span class="sidebar-icon">💬</span>
+          <span>Chatt</span>
+        </a>
+      </nav>
 
-                    <code>{sur_text}</code> – listan med styrkor/utvecklingsområden/riskbeteenden.
-                    <br><br>
-
-                    <b>Viktigt:</b> Ta inte bort taggarna i klamrar om du vill att rätt information ska
-                    föras in automatiskt.
-                </div>
-
-                <form method="post">
-                    {% csrf_token %}
-
-                    {# ===== SEKTION 1: Excelfil – teknisk struktur ===== #}
-                    {% for prompt in prompts %}
-                        {% if prompt.name == "tolka_excel_resultat" %}
-                            <div class="adminui-container" style="margin-bottom:32px;">
-                                <h3 class="adminui-subtitle">1. Tolkning av Excelfil (teknisk struktur)</h3>
-                                <p class="adminui-help" style="font-size:0.9rem;">
-                                    Denna prompt beskriver hur Excelfilen är <b>uppbyggd</b> och vad varje
-                                    kolumn betyder. I nuvarande version används tolkningen i första hand i
-                                    programmets Python-kod, men texten kan ligga kvar här som dokumentation.
-                                    <br><br>
-                                    <p style="color: red">Ändra endast om Excelformat eller kolumnnamn ändras.</p>
-                                </p>
-                                <textarea
-                                    name="prompt_{{ prompt.name }}"
-                                    rows="8"
-                                    class="adminui-textarea"
-                                >{{ prompt.text }}</textarea>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {# ===== SEKTION 2: Betygsskala – betydelsen av nivåerna ===== #}
-                    {% for prompt in prompts %}
-                        {% if prompt.name == "betygsskala_forklaring" %}
-                            <div class="adminui-container" style="margin-bottom:32px;">
-                                <h3 class="adminui-subtitle">2. Betygsskala: Vad betyder nivåerna 1–5?</h3>
-                                <p class="adminui-help" style="font-size:0.9rem;">
-                                    Denna prompt används i alla bedömningssteg. Här beskriver du hur AI:n ska
-                                    tolka poäng på skalan 1–5, både generellt och (valfritt) specifikt för
-                                    varje kompetens. Detta säkerställer konsekvent tolkning i rapporterna.
-                                    <br><br>
-                                    <b>Rekommendation:</b> Beskriv både en generell skala samt
-                                    per-kompetens-exempel om du vill ha ännu mer styrning.
-                                </p>
-                                <textarea
-                                    name="prompt_{{ prompt.name }}"
-                                    rows="12"
-                                    class="adminui-textarea"
-                                >{{ prompt.text }}</textarea>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {# ===== SEKTION 3: Övriga prompts – analyser & slutsatser ===== #}
-                    <div class="adminui-container" style="margin-bottom:16px;">
-                        <h3 class="adminui-subtitle">3. Övriga prompts (analyser och slutsatser)</h3>
-                        <p class="adminui-help" style="font-size:0.9rem; margin-bottom:16px;">
-                            Dessa prompts styr hur AI:n formulerar analyserna baserat på testdata,
-                            intervjuanteckningar, betyg och dina skaldefinitioner.
-                            <br>
-                            Anpassa ton, längd och detaljer efter vad du vill att Julia AI ska ge för typ av output.
-                        </p>
-
-                        {% for prompt in prompts %}
-                            {% if prompt.name not in "tolka_excel_resultat betygsskala_forklaring" %}
-                                <div style="margin-bottom:24px;">
-                                    <label for="prompt_{{ prompt.name }}" class="adminui-label">
-                                        {{ prompt.name|capfirst }}
-                                    </label>
-                                    <p style="font-size:0.8rem; color:#666; margin-bottom:4px;">
-                                        Behåll relevanta taggar (t.ex.
-                                        <code>{intervju_text}</code>,
-                                        <code>{ratings_json}</code>,
-                                        <code>{betygsskala_forklaring}</code>).
-                                    </p>
-                                    <textarea
-                                        id="prompt_{{ prompt.name }}"
-                                        name="prompt_{{ prompt.name }}"
-                                        rows="6"
-                                        class="adminui-textarea"
-                                    >{{ prompt.text }}</textarea>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    <button type="submit" class="adminui-button">
-                        💾 Spara ändringar
-                    </button>
-                </form>
-
-            </div>
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="user-avatar">
+            {{ user.first_name|default:"J" |first }}
+          </div>
+          <div class="user-meta">
+            <span>Inloggad som</span>
+            <strong>{{ user.get_full_name|default:"Gäst" }}</strong>
+          </div>
         </div>
-    </div>
-</section>
+        <button class="logout-btn" type="button">
+          Logga ut
+        </button>
+        <p class="sidebar-copy">© TQ Nordic</p>
+      </div>
+    </aside>
 
-        <!-- Footer-->
-        <footer class="py-5 bg-dark">
-            <div class="container px-4">
-                <p class="m-0 text-center text-white">Copyright &copy; TQ Nordic</p>
+    <!-- MAIN CONTENT -->
+    <main class="main-area">
+      <header class="page-header">
+        <div>
+          <h1>Hej {{ user.first_name|default:user.username }} 👋</h1>
+          <p>Uppdatera AI-instruktioner för Domarnämnden.</p>
+        </div>
+        <div class="page-header-meta">
+          <span class="pill">Domarnämnden</span>
+          <span class="pill pill-soft">Prompts</span>
+        </div>
+      </header>
+
+      <section id="about">
+        <div class="adminui-layout">
+          <div class="adminui-main">
+            <div class="adminui-container">
+
+              <h2 class="adminui-title" style="margin-top:0;">Redigera AI-instruktioner</h2>
+              <p class="adminui-intro">
+                Här styr du hur Julia AI tolkar testresultat, intervjuanteckningar och hur
+                rapportens olika delar formuleras. Uppdelat i tre tydliga sektioner.
+              </p>
+
+              <div class="adminui-assessment-box" style="font-size:0.9rem; margin-bottom:24px;">
+                <b>Tillgängliga taggar:</b><br>
+                <code>{excel_text}</code> – rådata/utdrag från Excelfilen (använd helst inte denna)<br>
+                <code>{intervju_text}</code> – intervjuanteckningar (rensade/samlade).<br>
+                <code>{ratings_json}</code> – Alla betyg 1–5 från testet (rensade/samlade).<br>
+                <code>{betygsskala_forklaring}</code> – din definition av vad nivåerna betyder.<br><br>
+
+                <code>{tq_fardighet_text}</code>, <code>{tq_motivation_text}</code>,
+                <code>{leda_text}</code>, <code>{mod_text}</code>,
+                <code>{sjalkannedom_text}</code>, <code>{strategi_text}</code>,
+                <code>{kommunikation_text}</code> – texter som genererats i tidigare steg.<br>
+
+                <code>{sur_text}</code> – listan med styrkor/utvecklingsområden/riskbeteenden.
+                <br><br>
+
+                <b>Viktigt:</b> Ta inte bort taggarna i klamrar om du vill att rätt information ska
+                föras in automatiskt.
+              </div>
+
+              <form method="post">
+                {% csrf_token %}
+
+                {# ===== SEKTION 1: Excelfil – teknisk struktur ===== #}
+                {% for prompt in prompts %}
+                  {% if prompt.name == "tolka_excel_resultat" %}
+                    <div class="adminui-container" style="margin-bottom:32px;">
+                      <h3 class="adminui-subtitle">1. Tolkning av Excelfil (teknisk struktur)</h3>
+                      <p class="adminui-help" style="font-size:0.9rem;">
+                        Denna prompt beskriver hur Excelfilen är <b>uppbyggd</b> och vad varje
+                        kolumn betyder. I nuvarande version används tolkningen i första hand i
+                        programmets Python-kod, men texten kan ligga kvar här som dokumentation.
+                        <br><br>
+                        <span style="color: red;">Ändra endast om Excelformat eller kolumnnamn ändras.</span>
+                      </p>
+                      <textarea
+                        name="prompt_{{ prompt.name }}"
+                        rows="8"
+                        class="adminui-textarea"
+                      >{{ prompt.text }}</textarea>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+
+                {# ===== SEKTION 2: Betygsskala – betydelsen av nivåerna ===== #}
+                {% for prompt in prompts %}
+                  {% if prompt.name == "betygsskala_forklaring" %}
+                    <div class="adminui-container" style="margin-bottom:32px;">
+                      <h3 class="adminui-subtitle">2. Betygsskala: Vad betyder nivåerna 1–5?</h3>
+                      <p class="adminui-help" style="font-size:0.9rem;">
+                        Denna prompt används i alla bedömningssteg. Här beskriver du hur AI:n ska
+                        tolka poäng på skalan 1–5, både generellt och (valfritt) specifikt för
+                        varje kompetens. Detta säkerställer konsekvent tolkning i rapporterna.
+                        <br><br>
+                        <b>Rekommendation:</b> Beskriv både en generell skala samt
+                        per-kompetens-exempel om du vill ha ännu mer styrning.
+                      </p>
+                      <textarea
+                        name="prompt_{{ prompt.name }}"
+                        rows="12"
+                        class="adminui-textarea"
+                      >{{ prompt.text }}</textarea>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+
+                {# ===== SEKTION 3: Övriga prompts – analyser & slutsatser ===== #}
+                <div class="adminui-container" style="margin-bottom:16px;">
+                  <h3 class="adminui-subtitle">3. Övriga prompts (analyser och slutsatser)</h3>
+                  <p class="adminui-help" style="font-size:0.9rem; margin-bottom:16px;">
+                    Dessa prompts styr hur AI:n formulerar analyserna baserat på testdata,
+                    intervjuanteckningar, betyg och dina skaldefinitioner.
+                    <br>
+                    Anpassa ton, längd och detaljer efter vad du vill att Julia AI ska ge för typ av output.
+                  </p>
+
+                  {% for prompt in prompts %}
+                    {% if prompt.name not in "tolka_excel_resultat betygsskala_forklaring" %}
+                      <div style="margin-bottom:24px;">
+                        <label for="prompt_{{ prompt.name }}" class="adminui-label">
+                          {{ prompt.name|capfirst }}
+                        </label>
+                        <p style="font-size:0.8rem; color:#666; margin-bottom:4px;">
+                          Behåll relevanta taggar (t.ex.
+                          <code>{intervju_text}</code>,
+                          <code>{ratings_json}</code>,
+                          <code>{betygsskala_forklaring}</code>).
+                        </p>
+                        <textarea
+                          id="prompt_{{ prompt.name }}"
+                          name="prompt_{{ prompt.name }}"
+                          rows="6"
+                          class="adminui-textarea"
+                        >{{ prompt.text }}</textarea>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+
+                <button type="submit" class="adminui-button">
+                  💾 Spara ändringar
+                </button>
+              </form>
+
             </div>
-        </footer>
+          </div>
+        </div>
+      </section>
+    </main>
 
-        <!-- Bootstrap core JS-->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="{% static 'js/script.js' %}"></script>
-    </body>
+    <!-- HÖGERSPALT / PLATS FÖR INFO -->
+    <aside class="right-panel">
+      <div class="right-panel-card">
+        <h3 class="assistant-title">Tips för prompts</h3>
+        <p class="assistant-empty">
+          Håll en konsekvent ton, behåll taggarna i klamrar och testa ändringar i verktyget
+          efter att du sparat.
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+</body>
 </html>
