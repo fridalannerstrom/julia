@@ -495,6 +495,43 @@ body {
   margin: 0;
 }
 
+.dn-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+}
+
+.dn-modal.is-open {
+  display: flex;
+}
+
+.dn-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.dn-modal-content {
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+}
+
+.dn-modal-pre {
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+}
+
 .assistant-list-item {
   display: flex;
   justify-content: space-between;

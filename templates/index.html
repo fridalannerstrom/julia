@@ -146,6 +146,7 @@
                 <!-- HIDDEN STATE -->
                 <input type="hidden" name="step" value="{{ step }}">
                 <input type="hidden" name="test_text" value="{{ test_text|escape }}">
+                <input type="hidden" name="uploaded_files_clean" value="{{ uploaded_files_clean }}">
                 <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
                 <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
                 <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text|escape }}">
@@ -458,28 +459,33 @@
     <!-- HÖGERSPALT / PLATS FÖR CHATT -->
     <aside class="right-panel">
       <div class="right-panel-card">
-          <h3 class="assistant-title">Testdata (1–5)</h3>
+          <h3 class="assistant-title">Uppladdad data</h3>
 
-  {% if ratings_sidebar %}
-    {% for section_title, items in ratings_sidebar.items %}
-      <div class="assistant-section">
-        <h4 class="assistant-section-title">{{ section_title }}</h4>
-        <ul class="assistant-list">
-          {% for item in items %}
-            <li class="assistant-list-item">
-              <span class="assistant-label">{{ item.label }}:</span>
-              <span class="assistant-value">{{ item.value }}</span>
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
-    {% endfor %}
-  {% else %}
-    <p class="assistant-empty">Ladda upp en Excelfil för att se testdatan här.</p>
-  {% endif %}
+            {% if ratings_sidebar %}
+              {% for section_title, items in ratings_sidebar.items %}
+                <div class="assistant-section">
+                  <h4 class="assistant-section-title">{{ section_title }}</h4>
+                  <ul class="assistant-list">
+                    {% for item in items %}
+                      <li class="assistant-list-item">
+                        <span class="assistant-label">{{ item.label }}:</span>
+                        <span class="assistant-value">{{ item.value }}</span>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="assistant-empty">När du laddat upp material kommer det hamna här.</p>
+            {% endif %}
+
+{% if uploaded_files_clean %}
+  <button type="button" class="btn btn-outline-secondary btn-sm" id="showPdfTextBtn">
+    Visa text från PDF-uppladdning
+  </button>
+{% endif %}
       </div>
     </aside>
-
   </div>
 
       <script>
@@ -491,39 +497,48 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+
+  // -------- OVERLAY --------
   const forms = document.querySelectorAll("form");
   const overlay = document.getElementById("loading-overlay");
 
-  if (!overlay) return;
+  if (overlay) {
+    forms.forEach(form => {
+      form.addEventListener("submit", function (e) {
+        const btn = e.submitter;
+        if (!btn) return;
 
-  forms.forEach(form => {
-    form.addEventListener("submit", function (e) {
-      const btn = e.submitter;
-      if (!btn) return;
+        const heavyActions = [
+          "next", "gen_tq_fardighet", "gen_tq_motivation",
+          "gen_leda", "gen_mod", "gen_sjalkannedom",
+          "gen_strategi", "gen_kommunikation", "gen_sur",
+          "gen_slutsats", "generate_analysis"
+        ];
 
-      const heavyActions = [
-        "next",
-        "gen_tq_fardighet",
-        "gen_tq_motivation",
-        "gen_leda",
-        "gen_mod",
-        "gen_sjalkannedom",
-        "gen_strategi",
-        "gen_kommunikation",
-        "gen_sur",
-        "gen_slutsats",
-        "generate_analysis"
-      ];
-
-      if (heavyActions.includes(btn.name)) {
-        overlay.style.display = "flex";
-      }
-      // build_doc kör utan overlay 👍
+        if (heavyActions.includes(btn.name)) {
+          overlay.style.display = "flex";
+        }
+      });
     });
-  });
+  }
+
+  // -------- POPUP --------
+  const btn = document.getElementById("showPdfTextBtn");
+  const modal = document.getElementById("pdfTextModal");
+  const closeBtn = document.getElementById("closePdfTextModal");
+
+  if (btn && modal && closeBtn) {
+    btn.addEventListener("click", () => modal.classList.add("is-open"));
+    closeBtn.addEventListener("click", () => modal.classList.remove("is-open"));
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal || e.target.classList.contains("dn-modal-backdrop")) {
+        modal.classList.remove("is-open");
+      }
+    });
+  }
+
 });
 </script>
-
 
   <!-- LOADING OVERLAY -->
   <div id="loading-overlay">
@@ -532,6 +547,17 @@ document.addEventListener("DOMContentLoaded", function () {
       <p>🧠 AI tänker... snart klar!</p>
     </div>
   </div>
+
+  {% if uploaded_files_clean %}
+<div id="pdfTextModal" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" id="closePdfTextModal" class="dn-modal-close">×</button>
+    <h3>Text från PDF-uppladdning</h3>
+    <pre class="dn-modal-pre">{{ uploaded_files_clean }}</pre>
+  </div>
+</div>
+{% endif %}
 
 <script src="{% static 'js/script.js' %}"></script>
 </body>
