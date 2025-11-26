@@ -454,18 +454,25 @@
     <!-- HÖGERSPALT / PLATS FÖR CHATT -->
     <aside class="right-panel">
       <div class="right-panel-card">
-        <h3>Assistent (kommer snart)</h3>
-        <p>
-          Här kan du senare lägga en chatt där du ber Julia om hjälp, t.ex:
-        </p>
-        <ul>
-          <li>“Kan du korta ned styrkorna i steg 8?”</li>
-          <li>“Ge ett alternativt förslag på slutsats.”</li>
-          <li>“Hur kan jag formulera det här mer neutralt?”</li>
+          <h3 class="assistant-title">Testdata (1–5)</h3>
+
+  {% if ratings_sidebar %}
+    {% for section_title, items in ratings_sidebar.items %}
+      <div class="assistant-section">
+        <h4 class="assistant-section-title">{{ section_title }}</h4>
+        <ul class="assistant-list">
+          {% for item in items %}
+            <li class="assistant-list-item">
+              <span class="assistant-label">{{ item.label }}:</span>
+              <span class="assistant-value">{{ item.value }}</span>
+            </li>
+          {% endfor %}
         </ul>
-        <div class="right-panel-placeholder-input">
-          <span>✍️ Skriv ett meddelande...</span>
-        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="assistant-empty">Ladda upp en Excelfil för att se testdatan här.</p>
+  {% endif %}
       </div>
     </aside>
 

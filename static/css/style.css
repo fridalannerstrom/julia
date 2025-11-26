@@ -465,6 +465,52 @@ body {
   background: #ffffff;
 }
 
+.assistant-panel {
+  padding: 16px;
+  background: #f8f9ff;
+  border-radius: 12px;
+  border: 1px solid #e0e3f0;
+  font-size: 0.9rem;
+}
+
+.assistant-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.assistant-section {
+  margin-top: 12px;
+}
+
+.assistant-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.assistant-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.assistant-list-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.assistant-label {
+  color: #333;
+}
+
+.assistant-value {
+  font-weight: 600;
+}
+
+
 /* Uppladdningsruta */
 .adminui-upload-area {
   margin-bottom: 12px;

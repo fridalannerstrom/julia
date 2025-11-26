@@ -765,6 +765,58 @@ def prompt_editor(request):
     return render(request, "prompt_editor.html", {"prompts": prompts})
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Assistent-sidofält
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+SECTION_TITLES = {
+    "leda_utveckla_och_engagera": "Leda, utveckla och engagera",
+    "mod_och_handlingskraft": "Mod och handlingskraft",
+    "sjalkannedom_och_emotionell_stabilitet": "Självkännedom och emotionell stabilitet",
+    "strategiskt_tankande_och_anpassningsformaga": "Strategiskt tänkande och anpassningsförmåga",
+    "kommunikation_och_samarbete": "Kommunikation och samarbete",
+}
+
+def _build_sidebar_ratings(ratings: dict):
+    """
+    Gör om ratings-dict till något som är enkelt att loopa i templaten:
+    {
+      "Leda, utveckla och engagera": [
+        {"label": "Leda andra", "value": 5},
+        {"label": "Engagera andra", "value": 4},
+        ...
+      ],
+      ...
+    }
+    """
+    grouped = {}
+
+    for sec_key, title in SECTION_TITLES.items():
+        sec = ratings.get(sec_key)
+        if not sec:
+            continue
+
+        grouped[title] = []
+
+        # Försök hålla ordning enligt TARGETS om det finns
+        labels_order = TARGETS.get(sec_key) or list(sec.keys())
+
+        for label in labels_order:
+            val = sec.get(label)
+            if val is None:
+                continue
+            try:
+                v = int(val)
+            except Exception:
+                v = val
+            grouped[title].append({
+                "label": label,
+                "value": v,
+            })
+
+    return grouped
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Huvudvy
 # ──────────────────────────────────────────────────────────────────────────────
 @login_required
@@ -834,6 +886,8 @@ def index(request):
             section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
             include_css=True,
         ))
+        # 👇 sidebar-data när ratings_json kommer från POST
+        context["ratings_sidebar"] = _build_sidebar_ratings(ratings)
 
     # ---------- 4) POST-actions ----------
     if request.method == "POST":
@@ -931,6 +985,7 @@ def index(request):
                             # strunta i icke-pdf om du vill
                             continue
                         try:
+                            from PyPDF2 import PdfReader
                             reader = PdfReader(f)
                             text = "\n".join((page.extract_text() or "") for page in reader.pages)
                         except Exception as e:
@@ -981,6 +1036,9 @@ def index(request):
                             section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
                             include_css=True,
                         ))
+                        # 👇 NYTT: sidebar-data direkt efter Excel-läsning
+                        context["ratings_sidebar"] = _build_sidebar_ratings(ratings)
+
                     except Exception as e:
                         context["error"] = "Kunde inte tolka betyg från Excel: " + str(e)[:400]
                         step = 1
