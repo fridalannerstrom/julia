@@ -5,6 +5,7 @@ import json
 import textwrap
 import openpyxl
 import markdown2
+from markdown2 import markdown
 import math
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -307,7 +308,6 @@ def _ratings_table_html(
         if rows_html:
             sections_html.append(f"""
             <div class="dn-section">
-              <h3 class="dn-h3">{title}</h3>
               <table class="dn-table">
                 <tbody>
                   {''.join(rows_html)}
@@ -316,36 +316,70 @@ def _ratings_table_html(
             </div>
             """)
 
-    css = """
-    <style>
-      .dn-section{margin:24px 0;}
-      .dn-h3{font-size:1.1rem;margin-bottom:8px;font-weight:600;}
-      .dn-table{width:100%;border-collapse:separate;border-spacing:0 6px;}
-      .dn-sub{
-        font-weight:600;
-        padding:10px 12px;
-        white-space:nowrap;
-        background:#ffffff;
-      }
-      .dn-cell{
-        text-align:center;
-        padding:10px 6px;
-        background:#ffffff;
-      }
-      .dn-dot{
-        display:inline-block;
-        width:14px;
-        height:14px;
-        border-radius:50%;
-        border:2px solid #d4d7e2;
-        background:#f5f6fa;
-      }
-      .dn-dot--active{
-        background:#7b2cbf; /* justera till Domarnämndens lila om du vill */
-        border-color:#7b2cbf;
-      }
-    </style>
-    """
+        css = """
+        <style>
+        .dn-section{
+            margin:24px 0;
+        }
+
+        .dn-h3{
+            font-size:0.95rem;
+            margin-bottom:12px;
+            font-weight:600;
+            color:#111827;
+        }
+
+        .dn-table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        /* radstil */
+        .dn-table tr + tr{
+            border-top:1px solid #e5e7eb;
+        }
+
+        .dn-sub{
+            font-weight:500;
+            padding:10px 0;
+            white-space:nowrap;
+            color:#111827;
+            background:transparent;
+        }
+
+        .dn-cell{
+            text-align:center;
+            padding:10px 4px;
+            background:transparent;
+        }
+
+        .dn-dot{
+            display:inline-flex;
+            width:16px;
+            height:16px;
+            border-radius:999px;
+            border:1px solid #d1d5db;
+            background:#f9fafb;
+            box-shadow:0 0 0 1px rgba(255,255,255,0.9);
+        }
+
+        .dn-dot--active{
+            background:#7b2cbf;              /* din lila */
+            border-color:#7b2cbf;
+            box-shadow:0 0 0 3px rgba(123,44,191,0.18);
+        }
+
+        @media (max-width:768px){
+            .dn-table{
+            font-size:0.9rem;
+            }
+            .dn-dot{
+            width:14px;
+            height:14px;
+            }
+        }
+        </style>
+        """
 
     return (css if include_css else "") + "\n".join(sections_html)
 
@@ -733,6 +767,27 @@ def _default_all_three():
         }
     }
 
+def _markdown_to_html(text: str) -> str:
+    if not text:
+        return ""
+
+    # markdown2 använder andra inställningar än python-markdown
+    html = markdown(
+        text,
+        extras=[
+            "fenced-code-blocks",
+            "tables",
+            "strike",
+            "break-on-newline",
+            "smarty-pants",
+            "spoiler",
+            "header-ids",
+            "cuddled-lists",
+        ]
+    )
+
+    return mark_safe(html)
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Prompt Editor (om du har en sida för att redigera prompter)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -820,7 +875,6 @@ def _build_sidebar_ratings(ratings: dict):
 # Huvudvy
 # ──────────────────────────────────────────────────────────────────────────────
 
-from markdown2 import markdown
 
 @login_required
 @csrf_exempt
@@ -1175,7 +1229,18 @@ def index(request):
 
         context["step"] = step
 
-    # ---------- 5) Render ----------
+    # ---------- 5) Förbered HTML-versioner till sammanställningen ----------
+    context["tq_fardighet_html"] = _markdown_to_html(context.get("tq_fardighet_text", ""))
+    context["sur_html"]          = _markdown_to_html(context.get("sur_text", ""))
+    context["tq_motivation_html"] = _markdown_to_html(context.get("tq_motivation_text", ""))
+    context["leda_html"]         = _markdown_to_html(context.get("leda_text", ""))
+    context["mod_html"]          = _markdown_to_html(context.get("mod_text", ""))
+    context["sjalkannedom_html"] = _markdown_to_html(context.get("sjalkannedom_text", ""))
+    context["strategi_html"]     = _markdown_to_html(context.get("strategi_text", ""))
+    context["kommunikation_html"] = _markdown_to_html(context.get("kommunikation_text", ""))
+    context["slutsats_html"]     = _markdown_to_html(context.get("slutsats_text", ""))
+
+    # ---------- 6) Render ----------
     return render(request, "index.html", context)
 
 

@@ -450,7 +450,7 @@ body {
   padding: 10px 12px;
   font-size: 0.95rem;
   resize: vertical;
-  min-height: 130px;
+  min-height: 250px;
   line-height: 1.5;
   background: #f9fafb;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -662,6 +662,38 @@ body {
 
 .adminui-button-secondary:hover {
   background: #f9fafb;
+}
+
+/* "Word-dokument"-look på sammanställningen */
+.adminui-report-preview {
+  max-width: 900px;
+  margin: 32px auto 64px;
+  padding: 40px 48px;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.10),
+    0 0 0 1px rgba(148, 163, 184, 0.10);
+}
+
+/* Rubriker inne i dokumentet */
+.adminui-report-preview .report-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Brödtext inne i dokumentet */
+.adminui-report-preview .report-body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #111827;
+}
+
+/* Lite luft mellan sektionerna */
+.adminui-report-preview .report-section {
+  margin-bottom: 32px;
 }
 
 /* Responsivitet för kortet */

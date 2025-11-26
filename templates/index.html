@@ -307,122 +307,97 @@
                         {% endif %}
 
                         <!-- STEG 10: Sammanställning -->
-                        {% if step == 10 %}
-                            <h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
-                            <p class="adminui-intro">
-                                Här ser du hela rapporten samlad, utan nya AI-anrop. Kontrollera innan du laddar ner Word.
-                            </p>
+{% if step == 10 %}
+  <h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
+  <p class="adminui-intro">
+      Här ser du hela rapporten samlad, utan nya AI-anrop. Kontrollera innan du laddar ner Word.
+  </p>
 
-                            <div class="adminui-report-preview">
+  <div class="adminui-report-preview">
 
-                                {% if tq_fardighet_text %}
-                                <div class="report-section">
-                                    <h3>TQ Färdighet</h3>
-                                    <div class="report-body">
-                                        {{ tq_fardighet_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if tq_fardighet_html %}
+      <div class="report-section">
+          <h3>TQ Färdighet</h3>
+          <div class="report-body">
+              {{ tq_fardighet_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                                {% if sur_text %}
-                                <div class="report-section">
-                                    <h3>Styrkor / Utvecklingsområden / Riskbeteenden</h3>
-                                    <div class="report-body">
-                                        {{ sur_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if sur_html %}
+      <div class="report-section">
+          <h3>Styrkor / Utvecklingsområden / Riskbeteenden</h3>
+          <div class="report-body">
+              {{ sur_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                                {% if tq_motivation_text %}
-                                <div class="report-section">
-                                    <h3>TQ Motivation – främsta drivkrafter</h3>
-                                    <div class="report-body">
-                                        {{ tq_motivation_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if tq_motivation_html %}
+      <div class="report-section">
+          <h3>TQ Motivation – främsta drivkrafter</h3>
+          <div class="report-body">
+              {{ tq_motivation_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                                {% if leda_text %}
-                                <div class="report-section">
-                                    <h3>Leda, utveckla och engagera</h3>
-                                    {% if leda_table_html %}
-                                        <div class="report-table">
-                                            {{ leda_table_html|safe }}
-                                        </div>
-                                    {% endif %}
-                                    <div class="report-body">
-                                        {{ leda_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if leda_html %}
+      <div class="report-section">
+          <h3>Leda, utveckla och engagera</h3>
+          <div class="report-body">
+              {{ leda_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                                {% if mod_text %}
-                                <div class="report-section">
-                                    <h3>Mod och handlingskraft</h3>
-                                    {% if mod_table_html %}
-                                        <div class="report-table">
-                                            {{ mod_table_html|safe }}
-                                        </div>
-                                    {% endif %}
-                                    <div class="report-body">
-                                        {{ mod_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if mod_html %}
+      <div class="report-section">
+          <h3>Mod och handlingskraft</h3>
+          <div class="report-body">
+              {{ mod_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                                {% if sjalkannedom_text %}
-                                <div class="report-section">
-                                    <h3>Självkännedom och emotionell stabilitet</h3>
-                                    {% if sjalkannedom_table_html %}
-                                        <div class="report-table">
-                                            {{ sjalkannedom_table_html|safe }}
-                                        </div>
-                                    {% endif %}
-                                    <div class="report-body">
-                                        {{ sjalkannedom_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if sjalkannedom_html %}
+      <div class="report-section">
+          <h3>Självkännedom och emotionell stabilitet</h3>
+          <div class="report-body">
+              {{ sjalkannedom_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                                {% if strategi_text %}
-                                <div class="report-section">
-                                    <h3>Strategiskt tänkande och anpassningsförmåga</h3>
-                                    {% if strategi_table_html %}
-                                        <div class="report-table">
-                                            {{ strategi_table_html|safe }}
-                                        </div>
-                                    {% endif %}
-                                    <div class="report-body">
-                                        {{ strategi_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if strategi_html %}
+      <div class="report-section">
+          <h3>Strategiskt tänkande och anpassningsförmåga</h3>
+          <div class="report-body">
+              {{ strategi_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                                {% if kommunikation_text %}
-                                <div class="report-section">
-                                    <h3>Kommunikation och samarbete</h3>
-                                    {% if kommunikation_table_html %}
-                                        <div class="report-table">
-                                            {{ kommunikation_table_html|safe }}
-                                        </div>
-                                    {% endif %}
-                                    <div class="report-body">
-                                        {{ kommunikation_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if kommunikation_html %}
+      <div class="report-section">
+          <h3>Kommunikation och samarbete</h3>
+          <div class="report-body">
+              {{ kommunikation_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                                {% if slutsats_text %}
-                                <div class="report-section">
-                                    <h3>Sammanfattande slutsats</h3>
-                                    <div class="report-body">
-                                        {{ slutsats_text|linebreaksbr }}
-                                    </div>
-                                </div>
-                                {% endif %}
+      {% if slutsats_html %}
+      <div class="report-section">
+          <h3>Sammanfattande slutsats</h3>
+          <div class="report-body">
+              {{ slutsats_html|safe }}
+          </div>
+      </div>
+      {% endif %}
 
-                            </div>
-                        {% endif %}
+  </div>
+{% endif %}
 
                 <!-- NAVIGATION -->
                 <div class="adminui-button-row">
@@ -479,7 +454,7 @@
             {% endif %}
 
 {% if uploaded_files_markdown %}
-  <button type="button" class="adminui-button-secondary" id="showPdfTextBtn">
+  <button type="button" class="adminui-button adminui-button-secondary" id="showPdfTextBtn">
     Visa CV
   </button>
 {% endif %}
