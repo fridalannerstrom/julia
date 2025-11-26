@@ -164,7 +164,7 @@
                 {% if step == 1 %}
                   <h2 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h2>
                   <p class="adminui-intro">
-                    Ladda upp Excelfilen och klistra in intervjuanteckningar.
+                    Ladda upp Excelfilen, övriga filer och och klistra in anteckningar.
                     Klicka på <strong>Nästa</strong> för att skapa din rapport.
                   </p>
 
@@ -177,11 +177,49 @@
                                 onchange="showFilename(this)">
                           <div class="adminui-drop-icon">📁</div>
                           <div class="adminui-drop-text">
-                            <span>Släpp fil här eller klicka för att välja</span>
+                            <span>Släpp Excelfil här eller klicka för att välja</span>
                             <small>Excel-format (.xlsx)</small>
                           </div>
                         </label>
                         <p id="filename" class="adminui-filename">Ingen fil vald</p>
+                      </div>
+
+                      <!-- Hidden field för att bära med sammanfogad text mellan stegen -->
+                      <input type="hidden" name="uploaded_files_text" value="{{ uploaded_files_text|default_if_none:'' }}">
+
+                      <h3 class="adminui-label">Övrigt underlag (PDF, max 5 st)</h3>
+                      <p class="adminui-helptext">
+                        Ladda upp t.ex. CV, jobbannons eller övriga rapporter som kan hjälpa AI:n i bedömningen.
+                      </p>
+
+                      <label class="adminui-drop-zone adminui-drop-zone-extra">
+                        <input
+                          id="extra_files"
+                          name="extra_files"
+                          type="file"
+                          accept=".pdf"
+                          multiple
+                          hidden
+                          onchange="updateExtraFiles(this)"
+                        >
+                        <div class="adminui-drop-zone-inner">
+                          <div class="adminui-drop-icon">📎</div>
+                          <div class="adminui-drop-text">
+                            Släpp filer här eller klicka för att välja (PDF)
+                          </div>
+                          <div class="adminui-drop-subtext">
+                            Max 5 filer.
+                          </div>
+                        </div>
+                      </label>
+
+                      <div id="extra-files-list" class="adminui-filelist">
+                        {% if uploaded_files_text %}
+                          <!-- Vi visar bara en generisk text, inte hela innehållet -->
+                          <span>Filer uppladdade (text används i analysen).</span>
+                        {% else %}
+                          <span>Inga filer valda</span>
+                        {% endif %}
                       </div>
 
                   <label class="adminui-label">Intervjuanteckningar</label>
@@ -440,12 +478,6 @@
     </script>
 
 <script>
-function showFilename(input) {
-  const fileName = input.files[0] ? input.files[0].name : "Ingen fil vald";
-  const el = document.getElementById("filename");
-  if (el) el.textContent = "Vald fil: " + fileName;
-}
-
 document.addEventListener("DOMContentLoaded", function () {
   const forms = document.querySelectorAll("form");
   const overlay = document.getElementById("loading-overlay");

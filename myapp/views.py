@@ -792,6 +792,7 @@ def index(request):
         "kommunikation_text": request.POST.get("kommunikation_text", ""),
         "sur_text": request.POST.get("sur_text", ""),
         "slutsats_text": request.POST.get("slutsats_text", ""),
+        "uploaded_files_text": request.POST.get("uploaded_files_text", ""),
         "error": "",
     }
 
@@ -891,11 +892,12 @@ def index(request):
             # se till att vi har den senaste ratings_json-strängen i context
             ratings_json_str = context.get("ratings_json", ratings_json_str or "")
 
-            # STEG 1 -> 2: Läs Excel + intervju, ratings + TQ F/M
+            # STEG 1 -> 2: Läs Excel + intervju, ratings + TQ F/M + extra PDF-filer
             if step == 1:
                 excel_text = ""
                 ws = None
 
+                # 1) Excel
                 if "excel" in request.FILES:
                     try:
                         file = request.FILES["excel"]
@@ -911,10 +913,37 @@ def index(request):
                 else:
                     context["error"] = "Ladda upp en Excelfil."
 
+                # 2) Intervju
                 intervju_raw = (request.POST.get("intervju") or "").strip()
                 if not intervju_raw and not context["error"]:
                     context["error"] = "Klistra in intervjuanteckningar."
 
+                # 3) Extra PDF-filer (övrigt underlag)
+                uploaded_files_text = context.get("uploaded_files_text", "")
+                extra_files = request.FILES.getlist("extra_files")
+                if extra_files:
+                    snippets = []
+                    for i, f in enumerate(extra_files):
+                        if i >= 5:
+                            break  # max 5 filer
+                        name = f.name.lower()
+                        if not name.endswith(".pdf"):
+                            # strunta i icke-pdf om du vill
+                            continue
+                        try:
+                            reader = PdfReader(f)
+                            text = "\n".join((page.extract_text() or "") for page in reader.pages)
+                        except Exception as e:
+                            text = f"(Kunde inte läsa {f.name}: {e})"
+                        text = _trim(text, max_chars=2500)
+                        snippets.append(f"FIL: {f.name}\n{text}")
+
+                    if snippets:
+                        uploaded_files_text = "\n\n---\n".join(snippets)
+
+                    context["uploaded_files_text"] = uploaded_files_text
+
+                # Validering
                 if context["error"]:
                     step = 1
                 else:
@@ -958,6 +987,7 @@ def index(request):
 
                     # TQ Färdighet & Motivation (endast om tomt)
                     if not context["error"]:
+                        uploaded_trimmed = _trim(context.get("uploaded_files_text", ""))
                         if not context["tq_fardighet_text"]:
                             P = Prompt.objects.get(user=request.user, name="tq_fardighet").text
                             context["tq_fardighet_text"] = _run_openai(
@@ -965,6 +995,7 @@ def index(request):
                                 style,
                                 excel_text=_trim(excel_text),
                                 intervju_text=_trim(intervju_raw),
+                                uploaded_files=uploaded_trimmed,
                             )
                         if not context["tq_motivation_text"]:
                             P = Prompt.objects.get(user=request.user, name="tq_motivation").text
@@ -973,6 +1004,7 @@ def index(request):
                                 style,
                                 excel_text=_trim(excel_text),
                                 intervju_text=_trim(intervju_raw),
+                                uploaded_files=uploaded_trimmed,
                             )
                         step = 2
 
@@ -987,6 +1019,7 @@ def index(request):
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
+                        uploaded_files=_trim(context.get("uploaded_files_text", "")),
                     )
                 step = 3
 
@@ -1001,6 +1034,7 @@ def index(request):
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
+                        uploaded_files=_trim(context.get("uploaded_files_text", "")),
                     )
                 step = 4
 
@@ -1015,6 +1049,7 @@ def index(request):
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
+                        uploaded_files=_trim(context.get("uploaded_files_text", "")),
                     )
                 step = 5
 
@@ -1029,6 +1064,7 @@ def index(request):
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
+                        uploaded_files=_trim(context.get("uploaded_files_text", "")),
                     )
                 step = 6
 
@@ -1043,6 +1079,7 @@ def index(request):
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
+                        uploaded_files=_trim(context.get("uploaded_files_text", "")),
                     )
                 step = 7
 
@@ -1060,6 +1097,7 @@ def index(request):
                         sjalkannedom_text=context["sjalkannedom_text"],
                         strategi_text=context["strategi_text"],
                         kommunikation_text=context["kommunikation_text"],
+                        uploaded_files=_trim(context.get("uploaded_files_text", "")),
                     )
                 step = 8
 
@@ -1078,6 +1116,7 @@ def index(request):
                         sjalkannedom_text=context["sjalkannedom_text"],
                         strategi_text=context["strategi_text"],
                         kommunikation_text=context["kommunikation_text"],
+                        uploaded_files=_trim(context.get("uploaded_files_text", "")),
                     )
                 step = 9
 
@@ -1089,7 +1128,6 @@ def index(request):
 
     # ---------- 5) Render ----------
     return render(request, "index.html", context)
-
 
 
 # ====== CHAT HELPERS =========================================================
