@@ -133,21 +133,6 @@
           <div class="adminui-main">
             <div class="adminui-container">
 
-              <!-- Header + steg-indikator -->
-              <div class="adminui-header">
-                <div>
-                  <h2 class="adminui-title">Domarnämnden – Stegvis analys</h2>
-                  <p class="adminui-help">
-                    Följ stegen i ordning. Varje steg använder bara den information som behövs,
-                    så AI-belastningen hålls nere och du kan justera texten längs vägen.
-                  </p>
-                </div>
-                <div class="adminui-step-box">
-                  <span class="adminui-step-label">Steg</span>
-                  <span class="adminui-step-value">{{ step }} / 10</span>
-                </div>
-              </div>
-
               <!-- Progressbar -->
               <div class="adminui-progress"
                    style="--current-step: {{ step }}; --total-steps: 10;">
@@ -157,6 +142,7 @@
               <form method="post" enctype="multipart/form-data" class="adminui-form">
                 {% csrf_token %}
 
+                <input type="hidden" name="step" value="{{ step }}">
                 <!-- HIDDEN STATE -->
                 <input type="hidden" name="step" value="{{ step }}">
                 <input type="hidden" name="test_text" value="{{ test_text|escape }}">
@@ -174,25 +160,29 @@
                   <input type="hidden" name="ratings_json" value="{{ ratings_json|escape }}">
                 {% endif %}
 
-                {# === ALLA STEG SOM DU REDAN HAR, OFÖRÄNDRADE === #}
+
                 {% if step == 1 %}
-                  <h3 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h3>
+                  <h2 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h2>
                   <p class="adminui-intro">
                     Ladda upp Excelfilen och klistra in intervjuanteckningar.
-                    Klicka på <strong>Nästa</strong> för att skapa TQ Färdighet &amp; TQ Motivation.
+                    Klicka på <strong>Nästa</strong> för att skapa din rapport.
                   </p>
 
                   <div class="adminui-upload-area">
-                    <label for="excel" class="adminui-drop-zone">
-                      <input type="file" name="excel" id="excel" hidden onchange="showFilename(this)">
-                      <div class="adminui-drop-icon">📁</div>
-                      <div class="adminui-drop-text">
-                        <span>Släpp fil här eller klicka för att välja</span>
-                        <small>Excel-format (.xlsx)</small>
+                        <label for="excel" class="adminui-drop-zone">
+                          <!-- VIKTIGT: name="excel" och INNE I FORMEN -->
+                          <input type="file" name="excel" id="excel"
+                                accept=".xlsx"
+                                style="display:none"
+                                onchange="showFilename(this)">
+                          <div class="adminui-drop-icon">📁</div>
+                          <div class="adminui-drop-text">
+                            <span>Släpp fil här eller klicka för att välja</span>
+                            <small>Excel-format (.xlsx)</small>
+                          </div>
+                        </label>
+                        <p id="filename" class="adminui-filename">Ingen fil vald</p>
                       </div>
-                    </label>
-                    <p id="filename" class="adminui-filename">Ingen fil vald</p>
-                  </div>
 
                   <label class="adminui-label">Intervjuanteckningar</label>
                   <textarea name="intervju" class="adminui-textarea" rows="6">{{ intervju_text }}</textarea>
@@ -442,7 +432,6 @@
 
   </div>
 
-  {# loading overlay + scripts som du redan har #}
   <!-- LOADING OVERLAY -->
   <div id="loading-overlay">
     <div class="loading-box">
@@ -450,5 +439,8 @@
       <p>🧠 AI tänker... snart klar!</p>
     </div>
   </div>
+
+<script src="{% static 'js/script.js' %}"></script>
 </body>
+
 </html>
