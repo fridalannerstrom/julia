@@ -432,6 +432,55 @@
 
   </div>
 
+      <script>
+        function showFilename(input) {
+            const fileName = input.files[0] ? input.files[0].name : "Ingen fil vald";
+            document.getElementById("filename").textContent = "Vald fil: " + fileName;
+        }
+    </script>
+
+<script>
+function showFilename(input) {
+  const fileName = input.files[0] ? input.files[0].name : "Ingen fil vald";
+  const el = document.getElementById("filename");
+  if (el) el.textContent = "Vald fil: " + fileName;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const forms = document.querySelectorAll("form");
+  const overlay = document.getElementById("loading-overlay");
+
+  if (!overlay) return;
+
+  forms.forEach(form => {
+    form.addEventListener("submit", function (e) {
+      const btn = e.submitter;
+      if (!btn) return;
+
+      const heavyActions = [
+        "next",
+        "gen_tq_fardighet",
+        "gen_tq_motivation",
+        "gen_leda",
+        "gen_mod",
+        "gen_sjalkannedom",
+        "gen_strategi",
+        "gen_kommunikation",
+        "gen_sur",
+        "gen_slutsats",
+        "generate_analysis"
+      ];
+
+      if (heavyActions.includes(btn.name)) {
+        overlay.style.display = "flex";
+      }
+      // build_doc kör utan overlay 👍
+    });
+  });
+});
+</script>
+
+
   <!-- LOADING OVERLAY -->
   <div id="loading-overlay">
     <div class="loading-box">
