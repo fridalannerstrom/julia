@@ -172,7 +172,7 @@
     <!-- HÖGERSPALT -->
     <aside class="right-panel">
         <h3 class="assistant-title">Tillgängliga taggar</h3>
-        <p class="assistant-help">
+        <p class="assistant-help adminui-intro">
           Klistra in dessa i dina prompts där du vill att data ska ersättas automatiskt.
         </p>
 
@@ -181,7 +181,7 @@
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{excel_text}</code>
-            <p>Rådata från Excel. Använd ej.</p>
+            <p>Rådata från excel. Använd ej.</p>
         </div>
 
         <button class="tag-example-btn" data-modal="modal-excel">
@@ -192,7 +192,7 @@
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{ratings_json}</code>
-            <p>Städad resultat. Använd denna.</p>
+            <p>Städad excel. Använd denna.</p>
         </div>
 
         <button class="tag-example-btn" data-modal="modal-ratings">
@@ -213,6 +213,17 @@
 
     <div class="tag-box">
         <div class="tag-box-left">
+            <code>{uploaded_files}</code>
+            <p>Uppladdade CV:t</p>
+        </div>
+
+        <button class="tag-example-btn" data-modal="modal-cv">
+            Se exempel
+        </button>
+    </div>
+
+    <div class="tag-box">
+        <div class="tag-box-left">
             <code>{intervju_text}</code>
             <p>Textbaserade anteckningar</p>
         </div>
@@ -222,27 +233,71 @@
         </button>
     </div>
 
-
-<div class="tag-box">
-    <code>{betygsskala_forklaring}</code>
-    <p>Definition av nivåerna</p>
-  </div>
-
-  <div class="tag-box">
-    <code>{intervju_text}</code>
-    <p>Intervjuanteckningar</p>
-  </div>
-
-  <div class="tag-box">
-    <code>{ratings_json}</code>
-    <p>Betyg 1–5</p>
-  </div>
-
+<br>
         <div class="assistant-section">
-          <h4 class="assistant-section-title">Tidigare texter</h4>
-          <p class="assistant-help" style="margin-bottom:0.5rem;">
-            TQ-texter som genereras i andra steg och kan återanvändas här:
+           <h3 class="assistant-title">Genererade taggar</h3>
+          <p class="assistant-help adminui-intro">
+            Dessa taggar får sitt innehåll under respektive steg i verktyget.
+Det betyder att de bara fungerar i prompts som ligger efter det steg där taggen genereras.
           </p>
+
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{tq_fardighet_text}</code>
+            <p>Städad resultat. Använd denna.</p>
+        </div>
+    </div>
+    
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{tq_motivation_text}</code>
+            <p>Städad resultat. Använd denna.</p>
+        </div>
+    </div>
+    
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{leda_text}</code>
+            <p>Städad resultat. Använd denna.</p>
+        </div>
+    </div>
+    
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{mod_text}</code>
+            <p>Städad resultat. Använd denna.</p>
+        </div>
+    </div>
+    
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{sjalkannedom_text}</code>
+            <p>Städad resultat. Använd denna.</p>
+        </div>
+    </div>
+    
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{strategi_text}</code>
+            <p>Städad resultat. Använd denna.</p>
+        </div>
+    </div>
+    
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{kommunikation_text}</code>
+            <p>Städad resultat. Använd denna.</p>
+        </div>
+    </div>
+    
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{sur_text}</code>
+            <p>Styrkor / Utvecklingsområden / Riskbeteenden.</p>
+        </div>
+    </div>
+
+
           <ul class="assistant-list">
             <li class="assistant-list-item">
               <span class="assistant-label"><code>{tq_fardighet_text}</code></span>
@@ -354,6 +409,60 @@ Kandidaten beskriver sig som driven och strukturerad.
 Har lett två team och ansvarat för onboarding.
 Styrkor: analys, kommunikation.
 Utmaningar: tidspress och snabba deadlines.
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Popup: CV ===== -->
+<div id="modal-cv" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {uploaded_files}</h3>
+    <div class="dn-modal-body">
+      <pre><br>
+<span style="color: red;"><b>Denna tagg fylls med den text som hämtas ur CV-PDF:en som laddas upp. 
+Endast texten tas med – inga visuella element eller layout. T ex: </b></span><br>
+Emma Lindstrom
+emmalindstrom@example.com | +46 70 123 45 67 | Stockholm, Sweden
+
+Professional Summary
+Emma Lindstrom är en erfaren digital marknadsföringsspecialist med över 7 års erfarenhet inom SEO, 
+innehållsstrategi och sociala medier. Emma är känd för att öka organisk trafik och utveckla högpresterande digitala kampanjer.
+
+Work Experience
+Senior Digital Marketing Specialist
+Nordic Web Solutions, Stockholm
+Jan 2020 - Present
+- Emma ledde SEO-strategin som ökade webbplatstrafiken med 65% på 18 månader. - Hon hanterade sociala 
+mediekampanjer med över 100k följare. - Emma samarbetade med produkt- och försäljningsteam för att samordna budskap.
+
+Marketing Coordinator
+Bright Ideas AB, Malmö
+Aug 2016 - Dec 2019
+- Emma utvecklade innehållsstrategier och övervakade innehållsskapande. - Hon skapade 
+e-postmarknadsföringskampanjer med en genomsnittlig öppningsfrekvens på 25%. - Emma genomförde
+marknadsundersökningar för att stödja produktlanseringar.
+
+Education
+MSc in Marketing and Management
+Lund University, 2014 - 2016
+
+BSc in Business Administration
+Uppsala University, 2011 - 2014
+
+Skills
+SEO & SEM
+Google Analytics & Ads
+Social Media Management
+Content Strategy
+WordPress & CMS
+Adobe Photoshop & Illustrator
+Languages
+Swedish (Native)
+English (Fluent)
+Spanish (Intermediate)
       </pre>
     </div>
   </div>
