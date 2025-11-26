@@ -58,12 +58,12 @@ body {
 
 .tag-example-btn {
   margin-top: 6px;
-  padding: 4px 8px;
+  padding: 3px 4px;
   border-radius: 100px;
   background: #f0f0f0;
   border: 1px solid #7b2cbf33;
   color: #3a3a3a;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   cursor: pointer;
   transition: 0.15s ease;
 }

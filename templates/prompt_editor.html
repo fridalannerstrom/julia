@@ -96,7 +96,7 @@
                         programmets Python-kod, men texten kan ligga kvar här som dokumentation.
                         <br><br>
                         <span style="color: red;">Ändra endast om Excelformat eller kolumnnamn ändras.</span>
-                      </p>
+                      </p><br>
                       <textarea
                         name="prompt_{{ prompt.name }}"
                         rows="8"
@@ -105,20 +105,17 @@
                     </div>
                   {% endif %}
                 {% endfor %}
-
+<hr>
                 {# ===== SEKTION 2: Betygsskala – betydelsen av nivåerna ===== #}
                 {% for prompt in prompts %}
                   {% if prompt.name == "betygsskala_forklaring" %}
                     <div class="adminui-container" style="margin-bottom:32px;">
                       <h3 class="adminui-subtitle">2. Betygsskala: Vad betyder nivåerna 1–5?</h3>
                       <p class="adminui-help" style="font-size:0.9rem;">
-                        Denna prompt används i alla bedömningssteg. Här beskriver du hur AI:n ska
+                        Denna prompt bör används i alla bedömningssteg. Här beskriver du hur AI:n ska
                         tolka poäng på skalan 1–5, både generellt och (valfritt) specifikt för
                         varje kompetens. Detta säkerställer konsekvent tolkning i rapporterna.
-                        <br><br>
-                        <b>Rekommendation:</b> Beskriv både en generell skala samt
-                        per-kompetens-exempel om du vill ha ännu mer styrning.
-                      </p>
+                      </p><br>
                       <textarea
                         name="prompt_{{ prompt.name }}"
                         rows="12"
@@ -181,16 +178,55 @@
 
   <h3 class="assistant-title">Grunddata</h3>
 
-<div class="tag-box">
-  <div class="tag-box-left">
-    <code>{excel_text}</code>
-    <p>Rådata från Excel</p>
-  </div>
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{excel_text}</code>
+            <p>Rådata från Excel. Använd ej.</p>
+        </div>
 
-  <button class="tag-example-btn" data-modal="modal-excel">
-    Se exempel
-  </button>
-</div>
+        <button class="tag-example-btn" data-modal="modal-excel">
+            Se exempel
+        </button>
+    </div>
+
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{ratings_json}</code>
+            <p>Städad resultat. Använd denna.</p>
+        </div>
+
+        <button class="tag-example-btn" data-modal="modal-ratings">
+            Se exempel
+        </button>
+    </div>
+
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{betygsskala_forklaring}</code>
+            <p>Definition av nivåerna</p>
+        </div>
+
+        <button class="tag-example-btn" data-modal="modal-betygsskala">
+            Se exempel
+        </button>
+    </div>
+
+    <div class="tag-box">
+        <div class="tag-box-left">
+            <code>{intervju_text}</code>
+            <p>Textbaserade anteckningar</p>
+        </div>
+
+        <button class="tag-example-btn" data-modal="modal-intervju">
+            Se exempel
+        </button>
+    </div>
+
+
+<div class="tag-box">
+    <code>{betygsskala_forklaring}</code>
+    <p>Definition av nivåerna</p>
+  </div>
 
   <div class="tag-box">
     <code>{intervju_text}</code>
@@ -200,11 +236,6 @@
   <div class="tag-box">
     <code>{ratings_json}</code>
     <p>Betyg 1–5</p>
-  </div>
-
-  <div class="tag-box">
-    <code>{betygsskala_forklaring}</code>
-    <p>Definition av nivåerna</p>
   </div>
 
         <div class="assistant-section">
@@ -289,10 +320,22 @@
     <h3>Exempel: {excel_text}</h3>
     <div class="dn-modal-body">
       <pre>
-Kolumn A: Kompetens
-Kolumn B: Poäng (1–10)
-Kolumn C: Färgade rutor
-...
+First Name,Last Name,
+Competency Score: Teamwork (STIVE),
+Competency Score: Networking (STIVE),
+Competency Score: Developing relationships (STIVE),
+Competency Score: Understand the individual (STIVE),
+Competency Score: Demonstrate self-awareness (STIVE),
+Competency Score: Resilience (STIVE),
+Competency Score: Plan and organise (STIVE),
+Competency Score: Proactive delivery (STIVE),
+Competency Score: Decision making (STIVE),
+Competency Score: Understanding the organisation (STIVE),
+Competency Score: Drive and appetite for learning (STIVE),
+Competency Score: Analysis (STIVE)
+
+Per,L,1.57,2.40,3.23,4.12,3.55,2.78,4.33,3.90,2.67,3.45,4.10,3.52,4.18
+
       </pre>
     </div>
   </div>
@@ -306,6 +349,7 @@ Kolumn C: Färgade rutor
     <h3>Exempel: {intervju_text}</h3>
     <div class="dn-modal-body">
       <pre>
+<span style="color: red;"><b>Denna tagg blir <u>exakt</u> det användaren klistrat in i textrutan för anteckningar. T ex: </b></span><br>
 Kandidaten beskriver sig som driven och strukturerad.
 Har lett två team och ansvarat för onboarding.
 Styrkor: analys, kommunikation.
@@ -322,13 +366,30 @@ Utmaningar: tidspress och snabba deadlines.
     <button type="button" class="dn-modal-close">×</button>
     <h3>Exempel: {ratings_json}</h3>
     <div class="dn-modal-body">
-      <pre>
-{
-  "Planning & Organising": 4,
-  "Resilience": 3,
-  "Analysis": 5,
-  "Collaboration": 4
-}
+      <pre><br>
+<h2 class="adminui-title"><strong>Leda, utveckla och engagera</strong></h2>
+<b>Leda andra:</b> 3
+<b>Engagera andra:</b> 4
+<b>Delegera:</b> 4
+<b>Utveckla andra:</b> 2
+<br>
+<h2 class="adminui-title"><strong>Mod och handlingskraft</strong></h2>
+<b>Beslutsamhet:</b> 5
+<b>Integritet:</b> 2
+<b>Hantera konflikter:</b> 1
+<br>
+<h2 class="adminui-title"><strong>Självkännedom och emotionell stabilitet</strong></h2>
+<b>Självmedvetenhet:</b> 3
+<b>Uthållighet:</b> 4
+<br>
+<h2 class="adminui-title"><strong>Strategiskt tänkande och anpassningsförmåga</strong></h2>
+<b>Strategiskt fokus:</b> 2
+<b>Anpassningsförmåga:</b> 3
+<br>
+<h2 class="adminui-title"><strong>Kommunikation och samarbete</strong></h2>
+<b>Teamarbete:</b> 3
+<b>Inflytelserik:</b> 1
+<br>
       </pre>
     </div>
   </div>
@@ -342,11 +403,12 @@ Utmaningar: tidspress och snabba deadlines.
     <h3>Exempel: {betygsskala_forklaring}</h3>
     <div class="dn-modal-body">
       <pre>
-1 = Begränsad nivå, kräver nära stöd.
-2 = Tillräcklig nivå i enklare situationer.
-3 = God nivå i de flesta situationer.
-4 = Mycket god nivå, visar konsekvent styrka.
-5 = Exceptionell nivå, förebildligt beteende.
+<span style="color: red;"><b>Denna tagg blir <u>exakt</u> det du skrivit i textrutan för "2. Betygsskala: Vad betyder nivåerna 1–5?". T ex:</b></span><br>
+1 = Tydligt utvecklingsområde. Beteendet stödjer inte kraven i rollen.
+2 = Acceptabel nivå, men med tydliga utvecklingsbehov i mer komplexa situationer.
+3 = God nivå. Räcker för de flesta vardagliga krav.
+4 = Stark nivå. Personen visar ofta beteenden som stödjer rollen väl.
+5 = Mycket stark nivå. Personen ligger konsekvent högt och fungerar som förebild.
       </pre>
     </div>
   </div>
