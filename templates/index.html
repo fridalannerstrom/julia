@@ -101,7 +101,7 @@
           </div>
           <div class="user-meta">
             <span>Inloggad som</span>
-            <strong>{{ user.get_full_name|default:"Gäst" }}</strong>
+            <strong>{{ user.first_name|default:user.username }} {{ user.last_name }}</strong>
           </div>
         </div>
         <button class="logout-btn" type="button">
@@ -170,7 +170,7 @@
                 {% if step == 1 %}
                 <h2 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h2>
                 <p class="adminui-intro">
-                  Ladda upp Excelfilen, övriga filer och och klistra in intervjuanteckningar.
+                  Ladda upp Excelfilen, CV och och klistra in intervjuanteckningar.
                   Klicka på <strong>Nästa</strong> för att skapa din rapport.
                 </p>
 
@@ -191,7 +191,7 @@
 
                 <h3 class="adminui-label">1. Excelfil</h3>
                 <p class="adminui-intro">
-                  Ladda upp din excelfil med data från testresultaten.
+                  Ladda upp din excelfil med testresultatet.
                 </p>
 
                 <div class="adminui-upload-area">
@@ -213,7 +213,7 @@
 
                 <h3 class="adminui-label">2. CV (PDF)</h3>
                 <p class="adminui-intro">
-                  Ladda upp kandidatens CV i PDF-format. Texten används som stöd i analysen.
+                  Ladda upp kandidatens CV i PDF-format.
                 </p>
 
                 <label class="adminui-drop-zone adminui-drop-zone-extra">

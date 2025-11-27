@@ -1,149 +1,269 @@
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Chatt – session</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>Julia – Chatt</title>
 
-  <style>
-    body{background:#f7f9fc}
-    .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
-    .sidebar{max-height:80vh;overflow:auto}
+  <!-- Bootstrap CSS (samma som index) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    /* Chat */
-    #chat-wrap{height:60vh; overflow-y:auto; border:1px solid #eef1f5; border-radius:12px; padding:12px}
-    .msg{margin:10px 0; display:flex; gap:8px}
-    .bubble{padding:10px 12px; border-radius:10px; max-width:75%; white-space:pre-wrap}
-    .bubble-user{margin-left:auto; background:#e8f0ff}
-    .bubble-ai{margin-right:auto; background:#f2f5f9}
-    .meta{font-size:.8rem; color:#6b7280; margin-bottom:4px}
-    .typing{opacity:.7; font-style:italic}
-  </style>
+  <!-- Dina egna styles -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.ico' %}">
 
   <!-- Markdown-rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* Chat-bubblor, anpassat till admin-layouten */
+    #chat-wrap{
+      height:60vh;
+      overflow-y:auto;
+      border:1px solid #eef1f5;
+      border-radius:12px;
+      padding:12px;
+      background:#fff;
+    }
+    .msg{margin:10px 0; display:flex; gap:8px}
+    .bubble{
+      padding:10px 12px;
+      border-radius:10px;
+      max-width:75%;
+      white-space:pre-wrap;
+    }
+    .bubble-user{
+      margin-left:auto;
+      background:#e8f0ff;
+    }
+    .bubble-ai{
+      margin-right:auto;
+      background:#f2f5f9;
+    }
+    .meta{
+      font-size:.8rem;
+      color:#6b7280;
+      margin-bottom:4px;
+    }
+    .typing{
+      opacity:.7;
+      font-style:italic;
+    }
+  </style>
 </head>
-<body>
-<nav class="navbar navbar-dark bg-dark">
-  <div class="container">
-    <a class="navbar-brand" href="{% url 'index' %}">Julia AI</a>
-    <div class="d-flex gap-3">
-      <a class="nav-link text-white-50" href="{% url 'index' %}">Verktyget</a>
-      <a class="nav-link text-white-50" href="{% url 'prompt_editor' %}">Ändra prompts</a>
-      <a class="nav-link text-white" href="{% url 'chat_home' %}">Chatt</a>
-    </div>
-  </div>
-</nav>
 
-<main class="container my-4">
-  <div class="row g-3">
-    <!-- Sidebar -->
-    <div class="col-12 col-md-4">
-      <div class="card p-3 mb-3">
-        <form method="post" class="mb-2">
-          {% csrf_token %}
-          <h5 class="mb-3">Inställningar</h5>
-          <div class="mb-2">
-            <label class="form-label">Titel</label>
-            <input name="title" class="form-control" value="{{ session.title }}">
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Instruktion (system-prompt)</label>
-            <textarea name="system_prompt" rows="3" class="form-control">{{ session.system_prompt }}</textarea>
-          </div>
-          <button name="save_settings" value="1" class="btn btn-outline-primary">Spara</button>
-        </form>
+<body id="page-top">
+  <div class="app-shell">
+
+    <!-- SIDEBAR (samma som index, men Chatt aktiv) -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-dot"></span>
+        <span class="brand-text">Julia AI</span>
       </div>
 
-<div class="card p-0 sidebar">
-  <div class="list-group list-group-flush">
-
-    {% for s in sessions %}
-      <div class="list-group-item d-flex align-items-center gap-2">
-        <a class="flex-grow-1 text-decoration-none {% if s.id == session.id %}fw-semibold{% endif %}"
-           href="{% url 'chat_session' s.id %}">
-          {{ s.title }}
+      <nav class="sidebar-nav">
+        <a href="{% url 'index' %}" class="sidebar-link">
+          <span class="sidebar-icon">⚙️</span>
+          <span>Verktyget</span>
         </a>
+        <a href="{% url 'prompt_editor' %}" class="sidebar-link">
+          <span class="sidebar-icon">📝</span>
+          <span>Ändra prompts</span>
+        </a>
+        <a href="{% url 'chat_home' %}" class="sidebar-link sidebar-link-active">
+          <span class="sidebar-icon">💬</span>
+          <span>Chatt</span>
+        </a>
+      </nav>
 
-        <small class="text-muted me-2">
-          {{ s.updated_at|date:"M j, Y, H:i" }}
-        </small>
-
-        <form action="{% url 'chat_delete' s.id %}" method="post"
-              onsubmit="return confirm('Ta bort denna chatt? Det går inte att ångra.');">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-sm btn-outline-danger" title="Ta bort">
-            <!-- inline-trash ikon (Bootstrap-lik) -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                 viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M5.5 5.5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0V6z"/>
-              <path fill-rule="evenodd"
-                    d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5h6h2.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM5 2.5a.5.5 0 0 0 .5.5h5a.5.5 0 0 0 .5-.5V2H5v.5z"/>
-            </svg>
-          </button>
-        </form>
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="user-avatar">
+            {{ user.first_name|default:"J" |first }}
+          </div>
+          <div class="user-meta">
+            <span>Inloggad som</span>
+            <strong>{{ user.get_full_name|default:"Gäst" }}</strong>
+          </div>
+        </div>
+        <button class="logout-btn" type="button">
+          Logga ut
+        </button>
+        <p class="sidebar-copy">© TQ Nordic</p>
       </div>
-    {% empty %}
-      <div class="list-group-item text-muted">Ingen historik ännu.</div>
-    {% endfor %}
+    </aside>
 
-  </div></div>
-    </div>
+    <!-- MAIN CONTENT -->
+    <main class="main-area">
+      <header class="page-header">
+        <div>
+          <h1>{{ session.title|default:"Chatt" }} 💬</h1>
+          <p>Fortsätt dialogen med Julia AI, justera inställningar och ladda upp filer.</p>
+        </div>
+        <div class="page-header-meta">
+          <span class="pill">Domarnämnden</span>
+          <span class="pill pill-soft">Chatt-session</span>
+        </div>
+      </header>
 
-    <!-- Main chat -->
-    <div class="col-12 col-md-8">
-      <div id="chat-wrap" class="card p-3 mb-3">
-        {% for m in messages %}
-          <div class="msg">
-            <div class="w-100">
-              <div class="meta">{{ m.role|title }} • {{ m.created_at }}</div>
+      <section id="chat-session">
+        <div class="adminui-layout">
+          <div class="adminui-main">
+            <div class="adminui-container">
 
-              {% if m.role == "user" %}
-                <div class="bubble bubble-user">{{ m.content }}</div>
-              {% else %}
-                <!-- Låt JS rendera Markdown → HTML för historiken också -->
-                <div class="bubble bubble-ai" data-md="{{ m.content|escape }}"></div>
-              {% endif %}
+              <div class="row g-3">
+                <!-- Vänster kolumn: inställningar + lista över chattar -->
+                <div class="col-12 col-md-4">
+                  <div class="adminui-container" style="margin-bottom:16px;">
+                    <h3 class="adminui-subtitle">Inställningar</h3>
+                    <form method="post" class="mb-2">
+                      {% csrf_token %}
+                      <div class="mb-2">
+                        <label class="form-label">Titel</label>
+                        <input name="title" class="form-control" value="{{ session.title }}">
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Instruktion (system-prompt)</label>
+                        <textarea name="system_prompt" rows="3" class="form-control">{{ session.system_prompt }}</textarea>
+                      </div>
+                      <button name="save_settings" value="1" class="adminui-button">
+                        💾 Spara
+                      </button>
+                    </form>
+                  </div>
 
-              {% if m.attachments.all %}
-                <div class="mt-2">
-                  {% for a in m.attachments.all %}
-                    <a href="{{ a.file.url }}" target="_blank">📎 {{ a.original_name }}</a><br>
-                  {% endfor %}
+                  <div class="adminui-container">
+                    <h3 class="adminui-subtitle">Dina chattar</h3>
+                    <div class="card p-0">
+                      <div class="list-group list-group-flush">
+
+                        {% for s in sessions %}
+                          <div class="list-group-item d-flex align-items-center gap-2">
+                            <a class="flex-grow-1 text-decoration-none {% if s.id == session.id %}fw-semibold{% endif %}"
+                               href="{% url 'chat_session' s.id %}">
+                              {{ s.title }}
+                            </a>
+
+                            <small class="text-muted me-2">
+                              {{ s.updated_at|date:"M j, Y, H:i" }}
+                            </small>
+
+                            <form action="{% url 'chat_delete' s.id %}" method="post"
+                                  onsubmit="return confirm('Ta bort denna chatt? Det går inte att ångra.');">
+                              {% csrf_token %}
+                              <button type="submit" class="btn btn-sm btn-outline-danger" title="Ta bort">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                     viewBox="0 0 16 16" aria-hidden="true">
+                                  <path d="M5.5 5.5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0V6z"/>
+                                  <path fill-rule="evenodd"
+                                        d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5h6h2.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM5 2.5a.5.5 0 0 0 .5.5h5a.5.5 0 0 0 .5-.5V2H5v.5z"/>
+                                </svg>
+                              </button>
+                            </form>
+                          </div>
+                        {% empty %}
+                          <div class="list-group-item text-muted">Ingen historik ännu.</div>
+                        {% endfor %}
+
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              {% endif %}
-            </div>
-          </div>
-        {% empty %}
-          <p class="text-muted">Ingen historik ännu.</p>
-        {% endfor %}
+
+                <!-- Höger kolumn: själva chatten -->
+                <div class="col-12 col-md-8">
+                  <div class="adminui-container" style="margin-bottom:16px;">
+                    <h3 class="adminui-subtitle">Konversation</h3>
+
+                    <div id="chat-wrap" class="card p-3 mb-3">
+                      {% for m in messages %}
+                        <div class="msg">
+                          <div class="w-100">
+                            <div class="meta">{{ m.role|title }} • {{ m.created_at }}</div>
+
+                            {% if m.role == "user" %}
+                              <div class="bubble bubble-user">{{ m.content }}</div>
+                            {% else %}
+                              <!-- Låt JS rendera Markdown → HTML för historiken också -->
+                              <div class="bubble bubble-ai" data-md="{{ m.content|escape }}"></div>
+                            {% endif %}
+
+                            {% if m.attachments.all %}
+                              <div class="mt-2">
+                                {% for a in m.attachments.all %}
+                                  <a href="{{ a.file.url }}" target="_blank">📎 {{ a.original_name }}</a><br>
+                                {% endfor %}
+                              </div>
+                            {% endif %}
+                          </div>
+                        </div>
+                      {% empty %}
+                        <p class="text-muted">Ingen historik ännu.</p>
+                      {% endfor %}
+                    </div>
+
+                    <!-- Composer -->
+                    <div class="card p-3">
+                      <form id="chat-form" action="{% url 'chat_send' session.id %}"
+                            method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                          <label class="form-label">Meddelande</label>
+                          <textarea name="message" id="msg" rows="3" class="form-control"
+                                    placeholder="Skriv ett meddelande…"></textarea>
+                        </div>
+                        <div class="mb-2">
+                          <label class="form-label">Filer (valfritt)</label>
+                          <input type="file" name="files" id="files" multiple class="form-control">
+                        </div>
+                        <button type="submit" class="adminui-button">Skicka</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div> <!-- /adminui-container -->
+          </div>   <!-- /adminui-main -->
+        </div>     <!-- /adminui-layout -->
+      </section>
+    </main>
+
+    <!-- HÖGERSPALT -->
+    <aside class="right-panel">
+      <h3 class="assistant-title">Tips för bra frågor</h3>
+      <p class="assistant-help adminui-intro">
+        Ju mer konkret du är i dina frågor, desto mer pricksäkra svar kan Julia AI ge.
+        Koppla gärna dina frågor till testdata, intervjun eller bedömningarna.
+      </p>
+
+      <h3 class="assistant-title">Exempel</h3>
+      <div class="tag-box">
+        <div class="tag-box-left">
+          <p><strong>Exempel 1</strong></p>
+          <p>“Utifrån denna kandidats resultat och mina anteckningar, vilka två risker bör jag
+          vara extra uppmärksam på?”</p>
+        </div>
       </div>
 
-      <!-- Composer -->
-      <div class="card p-3">
-        <form id="chat-form" action="{% url 'chat_send' session.id %}" method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-          <div class="mb-2">
-            <label class="form-label">Meddelande</label>
-            <textarea name="message" id="msg" rows="3" class="form-control" placeholder="Skriv ett meddelande…"></textarea>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Filer (valfritt)</label>
-            <input type="file" name="files" id="files" multiple class="form-control">
-          </div>
-          <button type="submit" class="btn btn-primary">Skicka</button>
-        </form>
+      <div class="tag-box">
+        <div class="tag-box-left">
+          <p><strong>Exempel 2</strong></p>
+          <p>“Formulera ett avsnitt om kandidatens styrkor i ledarskap i samma stil som rapporten.”</p>
+        </div>
       </div>
-    </div>
+    </aside>
+
   </div>
-</main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/script.js' %}"></script>
 
 <script>
-(function(){
+(function () {
   const wrap = document.getElementById('chat-wrap');
   const form = document.getElementById('chat-form');
   const msgEl = document.getElementById('msg');
@@ -156,8 +276,14 @@
     el.removeAttribute('data-md');
   });
 
-  function scrollBottom(){ wrap.scrollTop = wrap.scrollHeight; }
+  function scrollBottom() {
+    if (wrap) {
+      wrap.scrollTop = wrap.scrollHeight;
+    }
+  }
   scrollBottom();
+
+  if (!form || !wrap) return;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -170,7 +296,7 @@
       <div class="w-100">
         <div class="meta">User • nu</div>
         <div class="bubble bubble-user"></div>
-        <div class="user-attachments mt-2 small"></div> <!-- här kommer länkarna -->
+        <div class="user-attachments mt-2 small"></div>
       </div>`;
     userMsg.querySelector('.bubble-user').textContent = userText || '(fil skickad)';
     wrap.appendChild(userMsg);
@@ -188,8 +314,9 @@
     scrollBottom();
 
     // 3) Skicka stream-POST
-    const fd = new FormData(form);           // inkluderar CSRF + filer
-    msgEl.value = ''; filesEl.value = '';
+    const fd = new FormData(form);  // inkluderar CSRF + filer
+    msgEl.value = '';
+    filesEl.value = '';
 
     try {
       const resp = await fetch(form.action, { method: 'POST', body: fd });
@@ -208,21 +335,22 @@
       aiBubble.innerHTML = ''; // ta bort "skriver…"
 
       while (true) {
-        const {value, done} = await reader.read();
+        const { value, done } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, {stream:true});
+        const chunk = decoder.decode(value, { stream: true });
 
         if (!controlDone) {
           controlBuf += chunk;
           const nlIdx = controlBuf.indexOf('\n');
+
           if (nlIdx !== -1) {
             const firstLine = controlBuf.slice(0, nlIdx);
-            let rest = controlBuf.slice(nlIdx + 1);
+            const rest = controlBuf.slice(nlIdx + 1);
 
             if (firstLine.startsWith('__ATTACH_JSON__')) {
               try {
-                const jsonStr = firstLine.replace('__ATTACH_JSON__','');
+                const jsonStr = firstLine.replace('__ATTACH_JSON__', '');
                 const links = JSON.parse(jsonStr || '[]');
                 if (Array.isArray(links) && links.length) {
                   const holder = userMsg.querySelector('.user-attachments');
@@ -230,20 +358,20 @@
                     `🔗 <a href="${l.url}" target="_blank" rel="noopener">Bifogad fil: ${l.name}</a>`
                   ).join('<br>');
                 }
-              } catch(e) {
+              } catch (e) {
                 // ignorera parsningfel
               }
             }
+
             controlDone = true;
 
-            // resten av chunken är del av AI-texten
             if (rest) {
               raw += rest;
               aiBubble.innerHTML = marked.parse(raw);
               scrollBottom();
             }
           }
-          continue; // invänta att vi fått första hela raden
+          continue;
         }
 
         // Vanlig AI-text efter kontrollraden
@@ -256,11 +384,12 @@
       scrollBottom();
 
     } catch (err) {
-      aiBubble.textContent = `(Ett fel inträffade: ${err})`;
+      aiBubble.textContent = '(Ett fel inträffade: ' + err + ')';
       scrollBottom();
     }
   });
 })();
 </script>
+
 </body>
 </html>

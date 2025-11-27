@@ -1,87 +1,182 @@
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Chatt – översikt</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body{background:#f7f9fc}
-    .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
-    .container-narrow{max-width:900px}
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Julia – Chattar</title>
+
+    <!-- Bootstrap CSS (samma som index) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Dina egna styles -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" href="{% static 'img/favicon.ico' %}">
 </head>
-<body>
-<nav class="navbar navbar-dark bg-dark">
-  <div class="container">
-    <a class="navbar-brand" href="{% url 'index' %}">Julia AI</a>
-    <div class="d-flex gap-3">
-      <a class="nav-link text-white-50" href="{% url 'index' %}">Verktyget</a>
-      <a class="nav-link text-white-50" href="{% url 'prompt_editor' %}">Ändra prompts</a>
-      <a class="nav-link active text-white" href="{% url 'chat_home' %}">Chatt</a>
-    </div>
-  </div>
-</nav>
 
-<main class="container container-narrow my-4">
-  <h1 class="mb-3">Chattar</h1>
+<body id="page-top">
+  <div class="app-shell">
 
-<h5>Dina chattar</h5>
-
-  <!-- Lista sessions -->
-<div class="card p-0 sidebar">
-  <div class="list-group list-group-flush">
-
-    {% for s in sessions %}
-      <div class="list-group-item d-flex align-items-center gap-2">
-        <a class="flex-grow-1 text-decoration-none {% if s.id == session.id %}fw-semibold{% endif %}"
-           href="{% url 'chat_session' s.id %}">
-          {{ s.title }}
-        </a>
-
-        <small class="text-muted me-2">
-          {{ s.updated_at|date:"M j, Y, H:i" }}
-        </small>
-
-        <form action="{% url 'chat_delete' s.id %}" method="post"
-              onsubmit="return confirm('Ta bort denna chatt? Det går inte att ångra.');">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-sm btn-outline-danger" title="Ta bort">
-            <!-- inline-trash ikon (Bootstrap-lik) -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                 viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M5.5 5.5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0V6z"/>
-              <path fill-rule="evenodd"
-                    d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5h6h2.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM5 2.5a.5.5 0 0 0 .5.5h5a.5.5 0 0 0 .5-.5V2H5v.5z"/>
-            </svg>
-          </button>
-        </form>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-dot"></span>
+        <span class="brand-text">Julia AI</span>
       </div>
-    {% empty %}
-      <div class="list-group-item text-muted">Ingen historik ännu.</div>
-    {% endfor %}
+
+      <nav class="sidebar-nav">
+        <a href="{% url 'index' %}" class="sidebar-link">
+          <span class="sidebar-icon">⚙️</span>
+          <span>Verktyget</span>
+        </a>
+        <a href="{% url 'prompt_editor' %}" class="sidebar-link">
+          <span class="sidebar-icon">📝</span>
+          <span>Ändra prompts</span>
+        </a>
+        <a href="{% url 'chat_home' %}" class="sidebar-link sidebar-link-active">
+          <span class="sidebar-icon">💬</span>
+          <span>Chatt</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="user-avatar">
+            {{ user.first_name|default:"J" |first }}
+          </div>
+          <div class="user-meta">
+            <span>Inloggad som</span>
+            <strong>{{ user.get_full_name|default:"Gäst" }}</strong>
+          </div>
+        </div>
+        <button class="logout-btn" type="button">
+          Logga ut
+        </button>
+        <p class="sidebar-copy">© TQ Nordic</p>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-area">
+      <header class="page-header">
+        <div>
+          <h1>Hej {{ user.first_name|default:user.username }} 👋</h1>
+          <p>Hantera dina Julia-chattar och skapa nya konversationer.</p>
+        </div>
+        <div class="page-header-meta">
+          <span class="pill">Domarnämnden</span>
+          <span class="pill pill-soft">Chatt</span>
+        </div>
+      </header>
+
+      <section id="chat-home">
+        <div class="adminui-layout">
+          <div class="adminui-main">
+            <div class="adminui-container">
+
+              <h2 class="adminui-title" style="margin-top:0;">Dina chattar</h2>
+              <p class="adminui-intro">
+                Här ser du dina sparade chattar med Julia AI. Klicka på en chatt för att fortsätta där du slutade,
+                eller skapa en ny med en egen system-prompt.
+              </p>
+
+              <!-- Lista sessions -->
+              <div class="adminui-container" style="margin-bottom:32px;">
+                <h3 class="adminui-subtitle">Historik</h3>
+
+                <div class="card p-0">
+                  <div class="list-group list-group-flush">
+
+                    {% for s in sessions %}
+                      <div class="list-group-item d-flex align-items-center gap-2">
+                        <a class="flex-grow-1 text-decoration-none"
+                           href="{% url 'chat_session' s.id %}">
+                          {{ s.title }}
+                        </a>
+
+                        <small class="text-muted me-2">
+                          {{ s.updated_at|date:"M j, Y, H:i" }}
+                        </small>
+
+                        <form action="{% url 'chat_delete' s.id %}" method="post"
+                              onsubmit="return confirm('Ta bort denna chatt? Det går inte att ångra.');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-danger" title="Ta bort">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                 viewBox="0 0 16 16" aria-hidden="true">
+                              <path d="M5.5 5.5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0V6z"/>
+                              <path fill-rule="evenodd"
+                                    d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5h6h2.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM5 2.5a.5.5 0 0 0 .5.5h5a.5.5 0 0 0 .5-.5V2H5v.5z"/>
+                            </svg>
+                          </button>
+                        </form>
+                      </div>
+                    {% empty %}
+                      <div class="list-group-item text-muted">Ingen historik ännu.</div>
+                    {% endfor %}
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- Skapa ny session -->
+              <div class="adminui-container">
+                <h3 class="adminui-subtitle">Skapa ny chatt</h3>
+                <p class="adminui-help" style="font-size:0.9rem;">
+                  Ge chatten en tydlig titel och (valfritt) en system-prompt som styr hur Julia AI ska bete sig.
+                </p>
+
+                <form method="post" class="card p-3 mb-4">
+                  {% csrf_token %}
+                  <div class="mb-2">
+                    <label class="form-label">Titel</label>
+                    <input name="title" class="form-control" placeholder="Ny chatt">
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label">Instruktion (system-prompt, valfri)</label>
+                    <textarea name="system_prompt" rows="3" class="form-control"
+                      placeholder="Du är en hjälpsam, saklig och diplomatisk assistent."></textarea>
+                  </div>
+                  <button class="adminui-button">➕ Skapa ny chatt</button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- HÖGERSPALT -->
+    <aside class="right-panel">
+      <h3 class="assistant-title">Tips för system-prompt</h3>
+      <p class="assistant-help adminui-intro">
+        System-prompten talar om för Julia AI <em>hur</em> hon ska svara.
+        T.ex. formell eller informell ton, korta eller långa svar,
+        fokus på domarnämnden eller mer generell hjälp.
+      </p>
+
+      <div class="tag-box">
+        <div class="tag-box-left">
+          <code>Du är en saklig, tydlig och diplomatisk assistent.</code>
+          <p>Basinställning som funkar i de flesta chattar.</p>
+        </div>
+      </div>
+
+      <div class="tag-box">
+        <div class="tag-box-left">
+          <code>Fokusera på domarnämndens urvalsprocess.</code>
+          <p>Snävar in svaren till ditt arbetsområde.</p>
+        </div>
+      </div>
+    </aside>
 
   </div>
-</div>
-    <br>
-    <h5>Skapa ny chatt</h5>
-    <!-- Skapa ny session -->
-  <form method="post" class="card p-3 mb-4">
-    {% csrf_token %}
-    <div class="mb-2">
-      <label class="form-label">Titel</label>
-      <input name="title" class="form-control" placeholder="Ny chatt">
-    </div>
-    <div class="mb-2">
-      <label class="form-label">Instruktion (system-prompt, valfri)</label>
-      <textarea name="system_prompt" rows="3" class="form-control"
-        placeholder="Du är en hjälpsam, saklig och diplomatisk assistent."></textarea>
-    </div>
-    <button class="btn btn-primary">Skapa ny chatt</button>
-  </form>
-</main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/script.js' %}"></script>
 </body>
 </html>
