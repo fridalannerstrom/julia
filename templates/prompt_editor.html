@@ -91,9 +91,8 @@
                     <div class="adminui-container" style="margin-bottom:32px;">
                       <h3 class="adminui-subtitle">1. Tolkning av Excelfil (teknisk struktur)</h3>
                       <p class="adminui-help" style="font-size:0.9rem;">
-                        Denna prompt beskriver hur Excelfilen är <b>uppbyggd</b> och vad varje
-                        kolumn betyder. I nuvarande version används tolkningen i första hand i
-                        programmets Python-kod, men texten kan ligga kvar här som dokumentation.
+                        Denna prompt beskriver hur Excelfilen är uppbyggd och vad varje
+                        kolumn betyder. Denna prompt används framförallt för att bygga upp kod till tabbellerna i steget.
                         <br><br>
                         <span style="color: red;">Ändra endast om Excelformat eller kolumnnamn ändras.</span>
                       </p><br>
@@ -145,6 +144,7 @@
                           Behåll relevanta taggar (t.ex.
                           <code>{intervju_text}</code>,
                           <code>{ratings_json}</code>,
+                          <code>{uploaded_files}</code>,
                           <code>{betygsskala_forklaring}</code>).
                         </p>
                         <textarea
@@ -238,98 +238,65 @@
            <h3 class="assistant-title">Genererade taggar</h3>
           <p class="assistant-help adminui-intro">
             Dessa taggar får sitt innehåll under respektive steg i verktyget.
-Det betyder att de bara fungerar i prompts som ligger efter det steg där taggen genereras.
+Det betyder att de bara fungerar i prompts som ligger efter det steg där taggen genereras. 
+<b>Denna tagg är bara text, ej tabell eller testresultat.</b>
           </p>
 
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{tq_fardighet_text}</code>
-            <p>Städad resultat. Använd denna.</p>
+            <p>TQ Färdighet, genereras i steg 2.</p>
         </div>
     </div>
     
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{tq_motivation_text}</code>
-            <p>Städad resultat. Använd denna.</p>
+            <p>TQ Motivation, genereras i steg 2.</p>
         </div>
     </div>
     
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{leda_text}</code>
-            <p>Städad resultat. Använd denna.</p>
+            <p>Leda, utveckla och engagera, genereras i steg 3.</p>
         </div>
     </div>
     
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{mod_text}</code>
-            <p>Städad resultat. Använd denna.</p>
+            <p>Mod och handlingskraft, genereras i steg 4. </p>
         </div>
     </div>
     
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{sjalkannedom_text}</code>
-            <p>Städad resultat. Använd denna.</p>
+            <p>Självkännedom, genereras i steg 5.</p>
         </div>
     </div>
     
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{strategi_text}</code>
-            <p>Städad resultat. Använd denna.</p>
+            <p>Strategiskt tänkande, genereras i steg 6.</p>
         </div>
     </div>
     
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{kommunikation_text}</code>
-            <p>Städad resultat. Använd denna.</p>
+            <p>Kommunikation och samarbete, genereras i steg 7.</p>
         </div>
     </div>
     
     <div class="tag-box">
         <div class="tag-box-left">
             <code>{sur_text}</code>
-            <p>Styrkor / Utvecklingsområden / Riskbeteenden.</p>
+            <p>Styrkor, utvecklingsområden etc, genereras i steg 8.</p>
         </div>
     </div>
-
-
-          <ul class="assistant-list">
-            <li class="assistant-list-item">
-              <span class="assistant-label"><code>{tq_fardighet_text}</code></span>
-            </li>
-            <li class="assistant-list-item">
-              <span class="assistant-label"><code>{tq_motivation_text}</code></span>
-            </li>
-            <li class="assistant-list-item">
-              <span class="assistant-label"><code>{leda_text}</code></span>
-            </li>
-            <li class="assistant-list-item">
-              <span class="assistant-label"><code>{mod_text}</code></span>
-            </li>
-            <li class="assistant-list-item">
-              <span class="assistant-label"><code>{sjalkannedom_text}</code></span>
-            </li>
-            <li class="assistant-list-item">
-              <span class="assistant-label"><code>{strategi_text}</code></span>
-            </li>
-            <li class="assistant-list-item">
-              <span class="assistant-label"><code>{kommunikation_text}</code></span>
-            </li>
-            <li class="assistant-list-item">
-              <span class="assistant-label"><code>{sur_text}</code></span>
-              <span class="assistant-value">Styrkor / Utvecklingsområden / Riskbeteenden.</span>
-            </li>
-          </ul>
-        </div>
-
-        <p class="assistant-empty" style="margin-top:1rem;">
-          Ta inte bort taggarna i klamrar om du vill att rätt info ska fyllas i automatiskt.
-        </p>
     </aside>
 
   </div>
