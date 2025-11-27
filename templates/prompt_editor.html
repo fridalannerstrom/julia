@@ -388,8 +388,165 @@
     });
   </script>
 
-  {# Popups (Excel, Intervju, CV, Ratings, Betygsskala) – oförändrade #}
-  <!-- ... dina modaler här, samma som innan ... -->
+<!-- ===== Popup: Excel ===== -->
+<div id="modal-excel" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {excel_text}</h3>
+    <div class="dn-modal-body">
+      <pre>
+First Name,Last Name,
+Competency Score: Teamwork (STIVE),
+Competency Score: Networking (STIVE),
+Competency Score: Developing relationships (STIVE),
+Competency Score: Understand the individual (STIVE),
+Competency Score: Demonstrate self-awareness (STIVE),
+Competency Score: Resilience (STIVE),
+Competency Score: Plan and organise (STIVE),
+Competency Score: Proactive delivery (STIVE),
+Competency Score: Decision making (STIVE),
+Competency Score: Understanding the organisation (STIVE),
+Competency Score: Drive and appetite for learning (STIVE),
+Competency Score: Analysis (STIVE)
+
+Per,L,1.57,2.40,3.23,4.12,3.55,2.78,4.33,3.90,2.67,3.45,4.10,3.52,4.18
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Popup: Intervju ===== -->
+<div id="modal-intervju" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {intervju_text}</h3>
+    <div class="dn-modal-body">
+      <pre>
+<span style="color: red;"><b>Denna tagg blir <u>exakt</u> det användaren klistrat in i textrutan för anteckningar. T ex: </b></span>
+
+Kandidaten beskriver sig som driven och strukturerad.
+Har lett två team och ansvarat för onboarding.
+Styrkor: analys, kommunikation.
+Utmaningar: tidspress och snabba deadlines.
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Popup: CV ===== -->
+<div id="modal-cv" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {uploaded_files}</h3>
+    <div class="dn-modal-body">
+      <pre>
+<span style="color: red;"><b>Denna tagg fylls med texten som hämtas ur CV-PDF:en som laddas upp.
+Endast texten tas med – inga visuella element eller layout. T ex:</b></span>
+
+Emma Lindstrom
+emmalindstrom@example.com | +46 70 123 45 67 | Stockholm, Sweden
+
+Professional Summary
+Emma Lindstrom är en erfaren digital marknadsföringsspecialist med över 7 års erfarenhet
+inom SEO, innehållsstrategi och sociala medier. Emma är känd för att öka organisk trafik
+och utveckla högpresterande digitala kampanjer.
+
+Work Experience
+Senior Digital Marketing Specialist
+Nordic Web Solutions, Stockholm
+Jan 2020 - Present
+- Emma ledde SEO-strategin som ökade trafiken med 65% på 18 månader.
+- Hanterade sociala medier-kampanjer med över 100k följare.
+- Samarbetade med produkt- och försäljningsteam.
+
+Marketing Coordinator
+Bright Ideas AB, Malmö
+Aug 2016 - Dec 2019
+- Utvecklade innehållsstrategier.
+- Skapade e-postkampanjer med 25% öppningsfrekvens.
+- Genomförde marknadsundersökningar inför lanseringar.
+
+Education
+MSc in Marketing and Management, Lund University
+BSc in Business Administration, Uppsala University
+
+Skills
+SEO & SEM
+Google Analytics & Ads
+Social Media Management
+Content Strategy
+WordPress & CMS
+Adobe Photoshop & Illustrator
+
+Languages
+Swedish (Native)
+English (Fluent)
+Spanish (Intermediate)
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Popup: Ratings JSON ===== -->
+<div id="modal-ratings" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {ratings_json}</h3>
+    <div class="dn-modal-body">
+      <pre>
+
+<h2 class="adminui-title"><strong>Leda, utveckla och engagera</strong></h2>
+<b>Leda andra:</b> 3
+<b>Engagera andra:</b> 4
+<b>Delegera:</b> 4
+<b>Utveckla andra:</b> 2
+
+<h2 class="adminui-title"><strong>Mod och handlingskraft</strong></h2>
+<b>Beslutsamhet:</b> 5
+<b>Integritet:</b> 2
+<b>Hantera konflikter:</b> 1
+
+<h2 class="adminui-title"><strong>Självkännedom och emotionell stabilitet</strong></h2>
+<b>Självmedvetenhet:</b> 3
+<b>Uthållighet:</b> 4
+
+<h2 class="adminui-title"><strong>Strategiskt tänkande och anpassningsförmåga</strong></h2>
+<b>Strategiskt fokus:</b> 2
+<b>Anpassningsförmåga:</b> 3
+
+<h2 class="adminui-title"><strong>Kommunikation och samarbete</strong></h2>
+<b>Teamarbete:</b> 3
+<b>Inflytelserik:</b> 1
+
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Popup: Betygsskala ===== -->
+<div id="modal-betygsskala" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close">×</button>
+    <h3>Exempel: {betygsskala_forklaring}</h3>
+    <div class="dn-modal-body">
+      <pre>
+<span style="color: red;"><b>Denna tagg blir exakt det du skriver i prompten för nivåerna 1–5. T ex:</b></span>
+
+1 = Tydligt utvecklingsområde. Beteendet stödjer inte kraven i rollen.
+2 = Acceptabel nivå men med tydliga utvecklingsbehov i mer komplexa situationer.
+3 = God nivå. Räcker för de flesta vardagliga krav.
+4 = Stark nivå. Personen visar ofta beteenden som stödjer rollen väl.
+5 = Mycket stark nivå. Personen fungerar konsekvent som förebild.
+      </pre>
+    </div>
+  </div>
+</div>
+
 
 </body>
 </html>
