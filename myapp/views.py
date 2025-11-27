@@ -249,6 +249,26 @@ def _ai_text_and_ratings_for_section(config, base_prompt_text, style, excel_text
 
     return full_text, cleaned, "\n".join(debug_lines)
 
+from django.contrib.auth import get_user_model
+from django.conf import settings
+
+def get_prompt_owner(fallback_user=None):
+    """
+    Returnerar den användare vars prompter är 'globala' för hela systemet.
+    Typiskt: Veronika. Om inte hittad -> fallback_user.
+    """
+    User = get_user_model()
+    username = getattr(settings, "PROMPT_OWNER_USERNAME", None)
+
+    if username:
+        try:
+            return User.objects.get(username=username)
+        except User.DoesNotExist:
+            pass
+
+    # Fallback om något blivit fel
+    return fallback_user
+
 # ── NYTT: gör _ratings_table_html konfigurerbar (header av/på) ───────────────
 def _ratings_table_html(
     ratings: dict,
@@ -804,10 +824,16 @@ def _markdown_to_html(text: str) -> str:
 @login_required
 @csrf_exempt
 def prompt_editor(request):
-    ensure_default_prompts_exist(request.user)
-    prompts = Prompt.objects.filter(user=request.user)
+    owner = get_prompt_owner(request.user)
+    ensure_default_prompts_exist(owner)
 
-    if request.method == "POST":
+    prompts = Prompt.objects.filter(user=owner)
+
+    # ✅ Bara prompt-ägaren (t.ex. Veronika) får ändra
+    can_edit = (request.user == owner)
+
+    if request.method == "POST" and can_edit:
+        # reset-logik kan vara kvar om du vill
         if "reset" in request.POST:
             name = request.POST["reset"]
             defaults = {
@@ -816,7 +842,7 @@ def prompt_editor(request):
                 "helhetsbedomning": """Du är en HR-expert. Nedan finns en testanalys..."""
             }
             if name in defaults:
-                prompt = Prompt.objects.get(user=request.user, name=name)
+                prompt = Prompt.objects.get(user=owner, name=name)
                 prompt.text = defaults[name]
                 prompt.save()
         else:
@@ -827,7 +853,15 @@ def prompt_editor(request):
                     prompt.text = new_text
                     prompt.save()
 
-    return render(request, "prompt_editor.html", {"prompts": prompts})
+    return render(
+        request,
+        "prompt_editor.html",
+        {
+            "prompts": prompts,
+            "can_edit": can_edit,   # 👈 skickas till templaten
+            "owner": owner,
+        },
+    )
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Assistent-sidofält
@@ -889,6 +923,7 @@ def _build_sidebar_ratings(ratings: dict):
 @login_required
 @csrf_exempt
 def index(request):
+    owner = get_prompt_owner(request.user)
     ensure_default_prompts_exist(request.user)
 
     # ---------- 1) Läs nuvarande steg ----------
@@ -1112,7 +1147,7 @@ def index(request):
                         uploaded_trimmed = _trim(context["uploaded_files_markdown"])
 
                         if not context["tq_fardighet_text"]:
-                            P = Prompt.objects.get(user=request.user, name="tq_fardighet").text
+                            P = Prompt.objects.get(user=owner, name="tq_fardighet").text
                             context["tq_fardighet_text"] = _run_openai(
                                 P,
                                 style,
@@ -1121,7 +1156,7 @@ def index(request):
                                 uploaded_files=uploaded_trimmed,
                             )
                         if not context["tq_motivation_text"]:
-                            P = Prompt.objects.get(user=request.user, name="tq_motivation").text
+                            P = Prompt.objects.get(user=owner, name="tq_motivation").text
                             context["tq_motivation_text"] = _run_openai(
                                 P,
                                 style,
@@ -1134,7 +1169,7 @@ def index(request):
             # 2 -> 3: Leda, utveckla och engagera
             elif step == 2:
                 if not context["leda_text"]:
-                    P = Prompt.objects.get(user=request.user, name="leda").text
+                    P = Prompt.objects.get(user=owner, name="leda").text
                     context["leda_text"] = _run_openai(
                         P,
                         style,
@@ -1150,7 +1185,7 @@ def index(request):
             # 3 -> 4: Mod och handlingskraft
             elif step == 3:
                 if not context["mod_text"]:
-                    P = Prompt.objects.get(user=request.user, name="mod").text
+                    P = Prompt.objects.get(user=owner, name="mod").text
                     context["mod_text"] = _run_openai(
                         P,
                         style,
@@ -1166,7 +1201,7 @@ def index(request):
             # 4 -> 5: Självkännedom och emotionell stabilitet
             elif step == 4:
                 if not context["sjalkannedom_text"]:
-                    P = Prompt.objects.get(user=request.user, name="sjalkannedom").text
+                    P = Prompt.objects.get(user=owner, name="sjalkannedom").text
                     context["sjalkannedom_text"] = _run_openai(
                         P,
                         style,
@@ -1182,7 +1217,7 @@ def index(request):
             # 5 -> 6: Strategiskt tänkande och anpassningsförmåga
             elif step == 5:
                 if not context["strategi_text"]:
-                    P = Prompt.objects.get(user=request.user, name="strategi").text
+                    P = Prompt.objects.get(user=owner, name="strategi").text
                     context["strategi_text"] = _run_openai(
                         P,
                         style,
@@ -1198,7 +1233,7 @@ def index(request):
             # 6 -> 7: Kommunikation och samarbete
             elif step == 6:
                 if not context["kommunikation_text"]:
-                    P = Prompt.objects.get(user=request.user, name="kommunikation").text
+                    P = Prompt.objects.get(user=owner, name="kommunikation").text
                     context["kommunikation_text"] = _run_openai(
                         P,
                         style,
@@ -1214,7 +1249,7 @@ def index(request):
             # 7 -> 8: SUR (styrkor/utvecklingsområden/risk)
             elif step == 7:
                 if not context["sur_text"]:
-                    P = Prompt.objects.get(user=request.user, name="styrkor_utveckling_risk").text
+                    P = Prompt.objects.get(user=owner, name="styrkor_utveckling_risk").text
                     context["sur_text"] = _run_openai(
                         P,
                         style,
@@ -1233,7 +1268,7 @@ def index(request):
             # 8 -> 9: Sammanfattande slutsats
             elif step == 8:
                 if not context["slutsats_text"]:
-                    P = Prompt.objects.get(user=request.user, name="sammanfattande_slutsats").text
+                    P = Prompt.objects.get(user=owner, name="sammanfattande_slutsats").text
                     context["slutsats_text"] = _run_openai(
                         P,
                         style,

@@ -158,6 +158,8 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # Security headers (valfritt men bra)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+PROMPT_OWNER_USERNAME = "veronika" 
+
 STYLE_INSTRUCTION = """
 Skriv på ett liknande sätt som nedan text. Formulera din text så att det känns som samma person har skrivit den.
 Skriv kandidatens förnamn genom hela texten.

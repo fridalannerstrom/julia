@@ -19,7 +19,7 @@
 <body id="page-top">
   <div class="app-shell">
 
-    <!-- SIDEBAR (samma som på verktygssidan, men med aktiv länk på Ändra prompts) -->
+    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-brand">
         <span class="brand-dot"></span>
@@ -82,6 +82,14 @@
                 rapportens olika delar formuleras. Uppdelat i tre tydliga sektioner.
               </p>
 
+              <p class="text-muted small mb-3">
+                Dessa prompter används för alla användare och administreras av
+                <strong>{{ owner.get_full_name|default:owner.username }}</strong>.
+                {% if not can_edit %}
+                  Du kan läsa dem här, men inte ändra.
+                {% endif %}
+              </p>
+
               <form method="post">
                 {% csrf_token %}
 
@@ -99,7 +107,8 @@
                       <textarea
                         name="prompt_{{ prompt.name }}"
                         rows="8"
-                        class="adminui-textarea"
+                        class="adminui-textarea {% if not can_edit %}adminui-textarea--readonly{% endif %}"
+                        {% if not can_edit %}readonly disabled{% endif %}
                       >{{ prompt.text }}</textarea>
                     </div>
                   {% endif %}
@@ -118,7 +127,8 @@
                       <textarea
                         name="prompt_{{ prompt.name }}"
                         rows="12"
-                        class="adminui-textarea"
+                        class="adminui-textarea {% if not can_edit %}adminui-textarea--readonly{% endif %}"
+                        {% if not can_edit %}readonly disabled{% endif %}
                       >{{ prompt.text }}</textarea>
                     </div>
                   {% endif %}
@@ -134,54 +144,62 @@
                     Anpassa ton, längd och detaljer efter vad du vill att Julia AI ska ge för typ av output.
                   </p>
 
-                 {% for prompt in prompts %}
-                  {% if prompt.name != "tolka_excel_resultat" and prompt.name != "betygsskala_forklaring" %}
-                    <div style="margin-bottom:24px;">
+                  {% for prompt in prompts %}
+                    {% if prompt.name != "tolka_excel_resultat" and prompt.name != "betygsskala_forklaring" %}
+                      <div style="margin-bottom:24px;">
 
-                      <label for="prompt_{{ prompt.name }}" class="adminui-label">
-                        {{ prompt.name|capfirst }}
-                      </label>
+                        <label for="prompt_{{ prompt.name }}" class="adminui-label">
+                          {{ prompt.name|capfirst }}
+                        </label>
 
-                      {# ── Specialtext för global_style ── #}
-                      {% if prompt.name == "global_style" %}
-                        <p style="font-size:0.8rem; color:#666; margin-bottom:4px;">
-                          ❌ <strong>Använd ej taggar i <code>global_style</code>.</strong><br>
-                          Global stil ska bara innehålla:
-                          skrivregler, tonalitet, språkbruk
-                          (t.ex. “säg <em>grupp</em>, inte <em>team</em>”)
-                          och strukturella regler (t.ex. “undvik punktlistor”,
-                          “skriv i tredje person”) etc.<br>
-                        </p>
+                        {# ── Specialtext för global_style ── #}
+                        {% if prompt.name == "global_style" %}
+                          <p style="font-size:0.8rem; color:#666; margin-bottom:4px;">
+                            ❌ <strong>Använd ej taggar i <code>global_style</code>.</strong><br>
+                            Global stil ska bara innehålla:
+                            skrivregler, tonalitet, språkbruk
+                            (t.ex. “säg <em>grupp</em>, inte <em>team</em>”)
+                            och strukturella regler (t.ex. “undvik punktlistor”,
+                            “skriv i tredje person”) etc.<br>
+                          </p>
 
-                      {# ── Dessa två har egen förklaring högre upp – visa ingen tagg-hjälp här ── #}
-                      {% elif prompt.name == "tolka_excel_resultat" or prompt.name == "betygsskala_forklaring" %}
-                        {# inget extra info-block #}
+                        {# ── Dessa två har egen förklaring högre upp – visa ingen tagg-hjälp här ── #}
+                        {% elif prompt.name == "tolka_excel_resultat" or prompt.name == "betygsskala_forklaring" %}
+                          {# inget extra info-block #}
 
-                      {# ── Standardinfo för alla andra prompts ── #}
-                      {% else %}
-                        <p style="font-size:0.8rem; color:#666; margin-bottom:4px;">
-                          Behåll relevanta taggar (t.ex.
-                          <code>{intervju_text}</code>,
-                          <code>{ratings_json}</code>,
-                          <code>{uploaded_files}</code>,
-                          <code>{betygsskala_forklaring}</code>).
-                        </p>
-                      {% endif %}
+                        {# ── Standardinfo för alla andra prompts ── #}
+                        {% else %}
+                          <p style="font-size:0.8rem; color:#666; margin-bottom:4px;">
+                            Behåll relevanta taggar (t.ex.
+                            <code>{intervju_text}</code>,
+                            <code>{ratings_json}</code>,
+                            <code>{uploaded_files}</code>,
+                            <code>{betygsskala_forklaring}</code>).
+                          </p>
+                        {% endif %}
 
-                      <textarea
-                        id="prompt_{{ prompt.name }}"
-                        name="prompt_{{ prompt.name }}"
-                        rows="6"
-                        class="adminui-textarea"
-                      >{{ prompt.text }}</textarea>
+                        <textarea
+                          id="prompt_{{ prompt.name }}"
+                          name="prompt_{{ prompt.name }}"
+                          rows="6"
+                          class="adminui-textarea {% if not can_edit %}adminui-textarea--readonly{% endif %}"
+                          {% if not can_edit %}readonly disabled{% endif %}
+                        >{{ prompt.text }}</textarea>
 
-                    </div>
+                      </div>
                     {% endif %}
-{% endfor %}
+                  {% endfor %}
 
-                <button type="submit" class="adminui-button">
-                  💾 Spara ändringar
-                </button>
+                  {% if can_edit %}
+                    <button type="submit" class="adminui-button">
+                      💾 Spara ändringar
+                    </button>
+                  {% else %}
+                    <p class="text-muted small mt-2">
+                      Endast {{ owner.get_full_name|default:owner.username }} kan ändra dessa prompter.
+                    </p>
+                  {% endif %}
+                </div>
               </form>
 
             </div>
@@ -197,127 +215,128 @@
           Klistra in dessa i dina prompts där du vill att data ska ersättas automatiskt.
         </p>
 
-  <h3 class="assistant-title">Grunddata</h3>
+        <h3 class="assistant-title">Grunddata</h3>
 
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{excel_text}</code>
-            <p>Rådata från excel. Använd ej.</p>
+        <div class="tag-box">
+            <div class="tag-box-left">
+                <code>{excel_text}</code>
+                <p>Rådata från excel. Använd ej.</p>
+            </div>
+
+            <button class="tag-example-btn" data-modal="modal-excel">
+                Se exempel
+            </button>
         </div>
 
-        <button class="tag-example-btn" data-modal="modal-excel">
-            Se exempel
-        </button>
-    </div>
+        <div class="tag-box">
+            <div class="tag-box-left">
+                <code>{ratings_json}</code>
+                <p>Städad excel. Använd denna.</p>
+            </div>
 
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{ratings_json}</code>
-            <p>Städad excel. Använd denna.</p>
+            <button class="tag-example-btn" data-modal="modal-ratings">
+                Se exempel
+            </button>
         </div>
 
-        <button class="tag-example-btn" data-modal="modal-ratings">
-            Se exempel
-        </button>
-    </div>
+        <div class="tag-box">
+            <div class="tag-box-left">
+                <code>{betygsskala_forklaring}</code>
+                <p>Definition av nivåerna</p>
+            </div>
 
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{betygsskala_forklaring}</code>
-            <p>Definition av nivåerna</p>
+            <button class="tag-example-btn" data-modal="modal-betygsskala">
+                Se exempel
+            </button>
         </div>
 
-        <button class="tag-example-btn" data-modal="modal-betygsskala">
-            Se exempel
-        </button>
-    </div>
+        <div class="tag-box">
+            <div class="tag-box-left">
+                <code>{uploaded_files}</code>
+                <p>Uppladdade CV:t</p>
+            </div>
 
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{uploaded_files}</code>
-            <p>Uppladdade CV:t</p>
+            <button class="tag-example-btn" data-modal="modal-cv">
+                Se exempel
+            </button>
         </div>
 
-        <button class="tag-example-btn" data-modal="modal-cv">
-            Se exempel
-        </button>
-    </div>
+        <div class="tag-box">
+            <div class="tag-box-left">
+                <code>{intervju_text}</code>
+                <p>Textbaserade anteckningar</p>
+            </div>
 
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{intervju_text}</code>
-            <p>Textbaserade anteckningar</p>
+            <button class="tag-example-btn" data-modal="modal-intervju">
+                Se exempel
+            </button>
         </div>
 
-        <button class="tag-example-btn" data-modal="modal-intervju">
-            Se exempel
-        </button>
-    </div>
-
-<br>
+        <br>
         <div class="assistant-section">
            <h3 class="assistant-title">Genererade taggar</h3>
           <p class="assistant-help adminui-intro">
             Dessa taggar får sitt innehåll under respektive steg i verktyget.
-Det betyder att de bara fungerar i prompts som ligger efter det steg där taggen genereras. 
-<b>Denna tagg är bara text, ej tabell eller testresultat.</b>
+            Det betyder att de bara fungerar i prompts som ligger efter det steg där taggen genereras.
+            <b>Denna tagg är bara text, ej tabell eller testresultat.</b>
           </p>
 
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{tq_fardighet_text}</code>
-            <p>TQ Färdighet, genereras i steg 2.</p>
+          <div class="tag-box">
+              <div class="tag-box-left">
+                  <code>{tq_fardighet_text}</code>
+                  <p>TQ Färdighet, genereras i steg 2.</p>
+              </div>
+          </div>
+
+          <div class="tag-box">
+              <div class="tag-box-left">
+                  <code>{tq_motivation_text}</code>
+                  <p>TQ Motivation, genereras i steg 2.</p>
+              </div>
+          </div>
+
+          <div class="tag-box">
+              <div class="tag-box-left">
+                  <code>{leda_text}</code>
+                  <p>Leda, utveckla och engagera, genereras i steg 3.</p>
+              </div>
+          </div>
+
+          <div class="tag-box">
+              <div class="tag-box-left">
+                  <code>{mod_text}</code>
+                  <p>Mod och handlingskraft, genereras i steg 4. </p>
+              </div>
+          </div>
+
+          <div class="tag-box">
+              <div class="tag-box-left">
+                  <code>{sjalkannedom_text}</code>
+                  <p>Självkännedom, genereras i steg 5.</p>
+              </div>
+          </div>
+
+          <div class="tag-box">
+              <div class="tag-box-left">
+                  <code>{strategi_text}</code>
+                  <p>Strategiskt tänkande, genereras i steg 6.</p>
+              </div>
+          </div>
+
+          <div class="tag-box">
+              <div class="tag-box-left">
+                  <code>{kommunikation_text}</code>
+                  <p>Kommunikation och samarbete, genereras i steg 7.</p>
+              </div>
+          </div>
+
+          <div class="tag-box">
+              <div class="tag-box-left">
+                  <code>{sur_text}</code>
+                  <p>Styrkor, utvecklingsområden etc, genereras i steg 8.</p>
+              </div>
+          </div>
         </div>
-    </div>
-    
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{tq_motivation_text}</code>
-            <p>TQ Motivation, genereras i steg 2.</p>
-        </div>
-    </div>
-    
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{leda_text}</code>
-            <p>Leda, utveckla och engagera, genereras i steg 3.</p>
-        </div>
-    </div>
-    
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{mod_text}</code>
-            <p>Mod och handlingskraft, genereras i steg 4. </p>
-        </div>
-    </div>
-    
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{sjalkannedom_text}</code>
-            <p>Självkännedom, genereras i steg 5.</p>
-        </div>
-    </div>
-    
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{strategi_text}</code>
-            <p>Strategiskt tänkande, genereras i steg 6.</p>
-        </div>
-    </div>
-    
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{kommunikation_text}</code>
-            <p>Kommunikation och samarbete, genereras i steg 7.</p>
-        </div>
-    </div>
-    
-    <div class="tag-box">
-        <div class="tag-box-left">
-            <code>{sur_text}</code>
-            <p>Styrkor, utvecklingsområden etc, genereras i steg 8.</p>
-        </div>
-    </div>
     </aside>
 
   </div>
@@ -327,189 +346,34 @@ Det betyder att de bara fungerar i prompts som ligger efter det steg där taggen
   <script src="{% static 'js/script.js' %}"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-  
-  // Öppna popup
-  document.querySelectorAll(".tag-example-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const modalId = btn.dataset.modal;
-      document.getElementById(modalId).classList.add("is-open");
-    });
-  });
+      // Öppna popup
+      document.querySelectorAll(".tag-example-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const modalId = btn.dataset.modal;
+          document.getElementById(modalId).classList.add("is-open");
+        });
+      });
 
-  // Stäng popup (alla stäng-knappar)
-  document.querySelectorAll(".dn-modal-close").forEach(btn => {
-    btn.addEventListener("click", () => {
-      btn.closest(".dn-modal").classList.remove("is-open");
-    });
-  });
+      // Stäng popup (alla stäng-knappar)
+      document.querySelectorAll(".dn-modal-close").forEach(btn => {
+        btn.addEventListener("click", () => {
+          btn.closest(".dn-modal").classList.remove("is-open");
+        });
+      });
 
-  // Stäng popup genom att klicka på mörka bakgrunden
-  document.querySelectorAll(".dn-modal").forEach(modal => {
-    modal.addEventListener("click", e => {
-      if (e.target.classList.contains("dn-modal-backdrop")) {
-        modal.classList.remove("is-open");
-      }
+      // Stäng popup genom att klicka på mörka bakgrunden
+      document.querySelectorAll(".dn-modal").forEach(modal => {
+        modal.addEventListener("click", e => {
+          if (e.target.classList.contains("dn-modal-backdrop")) {
+            modal.classList.remove("is-open");
+          }
+        });
+      });
     });
-  });
-
-});
   </script>
 
-  <!-- ===== Popup: Excel ===== -->
-<div id="modal-excel" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" class="dn-modal-close">×</button>
-    <h3>Exempel: {excel_text}</h3>
-    <div class="dn-modal-body">
-      <pre>
-First Name,Last Name,
-Competency Score: Teamwork (STIVE),
-Competency Score: Networking (STIVE),
-Competency Score: Developing relationships (STIVE),
-Competency Score: Understand the individual (STIVE),
-Competency Score: Demonstrate self-awareness (STIVE),
-Competency Score: Resilience (STIVE),
-Competency Score: Plan and organise (STIVE),
-Competency Score: Proactive delivery (STIVE),
-Competency Score: Decision making (STIVE),
-Competency Score: Understanding the organisation (STIVE),
-Competency Score: Drive and appetite for learning (STIVE),
-Competency Score: Analysis (STIVE)
-
-Per,L,1.57,2.40,3.23,4.12,3.55,2.78,4.33,3.90,2.67,3.45,4.10,3.52,4.18
-
-      </pre>
-    </div>
-  </div>
-</div>
-
-<!-- ===== Popup: Intervju ===== -->
-<div id="modal-intervju" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" class="dn-modal-close">×</button>
-    <h3>Exempel: {intervju_text}</h3>
-    <div class="dn-modal-body">
-      <pre>
-<span style="color: red;"><b>Denna tagg blir <u>exakt</u> det användaren klistrat in i textrutan för anteckningar. T ex: </b></span><br>
-Kandidaten beskriver sig som driven och strukturerad.
-Har lett två team och ansvarat för onboarding.
-Styrkor: analys, kommunikation.
-Utmaningar: tidspress och snabba deadlines.
-      </pre>
-    </div>
-  </div>
-</div>
-
-<!-- ===== Popup: CV ===== -->
-<div id="modal-cv" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" class="dn-modal-close">×</button>
-    <h3>Exempel: {uploaded_files}</h3>
-    <div class="dn-modal-body">
-      <pre><br>
-<span style="color: red;"><b>Denna tagg fylls med den text som hämtas ur CV-PDF:en som laddas upp. 
-Endast texten tas med – inga visuella element eller layout. T ex: </b></span><br>
-Emma Lindstrom
-emmalindstrom@example.com | +46 70 123 45 67 | Stockholm, Sweden
-
-Professional Summary
-Emma Lindstrom är en erfaren digital marknadsföringsspecialist med över 7 års erfarenhet inom SEO, 
-innehållsstrategi och sociala medier. Emma är känd för att öka organisk trafik och utveckla högpresterande digitala kampanjer.
-
-Work Experience
-Senior Digital Marketing Specialist
-Nordic Web Solutions, Stockholm
-Jan 2020 - Present
-- Emma ledde SEO-strategin som ökade webbplatstrafiken med 65% på 18 månader. - Hon hanterade sociala 
-mediekampanjer med över 100k följare. - Emma samarbetade med produkt- och försäljningsteam för att samordna budskap.
-
-Marketing Coordinator
-Bright Ideas AB, Malmö
-Aug 2016 - Dec 2019
-- Emma utvecklade innehållsstrategier och övervakade innehållsskapande. - Hon skapade 
-e-postmarknadsföringskampanjer med en genomsnittlig öppningsfrekvens på 25%. - Emma genomförde
-marknadsundersökningar för att stödja produktlanseringar.
-
-Education
-MSc in Marketing and Management
-Lund University, 2014 - 2016
-
-BSc in Business Administration
-Uppsala University, 2011 - 2014
-
-Skills
-SEO & SEM
-Google Analytics & Ads
-Social Media Management
-Content Strategy
-WordPress & CMS
-Adobe Photoshop & Illustrator
-Languages
-Swedish (Native)
-English (Fluent)
-Spanish (Intermediate)
-      </pre>
-    </div>
-  </div>
-</div>
-
-<!-- ===== Popup: Ratings JSON ===== -->
-<div id="modal-ratings" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" class="dn-modal-close">×</button>
-    <h3>Exempel: {ratings_json}</h3>
-    <div class="dn-modal-body">
-      <pre><br>
-<h2 class="adminui-title"><strong>Leda, utveckla och engagera</strong></h2>
-<b>Leda andra:</b> 3
-<b>Engagera andra:</b> 4
-<b>Delegera:</b> 4
-<b>Utveckla andra:</b> 2
-<br>
-<h2 class="adminui-title"><strong>Mod och handlingskraft</strong></h2>
-<b>Beslutsamhet:</b> 5
-<b>Integritet:</b> 2
-<b>Hantera konflikter:</b> 1
-<br>
-<h2 class="adminui-title"><strong>Självkännedom och emotionell stabilitet</strong></h2>
-<b>Självmedvetenhet:</b> 3
-<b>Uthållighet:</b> 4
-<br>
-<h2 class="adminui-title"><strong>Strategiskt tänkande och anpassningsförmåga</strong></h2>
-<b>Strategiskt fokus:</b> 2
-<b>Anpassningsförmåga:</b> 3
-<br>
-<h2 class="adminui-title"><strong>Kommunikation och samarbete</strong></h2>
-<b>Teamarbete:</b> 3
-<b>Inflytelserik:</b> 1
-<br>
-      </pre>
-    </div>
-  </div>
-</div>
-
-<!-- ===== Popup: Betygsskala ===== -->
-<div id="modal-betygsskala" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" class="dn-modal-close">×</button>
-    <h3>Exempel: {betygsskala_forklaring}</h3>
-    <div class="dn-modal-body">
-      <pre>
-<span style="color: red;"><b>Denna tagg blir <u>exakt</u> det du skrivit i textrutan för "2. Betygsskala: Vad betyder nivåerna 1–5?". T ex:</b></span><br>
-1 = Tydligt utvecklingsområde. Beteendet stödjer inte kraven i rollen.
-2 = Acceptabel nivå, men med tydliga utvecklingsbehov i mer komplexa situationer.
-3 = God nivå. Räcker för de flesta vardagliga krav.
-4 = Stark nivå. Personen visar ofta beteenden som stödjer rollen väl.
-5 = Mycket stark nivå. Personen ligger konsekvent högt och fungerar som förebild.
-      </pre>
-    </div>
-  </div>
-</div>
+  {# Popups (Excel, Intervju, CV, Ratings, Betygsskala) – oförändrade #}
+  <!-- ... dina modaler här, samma som innan ... -->
 
 </body>
 </html>

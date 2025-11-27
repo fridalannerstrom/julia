@@ -971,6 +971,12 @@ body {
   color: #c3c7cf;
 }
 
+.adminui-textarea--readonly {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
 /* Responsivitet för kortet */
 @media (max-width: 768px) {
   .main-area {
