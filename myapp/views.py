@@ -1154,6 +1154,8 @@ def index(request):
                                 excel_text=_trim(excel_text),
                                 intervju_text=_trim(intervju_raw),
                                 uploaded_files=uploaded_trimmed,
+                                candidate_name=context["candidate_name"],
+                                candidate_role=context["candidate_role"],
                             )
                         if not context["tq_motivation_text"]:
                             P = Prompt.objects.get(user=owner, name="tq_motivation").text
@@ -1163,6 +1165,8 @@ def index(request):
                                 excel_text=_trim(excel_text),
                                 intervju_text=_trim(intervju_raw),
                                 uploaded_files=uploaded_trimmed,
+                                candidate_name=context["candidate_name"],
+                                candidate_role=context["candidate_role"],
                             )
                         step = 2
 
@@ -1179,6 +1183,8 @@ def index(request):
                         betygsskala_forklaring=betygsskala_prompt,
                         uploaded_files=_trim(context.get("uploaded_files_markdown") or
                                              context.get("uploaded_files_text", "")),
+                        candidate_name=context["candidate_name"],
+                        candidate_role=context["candidate_role"],
                     )
                 step = 3
 
@@ -1195,6 +1201,8 @@ def index(request):
                         betygsskala_forklaring=betygsskala_prompt,
                         uploaded_files=_trim(context.get("uploaded_files_markdown") or
                                              context.get("uploaded_files_text", "")),
+                        candidate_name=context["candidate_name"],
+                        candidate_role=context["candidate_role"],
                     )
                 step = 4
 
@@ -1211,6 +1219,8 @@ def index(request):
                         betygsskala_forklaring=betygsskala_prompt,
                         uploaded_files=_trim(context.get("uploaded_files_markdown") or
                                              context.get("uploaded_files_text", "")),
+                        candidate_name=context["candidate_name"],
+                        candidate_role=context["candidate_role"],
                     )
                 step = 5
 
@@ -1227,6 +1237,8 @@ def index(request):
                         betygsskala_forklaring=betygsskala_prompt,
                         uploaded_files=_trim(context.get("uploaded_files_markdown") or
                                              context.get("uploaded_files_text", "")),
+                        candidate_name=context["candidate_name"],
+                        candidate_role=context["candidate_role"],
                     )
                 step = 6
 
@@ -1243,6 +1255,8 @@ def index(request):
                         betygsskala_forklaring=betygsskala_prompt,
                         uploaded_files=_trim(context.get("uploaded_files_markdown") or
                                              context.get("uploaded_files_text", "")),
+                        candidate_name=context["candidate_name"],
+                        candidate_role=context["candidate_role"],
                     )
                 step = 7
 
@@ -1262,6 +1276,8 @@ def index(request):
                         kommunikation_text=context["kommunikation_text"],
                         uploaded_files=_trim(context.get("uploaded_files_markdown") or
                                              context.get("uploaded_files_text", "")),
+                        candidate_name=context["candidate_name"],
+                        candidate_role=context["candidate_role"],
                     )
                 step = 8
 
@@ -1282,6 +1298,8 @@ def index(request):
                         kommunikation_text=context["kommunikation_text"],
                         uploaded_files=_trim(context.get("uploaded_files_markdown") or
                                              context.get("uploaded_files_text", "")),
+                        candidate_name=context["candidate_name"],
+                        candidate_role=context["candidate_role"],
                     )
                 step = 9
 
