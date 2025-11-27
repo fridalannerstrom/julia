@@ -341,7 +341,7 @@ def _ratings_table_html(
 
         .dn-sub{
             font-weight:500;
-            padding:10px 0;
+            padding:10px 10px;
             white-space:nowrap;
             color:#111827;
             background:transparent;
@@ -902,6 +902,10 @@ def index(request):
         "sur_text": request.POST.get("sur_text", ""),
         "slutsats_text": request.POST.get("slutsats_text", ""),
 
+        # NYTT – kandidatinfo
+        "candidate_name": request.POST.get("candidate_name", ""),
+        "candidate_role": request.POST.get("candidate_role", ""),
+
         # dessa två ersätts av markdown + html
         "uploaded_files_markdown": request.POST.get("uploaded_files_markdown", ""),
         "uploaded_files_html": "",
@@ -1011,6 +1015,15 @@ def index(request):
             if step == 1:
                 excel_text = ""
                 ws = None
+
+                name = (request.POST.get("candidate_name") or "").strip()
+                role = (request.POST.get("candidate_role") or "").strip()
+
+                context["candidate_name"] = name
+                context["candidate_role"] = role
+
+                if not name:
+                    context["error"] = "Skriv in kandidatens namn."
 
                 # Excel
                 if "excel" in request.FILES:

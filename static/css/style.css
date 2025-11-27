@@ -757,6 +757,219 @@ body {
   margin-bottom: 32px;
 }
 
+/* ===== RAPPORT-PREVIEW (STEG 10) ===== */
+
+.dn-report {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  margin-top: 24px;
+}
+
+/* toppband med logga */
+.dn-report-header {
+  height: 200px;
+  background: linear-gradient(90deg, #1b0635, #e11370);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 24px 32px;
+}
+
+.dn-report-logo {
+  height: 40px;
+  object-fit: contain;
+}
+
+.dn-report-body {
+  padding: 0px 0px;
+}
+
+.dn-report-header img {
+  width: 250px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* raderna i tabellen */
+.dn-report-row {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  border-top: 1px solid #e5e7eb;
+}
+
+.dn-report-row:first-child {
+  border-top: none;
+}
+
+.dn-report-col {
+  padding: 18px 20px;
+}
+
+.dn-report-col--left {
+  border-right: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.dn-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.dn-body-text {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #4b5563;
+}
+
+.dn-subheading {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 6px 0 10px;
+  color: #111827;
+  padding-left: 10px;
+}
+
+.dn-report-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #111827;
+}
+
+.dn-report-table {
+  margin-bottom: 12px;
+}
+
+/* poängskale-bild */
+.dn-scale-box {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.dn-scale-image {
+  display: block;
+  width: 100%;
+}
+
+/* Skaltabellen högst upp */
+
+.dn-table-scale {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid rgb(223, 223, 223);
+}
+
+.dn-scale-head {
+  background: #111827;   /* mörk topp som i PDF:en */
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 6px;
+  border-left: 1px solid #1f2937;
+}
+
+.dn-scale-head--empty {
+  background: #111827;
+  border-left: none;
+  width: 40%;
+}
+
+.dn-table-scale tbody tr + tr {
+  border-top: 1px solid #e5e7eb;
+}
+
+.dn-scale-desc {
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: #111827;
+  padding: 12px 10px;
+  vertical-align: middle;
+}
+
+.dn-table-scale .dn-cell {
+  text-align: center;
+  padding: 10px 4px;
+}
+
+.dn-table {
+  border: 1px solid rgb(230, 230, 230);
+  padding: 10px;
+}
+
+/* lite tightare på små skärmar */
+@media (max-width: 900px) {
+  .dn-scale-head {
+    font-size: 0.7rem;
+    padding: 6px 4px;
+  }
+  .dn-scale-desc {
+    font-size: 0.8rem;
+  }
+}
+
+/* mobil */
+@media (max-width: 900px) {
+  .dn-report-row {
+    grid-template-columns: 1fr;
+  }
+  .dn-report-col--left {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+}
+
+.dn-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.dn-row--two .dn-field-group {
+  flex: 1;
+}
+
+/* Lite tajtare label/input så det matchar övrig design */
+.dn-field-group label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+  color: #111827;
+}
+
+.dn-field-group .dn-input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+  background-color: #F9FAFB;
+}
+
+/* Stacka på mobil */
+@media (max-width: 640px) {
+  .dn-row {
+    flex-direction: column;
+  }
+}
+
+/* Placeholder-style för alla dn-inputs */
+.dn-input::placeholder {
+  color: #9ca3af;      /* snygg neutral-grå */
+  font-size: 0.85rem;  /* lite mindre */
+  opacity: 1;          /* se till att färgen verkligen syns */
+}
+
+/* Vid focus – gör det ännu mildare så fokus känns “rent” */
+.dn-input:focus::placeholder {
+  color: #c3c7cf;
+}
 
 /* Responsivitet för kortet */
 @media (max-width: 768px) {

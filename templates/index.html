@@ -1,69 +1,72 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
-    <title>Julia</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <meta name="description" content="" />
+  <meta name="author" content="" />
+  <title>Julia</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Din egna styles (ligger efter så den vinner) -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <!-- Din egna styles (ligger efter så den vinner) -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-    <link rel="icon" href="{% static 'img/favicon.ico' %}">
+  <link rel="icon" href="{% static 'img/favicon.ico' %}">
 
-    <style>
-      /* LOADING OVERLAY – bara detta lokalt */
-      #loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(17, 24, 39, 0.55);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
+  <style>
+    /* LOADING OVERLAY – bara detta lokalt */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(17, 24, 39, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .loading-box {
+      background: #fff;
+      padding: 22px 30px;
+      border-radius: 14px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      min-width: 200px;
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 4px solid #e5e7eb;
+      border-top-color: #7b2cbf;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
       }
+    }
 
-      .loading-box {
-        background: #fff;
-        padding: 22px 30px;
-        border-radius: 14px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        min-width: 200px;
-        text-align: center;
-      }
-
-      .loading-spinner {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 4px solid #e5e7eb;
-        border-top-color: #7b2cbf;
-        animation: spin 1s linear infinite;
-      }
-
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-
-      #loading-overlay p {
-        font-size: 1rem;
-        color: #111827;
-        margin: 0;
-        font-weight: 500;
-      }
-    </style>
+    #loading-overlay p {
+      font-size: 1rem;
+      color: #111827;
+      margin: 0;
+      font-weight: 500;
+    }
+  </style>
 </head>
 
 <body id="page-top">
@@ -134,8 +137,7 @@
             <div class="adminui-container">
 
               <!-- Progressbar -->
-              <div class="adminui-progress"
-                   style="--current-step: {{ step }}; --total-steps: 10;">
+              <div class="adminui-progress" style="--current-step: {{ step }}; --total-steps: 10;">
                 <div class="adminui-progress-bar"></div>
               </div>
 
@@ -147,7 +149,9 @@
                 <input type="hidden" name="step" value="{{ step }}">
                 <input type="hidden" name="test_text" value="{{ test_text|escape }}">
                 <input type="hidden" name="uploaded_files_markdown"
-                          value="{{ uploaded_files_markdown|default_if_none:''|escape }}">
+                  value="{{ uploaded_files_markdown|default_if_none:''|escape }}">
+                <input type="hidden" name="candidate_name" value="{{ candidate_name }}">
+                <input type="hidden" name="candidate_role" value="{{ candidate_role }}">
                 <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
                 <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
                 <input type="hidden" name="tq_motivation_text" value="{{ tq_motivation_text|escape }}">
@@ -159,267 +163,462 @@
                 <input type="hidden" name="sur_text" value="{{ sur_text|escape }}">
                 <input type="hidden" name="slutsats_text" value="{{ slutsats_text|escape }}">
                 {% if ratings_json %}
-                  <input type="hidden" name="ratings_json" value="{{ ratings_json|escape }}">
+                <input type="hidden" name="ratings_json" value="{{ ratings_json|escape }}">
                 {% endif %}
 
 
                 {% if step == 1 %}
-                  <h2 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h2>
-                  <p class="adminui-intro">
-                    Ladda upp Excelfilen, övriga filer och och klistra in anteckningar.
-                    Klicka på <strong>Nästa</strong> för att skapa din rapport.
-                  </p>
+                <h2 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h2>
+                <p class="adminui-intro">
+                  Ladda upp Excelfilen, övriga filer och och klistra in anteckningar.
+                  Klicka på <strong>Nästa</strong> för att skapa din rapport.
+                </p>
 
-                  <h3 class="adminui-label">1. Excelfil</h3>
-                  <p class="adminui-intro">
-                      Ladda upp din excelfil med data från testresultaten.
-                  </p>
+<div class="dn-row dn-row--two">
+  <div class="dn-field-group">
+    <label for="candidate_name">Kandidatens namn *</label>
+    <input type="text" id="candidate_name" name="candidate_name"
+           value="{{ candidate_name }}" class="dn-input" placeholder="Ange för- och efternamn" required>
+  </div>
 
-                  <div class="adminui-upload-area">
-                        <label for="excel" class="adminui-drop-zone">
-                          <!-- VIKTIGT: name="excel" och INNE I FORMEN -->
-                          <input type="file" name="excel" id="excel"
-                                accept=".xlsx"
-                                style="display:none"
-                                onchange="showFilename(this)">
-                          <div class="adminui-drop-icon">📁</div>
-                          <div class="adminui-drop-text">
-                            <span>Släpp Excelfil här eller klicka för att välja</span>
-                            <small>Excel-format (.xlsx)</small>
-                          </div>
-                        </label>
-                        <p id="filename" class="adminui-filename">Ingen fil vald</p>
-                      </div>
+  <div class="dn-field-group">
+    <label for="candidate_role">Roll / tjänst (valfritt)</label>
+    <input type="text" id="candidate_role" name="candidate_role"
+           value="{{ candidate_role }}" class="dn-input" placeholder="Ange ev. roll">
+  </div>
+</div>
 
-                      <!-- Hidden field för att bära med sammanfogad text mellan stegen -->
-                      <input type="hidden" name="uploaded_files_text" value="{{ uploaded_files_text|default_if_none:'' }}">
 
-                      <h3 class="adminui-label">2. CV (PDF)</h3>
-                      <p class="adminui-intro">
-                        Ladda upp kandidatens CV i PDF-format. Texten används som stöd i analysen.
-                      </p>
+                <h3 class="adminui-label">1. Excelfil</h3>
+                <p class="adminui-intro">
+                  Ladda upp din excelfil med data från testresultaten.
+                </p>
 
-                      <label class="adminui-drop-zone adminui-drop-zone-extra">
-                        <input
-                          id="cv_file"
-                          name="cv_file"
-                          type="file"
-                          accept=".pdf"
-                          hidden
-                          onchange="updateExtraFiles(this)">
-                        <div class="adminui-drop-icon">📝</div>
-                        <div class="adminui-drop-text">
-                          <span>Släpp CV här eller klicka för att välja</span>
-                          <small>PDF-format (.pdf)</small>
-                        </div>
-                      </label>
+                <div class="adminui-upload-area">
+                  <label for="excel" class="adminui-drop-zone">
+                    <!-- VIKTIGT: name="excel" och INNE I FORMEN -->
+                    <input type="file" name="excel" id="excel" accept=".xlsx" style="display:none"
+                      onchange="showFilename(this)">
+                    <div class="adminui-drop-icon">📁</div>
+                    <div class="adminui-drop-text">
+                      <span>Släpp Excelfil här eller klicka för att välja</span>
+                      <small>Excel-format (.xlsx)</small>
+                    </div>
+                  </label>
+                  <p id="filename" class="adminui-filename">Ingen fil vald</p>
+                </div>
 
-                      <p id="cv-filename" class="adminui-filename">
-                        {% if uploaded_files_text %}
-                          CV uppladdat (text används i analysen).
-                        {% else %}
-                          Inget CV uppladdat
-                        {% endif %}
-                      </p>
+                <!-- Hidden field för att bära med sammanfogad text mellan stegen -->
+                <input type="hidden" name="uploaded_files_text" value="{{ uploaded_files_text|default_if_none:'' }}">
 
-                  <h3 class="adminui-label">3. Anteckningar, jobbannons och annat</h3>
-                  <p class="adminui-intro">
-                      Klistra in textbaserad information, till exempel anteckningar från intervju, 
-                      jobbannons eller annan relevant information.
-                  </p>
+                <h3 class="adminui-label">2. CV (PDF)</h3>
+                <p class="adminui-intro">
+                  Ladda upp kandidatens CV i PDF-format. Texten används som stöd i analysen.
+                </p>
 
-                  <textarea name="intervju" class="adminui-textarea" rows="6">{{ intervju_text }}</textarea>
+                <label class="adminui-drop-zone adminui-drop-zone-extra">
+                  <input id="cv_file" name="cv_file" type="file" accept=".pdf" hidden onchange="updateExtraFiles(this)">
+                  <div class="adminui-drop-icon">📝</div>
+                  <div class="adminui-drop-text">
+                    <span>Släpp CV här eller klicka för att välja</span>
+                    <small>PDF-format (.pdf)</small>
+                  </div>
+                </label>
+
+                <p id="cv-filename" class="adminui-filename">
+                  {% if uploaded_files_text %}
+                  CV uppladdat (text används i analysen).
+                  {% else %}
+                  Inget CV uppladdat
+                  {% endif %}
+                </p>
+
+                <h3 class="adminui-label">3. Anteckningar, jobbannons och annat</h3>
+                <p class="adminui-intro">
+                  Klistra in textbaserad information, till exempel anteckningar från intervju,
+                  jobbannons eller annan relevant information.
+                </p>
+
+                <textarea name="intervju" class="adminui-textarea" rows="6">{{ intervju_text }}</textarea>
                 {% endif %}
 
-                        <!-- STEG 2: TQ F/M -->
-                        {% if step == 2 %}
-                            <h3 class="adminui-subtitle">Steg 2 – TQ Färdighet &amp; TQ Motivation</h3>
+                <!-- STEG 2: TQ F/M -->
+                {% if step == 2 %}
+                <h3 class="adminui-subtitle">Steg 2 – TQ Färdighet &amp; TQ Motivation</h3>
 
-                            <label class="adminui-label">TQ Färdighet</label>
-                            <textarea class="adminui-textarea" rows="5" name="tq_fardighet_text">{{ tq_fardighet_text }}</textarea>
+                <label class="adminui-label">TQ Färdighet</label>
+                <textarea class="adminui-textarea" rows="5" name="tq_fardighet_text">{{ tq_fardighet_text }}</textarea>
 
-                            <label class="adminui-label">TQ Motivation – tre främsta drivkrafter</label>
-                            <textarea class="adminui-textarea" rows="5" name="tq_motivation_text">{{ tq_motivation_text }}</textarea>
+                <label class="adminui-label">TQ Motivation – tre främsta drivkrafter</label>
+                <textarea class="adminui-textarea" rows="5"
+                  name="tq_motivation_text">{{ tq_motivation_text }}</textarea>
+                {% endif %}
+
+                <!-- STEG 3: Leda -->
+                {% if step == 3 %}
+                <h3 class="adminui-subtitle">Steg 3 – Leda, utveckla och engagera</h3>
+                {% if leda_table_html %}
+                <div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>
+                {% endif %}
+                <label class="adminui-label">Text</label>
+                <textarea class="adminui-textarea" rows="6" name="leda_text">{{ leda_text }}</textarea>
+                {% endif %}
+
+                <!-- STEG 4: Mod -->
+                {% if step == 4 %}
+                <h3 class="adminui-subtitle">Steg 4 – Mod och handlingskraft</h3>
+                {% if mod_table_html %}
+                <div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>
+                {% endif %}
+                <label class="adminui-label">Text</label>
+                <textarea class="adminui-textarea" rows="6" name="mod_text">{{ mod_text }}</textarea>
+                {% endif %}
+
+                <!-- STEG 5: Självkännedom -->
+                {% if step == 5 %}
+                <h3 class="adminui-subtitle">Steg 5 – Självkännedom och emotionell stabilitet</h3>
+                {% if sjalkannedom_table_html %}
+                <div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>
+                {% endif %}
+                <label class="adminui-label">Text</label>
+                <textarea class="adminui-textarea" rows="6" name="sjalkannedom_text">{{ sjalkannedom_text }}</textarea>
+                {% endif %}
+
+                <!-- STEG 6: Strategi -->
+                {% if step == 6 %}
+                <h3 class="adminui-subtitle">Steg 6 – Strategiskt tänkande och anpassningsförmåga</h3>
+                {% if strategi_table_html %}
+                <div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>
+                {% endif %}
+                <label class="adminui-label">Text</label>
+                <textarea class="adminui-textarea" rows="6" name="strategi_text">{{ strategi_text }}</textarea>
+                {% endif %}
+
+                <!-- STEG 7: Kommunikation -->
+                {% if step == 7 %}
+                <h3 class="adminui-subtitle">Steg 7 – Kommunikation och samarbete</h3>
+                {% if kommunikation_table_html %}
+                <div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>
+                {% endif %}
+                <label class="adminui-label">Text</label>
+                <textarea class="adminui-textarea" rows="6"
+                  name="kommunikation_text">{{ kommunikation_text }}</textarea>
+                {% endif %}
+
+                <!-- STEG 8: SUR -->
+                {% if step == 8 %}
+                <h3 class="adminui-subtitle">Steg 8 – Styrkor / Utvecklingsområden / Riskbeteenden</h3>
+                <p class="adminui-intro">Här sammanfattas allt ovan till tre tydliga listor. Justera fritt.</p>
+                <textarea class="adminui-textarea" rows="8" name="sur_text">{{ sur_text }}</textarea>
+                {% endif %}
+
+                <!-- STEG 9: Slutsats -->
+                {% if step == 9 %}
+                <h3 class="adminui-subtitle">Steg 9 – Sammanfattande slutsats</h3>
+                <p class="adminui-intro">Skriv eller justera slutbedömningen baserat på hela bilden.</p>
+                <textarea class="adminui-textarea" rows="8" name="slutsats_text">{{ slutsats_text }}</textarea>
+                {% endif %}
+
+                <!-- STEG 10: Sammanställning -->
+                {% if step == 10 %}
+                <h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
+
+                <div class="dn-report">
+
+                  <!-- HEADER-BANNER (logga / gradient) -->
+                  <div class="dn-report-header">
+                    {# Använd egen bild här #}
+                    <img src="{% static 'jurek_logo.png' %}" alt="Logotyp" class="dn-report-logo">
+                  </div>
+
+                  <div class="dn-report-body">
+
+                    {# RAD 0 – Namn #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h5 class="dn-subheading">{{ candidate_name }}</h5>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <h5 class="dn-subheading">{% if candidate_role %} {{ candidate_role }}{% endif %}</h5>
+                      </div>
+                    </div>
+
+                    {# RAD 1 – Namn + Poängskala #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <p class="dn-body-text">
+                          Alla har beteendepreferenser på arbetet som påverkar vårt agerande. En individs
+                          preferenser påverkar, men dikterar inte individens beteende. Det är möjligt att arbeta
+                          utanför våra naturliga preferenser, men det kräver självkännedom, en medveten insats
+                          och energi.
+                          <br><br>
+                          Skalan visar hur sannolikt en kompetens är stark eller ej hos en individ.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+
+                        <h5 class="dn-subheading">Poängskala</h5>
+                        <div class="dn-report-table dn-report-table--scale">
+                          <table class="dn-table dn-table-scale">
+                            <thead>
+                              <tr>
+                                <th class="dn-scale-head dn-scale-head--empty"></th>
+                                <th class="dn-scale-head">Utrymme för<br>utveckling</th>
+                                <th class="dn-scale-head">Tillräcklig</th>
+                                <th class="dn-scale-head">God</th>
+                                <th class="dn-scale-head">Mycket god</th>
+                                <th class="dn-scale-head">Utmärkt</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>mycket mindre effektiv</strong> än de flesta
+                                  när det gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-dot dn-dot--active"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                              </tr>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>mindre effektiv</strong> än många när det
+                                  gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot dn-dot--active"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                              </tr>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>lika effektiv</strong> som de flesta
+                                  när det gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot dn-dot--active"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                              </tr>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>mer effektiv</strong> än många när det
+                                  gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot dn-dot--active"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                              </tr>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>mycket mer effektiv</strong> än de
+                                  flesta när det gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-dot dn-dot--active"></span></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    {# RAD 2 – TQ Färdighet #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">TQ Färdighet</h4>
+                        <p class="dn-body-text">
+                          Resultatet i dessa tester avgörs av hur snabb och noggrann kandidaten i fråga är.
+                          Frågorna är adaptiva vilket innebär att svårighetsgraden ändras beroende på om man
+                          svarar rätt eller fel.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <div class="dn-report-text">
+                          {{ tq_fardighet_html|safe }}
+                        </div>
+                      </div>
+                    </div>
+
+                    {# RAD 3 – Styrkor / Utvecklingsområden / Risk #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">1. Styrkor<br>2. Utvecklingsområden<br>3. Riskbeteenden</h4>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <div class="dn-report-text">
+                          {{ sur_html|safe }}
+                        </div>
+                      </div>
+                    </div>
+
+                    {# RAD 4 – Motivation (vänster = defin., höger = din text) #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Definition av kandidatens 3 främsta motivationsfaktorer</h4>
+                        <p class="dn-body-text">
+                          Här beskrivs kort vad respektive motivationsfaktor står för, till exempel
+                          kreativitet, nyfikenhet och prestation.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <div class="dn-report-text">
+                          {{ tq_motivation_html|safe }}
+                        </div>
+                      </div>
+                    </div>
+
+                    {# RAD 5 – Leda, utveckla och engagera #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Leda, utveckla och engagera</h4>
+                        <p class="dn-body-text">
+                          En chef ska kunna sätta upp och arbeta uthålligt mot tydliga mål som bidrar till
+                          verksamhetens resultat och utveckling, samt motivera och engagera medarbetarna.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if leda_table_html %}
+                        <div class="dn-report-table">
+                          {{ leda_table_html|safe }}
+                        </div>
                         {% endif %}
+                        <div class="dn-report-text">
+                          {{ leda_html|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-                        <!-- STEG 3: Leda -->
-                        {% if step == 3 %}
-                            <h3 class="adminui-subtitle">Steg 3 – Leda, utveckla och engagera</h3>
-                            {% if leda_table_html %}
-                                <div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>
-                            {% endif %}
-                            <label class="adminui-label">Text</label>
-                            <textarea class="adminui-textarea" rows="6" name="leda_text">{{ leda_text }}</textarea>
+                    {# RAD 6 – Mod och handlingskraft #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Mod och handlingskraft</h4>
+                        <p class="dn-body-text">
+                          Att visa mod och handlingskraft innebär att kunna ta ansvar och hantera svåra
+                          situationer samt fatta beslut även under press.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if mod_table_html %}
+                        <div class="dn-report-table">
+                          {{ mod_table_html|safe }}
+                        </div>
                         {% endif %}
+                        <div class="dn-report-text">
+                          {{ mod_html|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-                        <!-- STEG 4: Mod -->
-                        {% if step == 4 %}
-                            <h3 class="adminui-subtitle">Steg 4 – Mod och handlingskraft</h3>
-                            {% if mod_table_html %}
-                                <div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>
-                            {% endif %}
-                            <label class="adminui-label">Text</label>
-                            <textarea class="adminui-textarea" rows="6" name="mod_text">{{ mod_text }}</textarea>
+                    {# RAD 7 – Självkännedom och emotionell stabilitet #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Självkännedom och emotionell stabilitet</h4>
+                        <p class="dn-body-text">
+                          En chef behöver vara trygg, empatisk och medveten om sina egna styrkor och
+                          svagheter, samt kunna hantera stress i krävande situationer.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if sjalkannedom_table_html %}
+                        <div class="dn-report-table">
+                          {{ sjalkannedom_table_html|safe }}
+                        </div>
                         {% endif %}
+                        <div class="dn-report-text">
+                          {{ sjalkannedom_html|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-                        <!-- STEG 5: Självkännedom -->
-                        {% if step == 5 %}
-                            <h3 class="adminui-subtitle">Steg 5 – Självkännedom och emotionell stabilitet</h3>
-                            {% if sjalkannedom_table_html %}
-                                <div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>
-                            {% endif %}
-                            <label class="adminui-label">Text</label>
-                            <textarea class="adminui-textarea" rows="6" name="sjalkannedom_text">{{ sjalkannedom_text }}</textarea>
+                    {# RAD 8 – Strategiskt tänkande och anpassningsförmåga #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Strategiskt tänkande och anpassningsförmåga</h4>
+                        <p class="dn-body-text">
+                          En chef ska kunna tänka strategiskt, väga långsiktiga och kortsiktiga konsekvenser
+                          och anpassa sig efter förändrade omständigheter.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if strategi_table_html %}
+                        <div class="dn-report-table">
+                          {{ strategi_table_html|safe }}
+                        </div>
                         {% endif %}
+                        <div class="dn-report-text">
+                          {{ strategi_html|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-                        <!-- STEG 6: Strategi -->
-                        {% if step == 6 %}
-                            <h3 class="adminui-subtitle">Steg 6 – Strategiskt tänkande och anpassningsförmåga</h3>
-                            {% if strategi_table_html %}
-                                <div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>
-                            {% endif %}
-                            <label class="adminui-label">Text</label>
-                            <textarea class="adminui-textarea" rows="6" name="strategi_text">{{ strategi_text }}</textarea>
+                    {# RAD 9 – Kommunikation och samarbete #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Kommunikation och samarbete</h4>
+                        <p class="dn-body-text">
+                          Som chef är det viktigt att kommunicera tydligt, vara lyhörd och aktivt skapa
+                          samarbeten och relationer, både internt och externt.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if kommunikation_table_html %}
+                        <div class="dn-report-table">
+                          {{ kommunikation_table_html|safe }}
+                        </div>
                         {% endif %}
+                        <div class="dn-report-text">
+                          {{ kommunikation_html|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-                        <!-- STEG 7: Kommunikation -->
-                        {% if step == 7 %}
-                            <h3 class="adminui-subtitle">Steg 7 – Kommunikation och samarbete</h3>
-                            {% if kommunikation_table_html %}
-                                <div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>
-                            {% endif %}
-                            <label class="adminui-label">Text</label>
-                            <textarea class="adminui-textarea" rows="6" name="kommunikation_text">{{ kommunikation_text }}</textarea>
-                        {% endif %}
+                    {# RAD 10 – Sammanfattande slutsats #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Sammanfattande slutsats</h4>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <div class="dn-report-text">
+                          {{ slutsats_html|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-                        <!-- STEG 8: SUR -->
-                        {% if step == 8 %}
-                            <h3 class="adminui-subtitle">Steg 8 – Styrkor / Utvecklingsområden / Riskbeteenden</h3>
-                            <p class="adminui-intro">Här sammanfattas allt ovan till tre tydliga listor. Justera fritt.</p>
-                            <textarea class="adminui-textarea" rows="8" name="sur_text">{{ sur_text }}</textarea>
-                        {% endif %}
+                  </div>
+                </div>
+                {% endif %}
 
-                        <!-- STEG 9: Slutsats -->
-                        {% if step == 9 %}
-                            <h3 class="adminui-subtitle">Steg 9 – Sammanfattande slutsats</h3>
-                            <p class="adminui-intro">Skriv eller justera slutbedömningen baserat på hela bilden.</p>
-                            <textarea class="adminui-textarea" rows="8" name="slutsats_text">{{ slutsats_text }}</textarea>
-                        {% endif %}
-
-                        <!-- STEG 10: Sammanställning -->
-{% if step == 10 %}
-  <h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
-  <p class="adminui-intro">
-      Här ser du hela rapporten samlad, utan nya AI-anrop. Kontrollera innan du laddar ner Word.
-  </p>
-
-  <div class="adminui-report-preview">
-
-      {% if tq_fardighet_html %}
-      <div class="report-section">
-          <h3>TQ Färdighet</h3>
-          <div class="report-body">
-              {{ tq_fardighet_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-      {% if sur_html %}
-      <div class="report-section">
-          <h3>Styrkor / Utvecklingsområden / Riskbeteenden</h3>
-          <div class="report-body">
-              {{ sur_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-      {% if tq_motivation_html %}
-      <div class="report-section">
-          <h3>TQ Motivation – främsta drivkrafter</h3>
-          <div class="report-body">
-              {{ tq_motivation_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-      {% if leda_html %}
-      <div class="report-section">
-          <h3>Leda, utveckla och engagera</h3>
-          <div class="report-body">
-              {{ leda_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-      {% if mod_html %}
-      <div class="report-section">
-          <h3>Mod och handlingskraft</h3>
-          <div class="report-body">
-              {{ mod_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-      {% if sjalkannedom_html %}
-      <div class="report-section">
-          <h3>Självkännedom och emotionell stabilitet</h3>
-          <div class="report-body">
-              {{ sjalkannedom_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-      {% if strategi_html %}
-      <div class="report-section">
-          <h3>Strategiskt tänkande och anpassningsförmåga</h3>
-          <div class="report-body">
-              {{ strategi_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-      {% if kommunikation_html %}
-      <div class="report-section">
-          <h3>Kommunikation och samarbete</h3>
-          <div class="report-body">
-              {{ kommunikation_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-      {% if slutsats_html %}
-      <div class="report-section">
-          <h3>Sammanfattande slutsats</h3>
-          <div class="report-body">
-              {{ slutsats_html|safe }}
-          </div>
-      </div>
-      {% endif %}
-
-  </div>
-{% endif %}
 
                 <!-- NAVIGATION -->
                 <div class="adminui-button-row">
                   {% if step > 1 %}
-                    <button class="adminui-button adminui-button-secondary" type="submit" name="prev" value="1">
-                      ⬅ Föregående
-                    </button>
+                  <button class="adminui-button adminui-button-secondary" type="submit" name="prev" value="1">
+                    ⬅ Föregående
+                  </button>
                   {% endif %}
 
-                  {% if step < 9 %}
-                    <button class="adminui-button" type="submit" name="next" value="1">
-                      Nästa ➜
+                  {% if step < 9 %} <button class="adminui-button" type="submit" name="next" value="1">
+                    Nästa ➜
                     </button>
-                  {% elif step == 9 %}
+                    {% elif step == 9 %}
                     <button class="adminui-button" type="submit" name="next" value="1">
                       Sammanställ ➜
                     </button>
-                  {% elif step == 10 %}
+                    {% elif step == 10 %}
                     <button class="adminui-button" type="submit" name="build_doc" value="1">
                       📄 Ladda ner som Word
                     </button>
-                  {% endif %}
+                    {% endif %}
                 </div>
 
               </form>
@@ -432,80 +631,80 @@
 
     <!-- HÖGERSPALT / PLATS FÖR CHATT -->
     <aside class="right-panel">
-          <h3 class="assistant-title">Din data</h3>
+      <h3 class="assistant-title">Din data</h3>
 
-            {% if ratings_sidebar %}
-              {% for section_title, items in ratings_sidebar.items %}
-                <div class="assistant-section">
-                  <h4 class="assistant-section-title">{{ section_title }}</h4>
-                  <ul class="assistant-list">
-                    {% for item in items %}
-                      <li class="assistant-list-item">
-                        <span class="assistant-label">{{ item.label }}:</span>
-                        <span class="assistant-value">{{ item.value }}</span>
-                      </li>
-                    {% endfor %}
-                  </ul>
-                </div>
-              {% endfor %}
-            {% else %}
-              <p class="adminui-intro">När du laddat upp material kommer det hamna här.</p>
-            {% endif %}
+      {% if ratings_sidebar %}
+      {% for section_title, items in ratings_sidebar.items %}
+      <div class="assistant-section">
+        <h4 class="assistant-section-title">{{ section_title }}</h4>
+        <ul class="assistant-list">
+          {% for item in items %}
+          <li class="assistant-list-item">
+            <span class="assistant-label">{{ item.label }}:</span>
+            <span class="assistant-value">{{ item.value }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="adminui-intro">När du laddat upp material kommer det hamna här.</p>
+      {% endif %}
 
-{% if uploaded_files_markdown %}
-  <button type="button" class="adminui-button adminui-button-secondary" id="showPdfTextBtn">
-    Visa CV
-  </button>
-{% endif %}
+      {% if uploaded_files_markdown %}
+      <button type="button" class="adminui-button adminui-button-secondary" id="showPdfTextBtn">
+        Visa CV
+      </button>
+      {% endif %}
     </aside>
   </div>
 
 
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
 
-  // -------- OVERLAY --------
-  const forms = document.querySelectorAll("form");
-  const overlay = document.getElementById("loading-overlay");
+      // -------- OVERLAY --------
+      const forms = document.querySelectorAll("form");
+      const overlay = document.getElementById("loading-overlay");
 
-  if (overlay) {
-    forms.forEach(form => {
-      form.addEventListener("submit", function (e) {
-        const btn = e.submitter;
-        if (!btn) return;
+      if (overlay) {
+        forms.forEach(form => {
+          form.addEventListener("submit", function (e) {
+            const btn = e.submitter;
+            if (!btn) return;
 
-        const heavyActions = [
-          "next", "gen_tq_fardighet", "gen_tq_motivation",
-          "gen_leda", "gen_mod", "gen_sjalkannedom",
-          "gen_strategi", "gen_kommunikation", "gen_sur",
-          "gen_slutsats", "generate_analysis"
-        ];
+            const heavyActions = [
+              "next", "gen_tq_fardighet", "gen_tq_motivation",
+              "gen_leda", "gen_mod", "gen_sjalkannedom",
+              "gen_strategi", "gen_kommunikation", "gen_sur",
+              "gen_slutsats", "generate_analysis"
+            ];
 
-        if (heavyActions.includes(btn.name)) {
-          overlay.style.display = "flex";
-        }
-      });
-    });
-  }
-
-  // -------- POPUP --------
-  const btn = document.getElementById("showPdfTextBtn");
-  const modal = document.getElementById("pdfTextModal");
-  const closeBtn = document.getElementById("closePdfTextModal");
-
-  if (btn && modal && closeBtn) {
-    btn.addEventListener("click", () => modal.classList.add("is-open"));
-    closeBtn.addEventListener("click", () => modal.classList.remove("is-open"));
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal || e.target.classList.contains("dn-modal-backdrop")) {
-        modal.classList.remove("is-open");
+            if (heavyActions.includes(btn.name)) {
+              overlay.style.display = "flex";
+            }
+          });
+        });
       }
-    });
-  }
 
-});
-</script>
+      // -------- POPUP --------
+      const btn = document.getElementById("showPdfTextBtn");
+      const modal = document.getElementById("pdfTextModal");
+      const closeBtn = document.getElementById("closePdfTextModal");
+
+      if (btn && modal && closeBtn) {
+        btn.addEventListener("click", () => modal.classList.add("is-open"));
+        closeBtn.addEventListener("click", () => modal.classList.remove("is-open"));
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal || e.target.classList.contains("dn-modal-backdrop")) {
+            modal.classList.remove("is-open");
+          }
+        });
+      }
+
+    });
+  </script>
 
   <!-- LOADING OVERLAY -->
   <div id="loading-overlay">
@@ -515,21 +714,21 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
   </div>
 
-{% if uploaded_files_html %}
-<div id="pdfTextModal" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" id="closePdfTextModal" class="dn-modal-close">×</button>
-    <h3>Text från PDF-uppladdning</h3>
+  {% if uploaded_files_html %}
+  <div id="pdfTextModal" class="dn-modal">
+    <div class="dn-modal-backdrop"></div>
+    <div class="dn-modal-content">
+      <button type="button" id="closePdfTextModal" class="dn-modal-close">×</button>
+      <h3>Text från PDF-uppladdning</h3>
 
-    <div class="dn-modal-body markdown-body">
-      {{ uploaded_files_html|safe }}
+      <div class="dn-modal-body markdown-body">
+        {{ uploaded_files_html|safe }}
+      </div>
     </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
-<script src="{% static 'js/script.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
 </body>
 
 </html>
