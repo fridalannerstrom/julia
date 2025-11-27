@@ -134,12 +134,31 @@
                     Anpassa ton, längd och detaljer efter vad du vill att Julia AI ska ge för typ av output.
                   </p>
 
-                  {% for prompt in prompts %}
-                    {% if prompt.name not in "tolka_excel_resultat betygsskala_forklaring" %}
-                      <div style="margin-bottom:24px;">
-                        <label for="prompt_{{ prompt.name }}" class="adminui-label">
-                          {{ prompt.name|capfirst }}
-                        </label>
+                 {% for prompt in prompts %}
+                  {% if prompt.name != "tolka_excel_resultat" and prompt.name != "betygsskala_forklaring" %}
+                    <div style="margin-bottom:24px;">
+
+                      <label for="prompt_{{ prompt.name }}" class="adminui-label">
+                        {{ prompt.name|capfirst }}
+                      </label>
+
+                      {# ── Specialtext för global_style ── #}
+                      {% if prompt.name == "global_style" %}
+                        <p style="font-size:0.8rem; color:#666; margin-bottom:4px;">
+                          ❌ <strong>Använd ej taggar i <code>global_style</code>.</strong><br>
+                          Global stil ska bara innehålla:
+                          skrivregler, tonalitet, språkbruk
+                          (t.ex. “säg <em>grupp</em>, inte <em>team</em>”)
+                          och strukturella regler (t.ex. “undvik punktlistor”,
+                          “skriv i tredje person”) etc.<br>
+                        </p>
+
+                      {# ── Dessa två har egen förklaring högre upp – visa ingen tagg-hjälp här ── #}
+                      {% elif prompt.name == "tolka_excel_resultat" or prompt.name == "betygsskala_forklaring" %}
+                        {# inget extra info-block #}
+
+                      {# ── Standardinfo för alla andra prompts ── #}
+                      {% else %}
                         <p style="font-size:0.8rem; color:#666; margin-bottom:4px;">
                           Behåll relevanta taggar (t.ex.
                           <code>{intervju_text}</code>,
@@ -147,16 +166,18 @@
                           <code>{uploaded_files}</code>,
                           <code>{betygsskala_forklaring}</code>).
                         </p>
-                        <textarea
-                          id="prompt_{{ prompt.name }}"
-                          name="prompt_{{ prompt.name }}"
-                          rows="6"
-                          class="adminui-textarea"
-                        >{{ prompt.text }}</textarea>
-                      </div>
+                      {% endif %}
+
+                      <textarea
+                        id="prompt_{{ prompt.name }}"
+                        name="prompt_{{ prompt.name }}"
+                        rows="6"
+                        class="adminui-textarea"
+                      >{{ prompt.text }}</textarea>
+
+                    </div>
                     {% endif %}
-                  {% endfor %}
-                </div>
+{% endfor %}
 
                 <button type="submit" class="adminui-button">
                   💾 Spara ändringar

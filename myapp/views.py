@@ -609,6 +609,16 @@ def _scale_demo_html() -> str:
 # ──────────────────────────────────────────────────────────────────────────────
 def ensure_default_prompts_exist(user):
     defaults = {
+        "global_style": (
+            "❌ Använd aldrig taggar i global_style.\n\n"
+            "Global stil ska ENDAST innehålla:\n"
+            "- skrivregler\n"
+            "- tonalitet\n"
+            "- språkbruk (t.ex. “säg grupp, inte team”)\n"
+            "- strukturella regler (t.ex. “undvik punktlistor”, “skriv i tredje person”)\n\n"
+            "Den får inte innehålla innehållstexter eller taggar som "
+            "{excel_text}, {intervju_text}, {uploaded_files}."
+        ),
         # NYTT — tolkning av Excelfil
         "tolka_excel_resultat": (
             "Du är en analytiker som ska tolka en Excelfil med testresultat. "
@@ -999,7 +1009,11 @@ def index(request):
         # Nästa (inkl AI)
         elif "next" in request.POST:
 
-            style = getattr(settings, "STYLE_INSTRUCTION", "")
+            try:
+                style = Prompt.objects.get(user=request.user, name="global_style").text
+            except Prompt.DoesNotExist:
+                # fallback om något strular
+                style = getattr(settings, "STYLE_INSTRUCTION", "")
 
             # hämtar förklaringen till betygsskalan (ny prompt)
             try:
