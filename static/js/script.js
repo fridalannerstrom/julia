@@ -95,11 +95,6 @@ if (dropZoneExtra && extraInput) {
     }
     window.updateExtraFiles(extraInput);
   });
-
-  // Klick på zonen -> öppna filväljare
-  dropZoneExtra.addEventListener("click", function () {
-    extraInput.click();
-  });
 }
 })();
 
