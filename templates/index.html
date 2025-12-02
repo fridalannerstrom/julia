@@ -174,19 +174,19 @@
                   Klicka på <strong>Nästa</strong> för att skapa din rapport.
                 </p>
 
-<div class="dn-row dn-row--two">
-  <div class="dn-field-group">
-    <label for="candidate_name">Kandidatens namn *</label>
-    <input type="text" id="candidate_name" name="candidate_name"
-           value="{{ candidate_name }}" class="dn-input" placeholder="Ange för- och efternamn" required>
-  </div>
+                <div class="dn-row dn-row--two">
+                  <div class="dn-field-group">
+                    <label for="candidate_name">Kandidatens namn *</label>
+                    <input type="text" id="candidate_name" name="candidate_name"
+                          value="{{ candidate_name }}" class="dn-input" placeholder="Ange för- och efternamn" required>
+                  </div>
 
-  <div class="dn-field-group">
-    <label for="candidate_role">Roll / tjänst (valfritt)</label>
-    <input type="text" id="candidate_role" name="candidate_role"
-           value="{{ candidate_role }}" class="dn-input" placeholder="Ange ev. roll">
-  </div>
-</div>
+                  <div class="dn-field-group">
+                    <label for="candidate_role">Roll / tjänst (valfritt)</label>
+                    <input type="text" id="candidate_role" name="candidate_role"
+                          value="{{ candidate_role }}" class="dn-input" placeholder="Ange ev. roll">
+                  </div>
+                </div>
 
 
                 <h3 class="adminui-label">1. Excelfil</h3>
@@ -211,27 +211,20 @@
                 <!-- Hidden field för att bära med sammanfogad text mellan stegen -->
                 <input type="hidden" name="uploaded_files_text" value="{{ uploaded_files_text|default_if_none:'' }}">
 
-                <h3 class="adminui-label">2. CV (PDF)</h3>
+
+                <h3 class="adminui-label">2. CV (klistra in text)</h3>
                 <p class="adminui-intro">
-                  Ladda upp kandidatens CV i PDF-format.
+                  Klistra in texten från kandidatens CV. Det gör inget om den är rörig – AI hjälper dig att städa upp den.
                 </p>
 
-                <label class="adminui-drop-zone adminui-drop-zone-extra">
-                  <input id="cv_file" name="cv_file" type="file" accept=".pdf" hidden onchange="updateExtraFiles(this)">
-                  <div class="adminui-drop-icon">📝</div>
-                  <div class="adminui-drop-text">
-                    <span>Släpp CV här eller klicka för att välja</span>
-                    <small>PDF-format (.pdf)</small>
-                  </div>
-                </label>
-
-                <p id="cv-filename" class="adminui-filename">
-                  {% if uploaded_files_text %}
-                  CV uppladdat (text används i analysen).
-                  {% else %}
-                  Inget CV uppladdat
-                  {% endif %}
-                </p>
+                <div class="mb-3">
+                  <textarea
+                      name="cv_text"
+                      id="cv_text"
+                      rows="8"
+                      class="form-control adminui-textarea"
+                  >{{ uploaded_files_markdown }}</textarea>
+                </div>
 
                 <h3 class="adminui-label">3. Intervjuanteckningar</h3>
                 <p class="adminui-intro">

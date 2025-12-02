@@ -46,47 +46,6 @@ SECTION_KEYS = [
     ("kommunikation_text", "Kommunikation och samarbete"),
 ]
 
-# ── Koppling från STIVE-kompetenser -> (sektion_key, radnamn) ────────────────
-# Anpassa vid behov, detta är ett förslag.
-HEADER_TO_TARGET = {
-    "Teamwork": ("kommunikation_och_samarbete", "Teamwork"),
-    "Networking": ("kommunikation_och_samarbete", "Networking"),
-    "Developing relationships": ("kommunikation_och_samarbete", "Developing relationships"),
-    "Developing others": ("leda_utveckla_och_engagera", "Developing others"),
-    "Supporting others": ("leda_utveckla_och_engagera", "Supporting others"),
-    "Influencing": ("kommunikation_och_samarbete", "Influencing"),
-    "Directing others": ("leda_utveckla_och_engagera", "Directing others"),
-    "Delegating": ("leda_utveckla_och_engagera", "Delegating"),
-    "Engaging others": ("leda_utveckla_och_engagera", "Engaging others"),
-    "Managing conflict": ("mod_och_handlingskraft", "Managing conflict"),
-    "Interpersonal communication": ("kommunikation_och_samarbete", "Interpersonal communication"),
-    "Written communication": ("kommunikation_och_samarbete", "Written communication"),
-    "Negotiating": ("kommunikation_och_samarbete", "Negotiating"),
-    "Customer Focus": ("kommunikation_och_samarbete", "Customer Focus"),
-
-    "Planning and organising": ("strategiskt_tankande_och_anpassningsformaga", "Planning and organising"),
-    "Problem solving and analysis": ("strategiskt_tankande_och_anpassningsformaga", "Problem solving and analysis"),
-    "Decision making": ("mod_och_handlingskraft", "Decision making"),
-    "Strategic thinking": ("strategiskt_tankande_och_anpassningsformaga", "Strategic thinking"),
-    "Organisational awareness": ("strategiskt_tankande_och_anpassningsformaga", "Organisational awareness"),
-    "Commercial thinking": ("strategiskt_tankande_och_anpassningsformaga", "Commercial thinking"),
-    "Innovating": ("strategiskt_tankande_och_anpassningsformaga", "Innovating"),
-    "Adaptability": ("strategiskt_tankande_och_anpassningsformaga", "Adaptability"),
-    "Embracing diversity": ("kommunikation_och_samarbete", "Embracing diversity"),
-
-    "Decisiveness": ("mod_och_handlingskraft", "Decisiveness"),
-    "Technical knowledge and skill": ("leda_utveckla_och_engagera", "Technical knowledge and skill"),
-    "Resilience": ("sjalkannedom_och_emotionell_stabilitet", "Resilience"),
-    "Drive": ("mod_och_handlingskraft", "Drive"),
-    "Results orientation": ("mod_och_handlingskraft", "Results orientation"),
-    "Reliability": ("sjalkannedom_och_emotionell_stabilitet", "Reliability"),
-    "Integrity": ("mod_och_handlingskraft", "Integrity"),
-    "Initiative": ("mod_och_handlingskraft", "Initiative"),
-    "Self-awareness": ("sjalkannedom_och_emotionell_stabilitet", "Self-awareness"),
-    "Dealing with ambiguity": ("sjalkannedom_och_emotionell_stabilitet", "Dealing with ambiguity"),
-    "Learning focus": ("strategiskt_tankande_och_anpassningsformaga", "Learning focus"),
-}
-
 # ── Koppling från STIVE-kompetenser -> (sektion_key, svensk_rad) ────────────
 HEADER_TO_TARGET = {
     # Leda, utveckla och engagera
@@ -144,20 +103,6 @@ def _run_openai(prompt_text: str, style: str, **vars_) -> str:
             "Försök igen om en liten stund."
         )
     
-
-def _normalize_header_cell(value: str) -> str:
-    """
-    Tar t.ex. 'Competency Score: Teamwork (STIVE)'
-    -> 'Teamwork'
-    """
-    if not value:
-        return ""
-    text = str(value)
-    if "Competency Score" in text:
-        text = text.split("Competency Score:")[-1]
-    if "(" in text:
-        text = text.split("(")[0]
-    return text.strip()
 
 def _round_to_1_5(x) -> int:
     """
@@ -673,24 +618,6 @@ def ensure_default_prompts_exist(user):
             "- Beslutsamhet: 1 = …, 3 = …, 5 = …\n"
         ),
 
-        # Exempel: uppdatera 'leda'-prompten direkt här också (mer om det nedan)
-        "leda": (
-            "Du är HR-psykolog. Du ska bedöma kompetensområdet "
-            "'Leda, utveckla och engagera'.\n\n"
-            "Du får:\n"
-            "1) En JSON-tabell med betyg 1–5 per delkompetens i detta område.\n"
-            "2) En beskrivning av vad betyg 1–5 betyder.\n"
-            "3) Intervjuanteckningar.\n\n"
-            "Använd skalan konsekvent. Om betygen ligger högt/lågt, beskriv vad det innebär "
-            "i beteenden i rollen, koppla gärna till typiska styrkor och utvecklingsområden.\n\n"
-            "Betygsskala och förklaringar:\n"
-            "{betygsskala_forklaring}\n\n"
-            "Testbetyg (JSON):\n"
-            "{ratings_json}\n\n"
-            "Intervjuanteckningar:\n"
-            "{intervju_text}\n"
-        ),
-
         # befintliga
         #"testanalys": """Du är en psykolog specialiserad på testtolkning...
 #{excel_text}
@@ -946,6 +873,7 @@ def index(request):
         "kommunikation_text": request.POST.get("kommunikation_text", ""),
         "sur_text": request.POST.get("sur_text", ""),
         "slutsats_text": request.POST.get("slutsats_text", ""),
+        "cv_text": request.POST.get("cv_text", ""),
 
         # NYTT – kandidatinfo
         "candidate_name": request.POST.get("candidate_name", ""),
@@ -1096,30 +1024,26 @@ def index(request):
                     context["error"] = "Klistra in intervjuanteckningar."
 
                 # CV PDF
-                cv_file = request.FILES.get("cv_file")
-                uploaded_markdown = context["uploaded_files_markdown"]
+                # CV-TEXT (klistra in)
+                cv_raw = (request.POST.get("cv_text") or "").strip()
 
-                if cv_file:
-                    try:
-                        reader = PdfReader(cv_file)
-                        raw_text = "\n".join((page.extract_text() or "") for page in reader.pages)
-                    except Exception as e:
-                        raw_text = f"(Kunde inte läsa {cv_file.name}: {e})"
-
-                    raw_text = _trim(raw_text)
-
-                    # AI-städa PDF → markdown
+                if not cv_raw:
+                    # Lägg bara felmeddelande om vi inte redan har något annat fel
+                    if not context["error"]:
+                        context["error"] = "Klistra in kandidatens CV som text."
+                else:
+                    # AI-städa CV-text → markdown
                     clean_prompt = (
                         "Du är en text- och strukturassistent.\n\n"
-                        "Rensa och strukturera texten, behåll endast relevant innehåll.\n"
-                        "Formatera med markdown-rubriker där naturligt.\n\n"
+                        "Rensa och strukturera texten från ett CV, behåll endast relevant innehåll.\n"
+                        "Formatera med tydliga rubriker (t.ex. Erfarenhet, Utbildning, Kompetenser) i markdown.\n\n"
                         "Råtext:\n{uploaded_files}"
                     )
 
                     cleaned = _run_openai(
                         clean_prompt,
                         style,
-                        uploaded_files=_trim(raw_text),
+                        uploaded_files=_trim(cv_raw),
                     )
 
                     context["uploaded_files_markdown"] = cleaned
@@ -1153,6 +1077,8 @@ def index(request):
                                 style,
                                 excel_text=_trim(excel_text),
                                 intervju_text=_trim(intervju_raw),
+                                ratings_json=ratings_json_str,
+                                betygsskala_forklaring=betygsskala_prompt,
                                 uploaded_files=uploaded_trimmed,
                                 candidate_name=context["candidate_name"],
                                 candidate_role=context["candidate_role"],
@@ -1164,6 +1090,8 @@ def index(request):
                                 style,
                                 excel_text=_trim(excel_text),
                                 intervju_text=_trim(intervju_raw),
+                                ratings_json=ratings_json_str,    
+                                betygsskala_forklaring=betygsskala_prompt,
                                 uploaded_files=uploaded_trimmed,
                                 candidate_name=context["candidate_name"],
                                 candidate_role=context["candidate_role"],
