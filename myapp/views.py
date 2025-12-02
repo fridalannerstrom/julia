@@ -728,21 +728,27 @@ def _markdown_to_html(text: str) -> str:
     if not text:
         return ""
 
-    # markdown2 använder andra inställningar än python-markdown
+    text = str(text).strip()
+
+    # 🔍 Om texten redan innehåller typiska HTML-taggar: använd som den är
+    # (detta händer när användaren har redigerat i WYSIWYG och vi får tillbaka HTML)
+    if "<" in text and re.search(r"</(p|br|strong|em|ul|ol|li|h[1-6])\s*>", text, flags=re.IGNORECASE):
+        return mark_safe(text)
+
+    # Annars: behandla det som markdown från OpenAI
     html = markdown(
         text,
         extras=[
             "fenced-code-blocks",
             "tables",
             "strike",
-            "break-on-newline",
+            "break-on-newline",   # 👈 gör \n till radbrytningar
             "smarty-pants",
             "spoiler",
             "header-ids",
             "cuddled-lists",
         ]
     )
-
     return mark_safe(html)
 
 # ──────────────────────────────────────────────────────────────────────────────

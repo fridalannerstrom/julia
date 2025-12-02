@@ -15,6 +15,8 @@
   <!-- Din egna styles (ligger efter så den vinner) -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/trumbowyg@2.27.3/dist/ui/trumbowyg.min.css">
+
   <link rel="icon" href="{% static 'img/favicon.ico' %}">
 
   <style>
@@ -239,11 +241,11 @@
                 <h3 class="adminui-subtitle">Steg 2 – TQ Färdighet &amp; TQ Motivation</h3>
 
                 <label class="adminui-label">TQ Färdighet</label>
-                <textarea class="adminui-textarea" rows="5" name="tq_fardighet_text">{{ tq_fardighet_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="5" name="tq_fardighet_text">{{ tq_fardighet_html|default:tq_fardighet_text|safe }}</textarea>
 
                 <label class="adminui-label">TQ Motivation – tre främsta drivkrafter</label>
-                <textarea class="adminui-textarea" rows="5"
-                  name="tq_motivation_text">{{ tq_motivation_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="5"
+                  name="tq_motivation_text">{{ tq_motivation_html|default:tq_motivation_text|safe }}</textarea>
                 {% endif %}
 
                 <!-- STEG 3: Leda -->
@@ -253,7 +255,7 @@
                 <div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>
                 {% endif %}
                 <label class="adminui-label">Text</label>
-                <textarea class="adminui-textarea" rows="6" name="leda_text">{{ leda_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="6" name="leda_text">{{ leda_html|default:leda_text|safe }}</textarea>
                 {% endif %}
 
                 <!-- STEG 4: Mod -->
@@ -263,7 +265,7 @@
                 <div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>
                 {% endif %}
                 <label class="adminui-label">Text</label>
-                <textarea class="adminui-textarea" rows="6" name="mod_text">{{ mod_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="6" name="mod_text">{{ mod_html|default:mod_text|safe }}</textarea>
                 {% endif %}
 
                 <!-- STEG 5: Självkännedom -->
@@ -273,7 +275,7 @@
                 <div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>
                 {% endif %}
                 <label class="adminui-label">Text</label>
-                <textarea class="adminui-textarea" rows="6" name="sjalkannedom_text">{{ sjalkannedom_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="6" name="sjalkannedom_text">{{ sjalkannedom_html|default:sjalkannedom_text|safe }}</textarea>
                 {% endif %}
 
                 <!-- STEG 6: Strategi -->
@@ -283,7 +285,7 @@
                 <div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>
                 {% endif %}
                 <label class="adminui-label">Text</label>
-                <textarea class="adminui-textarea" rows="6" name="strategi_text">{{ strategi_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="6" name="strategi_text">{{ strategi_html|default:strategi_text|safe }}</textarea>
                 {% endif %}
 
                 <!-- STEG 7: Kommunikation -->
@@ -293,22 +295,22 @@
                 <div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>
                 {% endif %}
                 <label class="adminui-label">Text</label>
-                <textarea class="adminui-textarea" rows="6"
-                  name="kommunikation_text">{{ kommunikation_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="6"
+                  name="kommunikation_text">{{ kommunikation_html|default:kommunikation_text|safe }}</textarea>
                 {% endif %}
 
                 <!-- STEG 8: SUR -->
                 {% if step == 8 %}
                 <h3 class="adminui-subtitle">Steg 8 – Styrkor / Utvecklingsområden / Riskbeteenden</h3>
                 <p class="adminui-intro">Här sammanfattas allt ovan till tre tydliga listor. Justera fritt.</p>
-                <textarea class="adminui-textarea" rows="8" name="sur_text">{{ sur_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="8" name="sur_text">{{ sur_html|default:sur_text|safe }}</textarea>
                 {% endif %}
 
                 <!-- STEG 9: Slutsats -->
                 {% if step == 9 %}
                 <h3 class="adminui-subtitle">Steg 9 – Sammanfattande slutsats</h3>
                 <p class="adminui-intro">Skriv eller justera slutbedömningen baserat på hela bilden.</p>
-                <textarea class="adminui-textarea" rows="8" name="slutsats_text">{{ slutsats_text }}</textarea>
+                <textarea class="adminui-textarea rich-text" rows="8" name="slutsats_text">{{ slutsats_html|default:slutsats_text|safe }}</textarea>
                 {% endif %}
 
                 <!-- STEG 10: Sammanställning -->
@@ -723,6 +725,20 @@
 
   <script src="{% static 'js/script.js' %}"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/trumbowyg@2.27.3/dist/trumbowyg.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('textarea.rich-text').trumbowyg({
+        btns: [
+            ['strong', 'em', 'underline'],
+            ['unorderedList', 'orderedList'],
+            ['link'],
+            ['removeformat']
+        ]
+    });
+});
+</script>
 </body>
 
 </html>
