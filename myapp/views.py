@@ -7,6 +7,9 @@ import openpyxl
 import markdown2
 from markdown2 import markdown
 import math
+from docx import Document
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -20,6 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
+from bs4 import BeautifulSoup
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -573,6 +577,35 @@ def _map_0_10_to_1_5(x) -> int:
         bucket = 1
     return bucket
 
+def html_to_text(html: str) -> str:
+    """
+    Tar HTML och returnerar ren text i ett Word-vänligt format.
+    Behåller radbrytningar, listor m.m.
+    """
+    if not html:
+        return ""
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Hantera <br> som radbrytning
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+
+    # Hantera listor lite snyggare
+    lines = []
+    for elem in soup.recursiveChildGenerator():
+        if elem.name == "li":
+            lines.append("• " + elem.get_text(strip=True))
+        elif elem.name in ("p", "div"):
+            text = elem.get_text(strip=True)
+            if text:
+                lines.append(text)
+
+    # Om det fanns inga <p> eller <li>, fall tillbaka
+    if not lines:
+        return soup.get_text("\n", strip=True)
+
+    return "\n".join(lines)
+
 
 def _normalize_header_cell(value: str) -> str:
     """
@@ -640,6 +673,81 @@ def _ratings_from_worksheet(ws):
 
     return ratings, debug
 
+
+def docx_replace_text(doc, mapping: dict):
+    """
+    Ersätter t.ex. {candidate_name} i alla paragrafer och tabellceller.
+    Enkel variant som funkar bra om du inte har massa blandad formatering
+    mitt i samma mening.
+    """
+    def replace_in_paragraph(paragraph):
+        if not paragraph.text:
+            return
+        full_text = paragraph.text
+        changed = False
+        for k, v in mapping.items():
+            if k in full_text:
+                full_text = full_text.replace(k, v or "")
+                changed = True
+        if changed:
+            # nollställ runs och skriv allt i första run
+            for run in paragraph.runs:
+                run.text = ""
+            if paragraph.runs:
+                paragraph.runs[0].text = full_text
+
+    for p in doc.paragraphs:
+        replace_in_paragraph(p)
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    replace_in_paragraph(p)
+
+
+def build_ratings_table_for_section(doc, ratings: dict, section_key: str):
+    """
+    Skapar en Word-tabell med:
+    | Label | 1 | 2 | 3 | 4 | 5 |
+    och fyller i en "●" på rätt kolumn.
+    Returnerar den skapade tabellen.
+    """
+    section_ratings = ratings.get(section_key) or {}
+    labels_order = TARGETS.get(section_key) or list(section_ratings.keys())
+
+    rows = len(labels_order)
+    cols = 6  # label + 5 "prickar"
+
+    table = doc.add_table(rows=rows, cols=cols)
+    table.style = "Table Grid"  # byt vid behov
+
+    for r_idx, label in enumerate(labels_order):
+        row = table.rows[r_idx]
+        row.cells[0].text = label
+        val = int(section_ratings.get(label, 3))
+
+        for c in range(1, 6):
+            cell = row.cells[c]
+            cell.text = "●" if c == val else "○"
+
+    return table
+
+def replace_table_placeholder(doc, placeholder: str, ratings: dict, section_key: str):
+    for p in doc.paragraphs:
+        if placeholder in p.text:
+            # skapa tabell sist i dokumentet
+            table = build_ratings_table_for_section(doc, ratings, section_key)
+
+            # flytta tabellen direkt efter paragrafen med taggen
+            p_elem = p._p
+            tbl_elem = table._tbl
+            p_elem.addnext(tbl_elem)
+
+            # ta bort taggtexten
+            for run in p.runs:
+                run.text = p.runs[0].text.replace(placeholder, "")
+            break
 
 # ── NYTT: statisk skalförklaring (HTML) med header ───────────────────────────
 def _scale_demo_html() -> str:
@@ -1029,33 +1137,43 @@ def index(request):
 
         # Skapa Word endast på sista steget
         elif "build_doc" in request.POST and step == 10:
-            from docx import Document
             from django.http import HttpResponse
 
-            doc = Document()
+            template_path = os.path.join(settings.BASE_DIR, "reports", "domarnamnden_template.docx")
+            doc = Document(template_path)
 
-            def add_section(title, text):
-                if text:
-                    doc.add_heading(title, level=2)
-                    for line in (text or "").split("\n"):
-                        line = line.strip()
-                        if line:
-                            doc.add_paragraph(line)
+            # 1) Text-taggar
+            mapping = {
+                "{candidate_name}": context.get("candidate_name", ""),
+                "{candidate_role}": context.get("candidate_role", ""),
+                "{tq_fardighet_text}": html_to_text(context.get("tq_fardighet_text", "")),
+                "{sur_text}": html_to_text(context.get("sur_text", "")),
+                "{tq_motivation_text}": html_to_text(context.get("tq_motivation_text", "")),
+                "{leda_text}": html_to_text(context.get("leda_text", "")),
+                "{mod_text}": html_to_text(context.get("mod_text", "")),
+                "{sjalkannedom_text}": html_to_text(context.get("sjalkannedom_text", "")),
+                "{strategi_text}": html_to_text(context.get("strategi_text", "")),
+                "{kommunikation_text}": html_to_text(context.get("kommunikation_text", "")),
+            }
+            docx_replace_text(doc, mapping)
 
-            add_section("TQ Färdighet", context["tq_fardighet_text"])
-            add_section("Styrkor / Utvecklingsområden / Riskbeteenden", context["sur_text"])
-            add_section("TQ Motivation – främsta drivkrafter", context["tq_motivation_text"])
-            add_section("Leda, utveckla och engagera", context["leda_text"])
-            add_section("Mod och handlingskraft", context["mod_text"])
-            add_section("Självkännedom och emotionell stabilitet", context["sjalkannedom_text"])
-            add_section("Strategiskt tänkande och anpassningsförmåga", context["strategi_text"])
-            add_section("Kommunikation och samarbete", context["kommunikation_text"])
-            add_section("Sammanfattande slutsats", context["slutsats_text"])
+            # 2) Tabeller – om vi har ratings_json
+            ratings_json_str = context.get("ratings_json")
+            if ratings_json_str:
+                ratings = json.loads(ratings_json_str)
 
+                replace_table_placeholder(doc, "{leda_table}", ratings, "leda_utveckla_och_engagera")
+                replace_table_placeholder(doc, "{mod_table}", ratings, "mod_och_handlingskraft")
+                replace_table_placeholder(doc, "{sjalkannedom_table}", ratings, "sjalkannedom_och_emotionell_stabilitet")
+                replace_table_placeholder(doc, "{strategi_table}", ratings, "strategiskt_tankande_och_anpassningsformaga")
+                replace_table_placeholder(doc, "{kommunikation_table}", ratings, "kommunikation_och_samarbete")
+
+            # 3) Skicka ner filen
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-            response["Content-Disposition"] = 'attachment; filename="bedomning.docx"'
+            filename = f"bedomning_{context.get('candidate_name','rapport')}.docx"
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
             doc.save(response)
             return response
 
