@@ -913,6 +913,38 @@ body {
   }
 }
 
+/* Statisk poängskala (översta tabellen) */
+.dn-scale-dot {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+}
+
+.dn-scale-dot--active {
+    background: #7b2cbf;              /* din lila */
+    border-color: #7b2cbf;
+    box-shadow: 0 0 0 3px rgba(123, 44, 191, 0.18);
+}
+
+/* Poängskala – prickar */
+.dn-table-scale .dn-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid #ffffff;   /* vit ring mot mörk bakgrund */
+    background: transparent;
+    box-sizing: border-box;
+}
+
+.dn-table-scale .dn-dot--active {
+    background: #ffffff;         /* fylld vit prick = aktiv */
+}
+
 /* mobil */
 @media (max-width: 900px) {
   .dn-report-row {

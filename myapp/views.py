@@ -24,6 +24,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from bs4 import BeautifulSoup
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -296,35 +298,11 @@ def _ratings_table_html(
             </div>
             """)
 
-    css = """
-    <style>
-    .dn-sub {
-        font-weight: 500;
-        padding: 10px 10px;
-        white-space: normal;
-        color: #111827;
-        background: transparent;
-    }
-    .dn-sub-title {
-        font-weight: 600;
-        margin-bottom: 2px;
-    }
+        css = """
+        <style>
 
-    .dn-sub-desc {
-        font-weight: 400;
-        font-size: 0.7rem;
-        color: #4b5563;
-        line-height: 1.3;
-    }
         .dn-section{
             margin:24px 0;
-        }
-
-        .dn-h3{
-            font-size:0.95rem;
-            margin-bottom:12px;
-            font-weight:600;
-            color:#111827;
         }
 
         .dn-table{
@@ -332,29 +310,38 @@ def _ratings_table_html(
             border-collapse:collapse;
         }
 
-        /* radstil */
         .dn-table tr + tr{
             border-top:1px solid #e5e7eb;
         }
 
-        .dn-sub{
+        .dn-sub {
             font-weight:500;
             padding:10px 10px;
-            white-space:nowrap;
+            white-space:normal;
             color:#111827;
-            background:transparent;
+        }
+
+        .dn-sub-title {
+            font-weight:600;
+            margin-bottom:2px;
+        }
+
+        .dn-sub-desc {
+            font-weight:400;
+            font-size:0.7rem;
+            color:#4b5563;
+            line-height:1.3;
         }
 
         .dn-cell{
             text-align:center;
-            padding:10px 4px;
-            background:transparent;
+            padding:8px 2px;
         }
 
         .dn-dot{
             display:inline-flex;
-            width:16px;
-            height:16px;
+            width:15px;
+            height:15px;
             border-radius:999px;
             border:1px solid #d1d5db;
             background:#f9fafb;
@@ -362,20 +349,41 @@ def _ratings_table_html(
         }
 
         .dn-dot--active{
-            background:#7b2cbf;              /* din lila */
+            background:#7b2cbf;
             border-color:#7b2cbf;
             box-shadow:0 0 0 3px rgba(123,44,191,0.18);
         }
 
-        @media (max-width:768px){
-            .dn-table{
-            font-size:0.9rem;
-            }
-            .dn-dot{
-            width:14px;
-            height:14px;
-            }
+        /* ─────────────────────────────
+        EXPORT-VY (html2canvas)
+        ───────────────────────────── */
+
+        .rating-export{
+            width:640px;          /* <– ÄNNU smalare */
+            max-width:640px;
+            margin:0 auto;
+            background:#ffffff;
+            padding:10px 0;
         }
+
+        .rating-export .dn-table{
+            width:640px;
+            max-width:640px;
+            table-layout:fixed;
+        }
+
+        /* vänster textkolumn smalare */
+        .rating-export .dn-sub{
+            width:280px;
+            max-width:280px;
+        }
+
+        /* 5 prickkolumner fördelar ca 360px → 72px var */
+        .rating-export .dn-cell{
+            width:72px;
+            max-width:72px;
+        }
+
         </style>
         """
 
@@ -705,49 +713,175 @@ def docx_replace_text(doc, mapping: dict):
                 for p in cell.paragraphs:
                     replace_in_paragraph(p)
 
+TABLE_PLACEHOLDERS = {
+    "{leda_table}": "leda_utveckla_och_engagera",
+    "{mod_table}": "mod_och_handlingskraft",
+    "{sjalkannedom_table}": "sjalkannedom_och_emotionell_stabilitet",
+    "{strategi_table}": "strategiskt_tankande_och_anpassningsformaga",
+    "{kommunikation_table}": "kommunikation_och_samarbete",
+}
+
+def _insert_ratings_table_into_cell(cell, section_key, ratings_dict):
+    """
+    Skapar en liten 1–5-tabell inne i en cell, baserat på ratings_json.
+    - cell: docx.cell
+    - section_key: t.ex. 'leda_utveckla_och_engagera'
+    - ratings_dict: dict från ratings_json
+    """
+    section_ratings = ratings_dict.get(section_key, {})
+    labels = TARGETS.get(section_key, [])
+    if not labels:
+        return
+
+    # skapa inre tabell: 1 kolumn för label + 5 för prickar
+    inner = cell.add_table(rows=len(labels), cols=6)
+    inner.style = "Table Grid"  # eller någon stil du har i mallen
+
+    for r_idx, label in enumerate(labels):
+        row = inner.rows[r_idx]
+        # första kolumnen = etikett
+        row.cells[0].text = label
+
+        score = int(section_ratings.get(label, 3)) if section_ratings.get(label) is not None else 3
+        score = max(1, min(5, score))
+
+        # kolumn 1–5 = ○/●
+        for c_idx in range(1, 6):
+            cell_dot = row.cells[c_idx]
+            p = cell_dot.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = p.add_run("●" if c_idx == score else "○")
+            run.font.size = Pt(10)
+
+
+def _apply_table_placeholders(doc, ratings_dict):
+    """
+    Går igenom alla tabell-taggar ({leda_table} osv) och ersätter dem
+    med inre tabeller baserade på ratings_dict.
+    """
+    if not ratings_dict:
+        return
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    text = p.text or ""
+                    for placeholder, section_key in TABLE_PLACEHOLDERS.items():
+                        if placeholder in text:
+                            # ta bort taggen i paragrafen
+                            p.text = text.replace(placeholder, "").strip()
+                            # stoppa in vår inre tabell i cellen
+                            _insert_ratings_table_into_cell(cell, section_key, ratings_dict)
+
+def _safe_table_style(table, style_name="Table Grid"):
+    """
+    Försök sätta en tabellstil om den finns i dokumentmallen.
+    Annars: låt Word använda standardstilen.
+    """
+    try:
+        table.style = style_name
+    except KeyError:
+        # Stilen finns inte i denna .dotx/.docx → använd default
+        pass
+
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
 def build_ratings_table_for_section(doc, ratings: dict, section_key: str):
     """
-    Skapar en Word-tabell med:
-    | Label | 1 | 2 | 3 | 4 | 5 |
-    och fyller i en "●" på rätt kolumn.
-    Returnerar den skapade tabellen.
+    Skapar en “snygg” tabell för en given sektion, t.ex. leda_utveckla_och_engagera.
+
+    | Leda andra
+      (beskrivning)             ○  ●  ○  ○  ○ |
+
+    Första kolumnen: etikett + kort beskrivning.
+    Nästa 5 kolumner: cirklar där rätt värde (1–5) är ifyllt.
     """
     section_ratings = ratings.get(section_key) or {}
     labels_order = TARGETS.get(section_key) or list(section_ratings.keys())
 
     rows = len(labels_order)
-    cols = 6  # label + 5 "prickar"
+    cols = 6  # label + 5 cirklar
 
+    # Skapa tabell – den flyttas med replace_table_placeholder till rätt ställe
     table = doc.add_table(rows=rows, cols=cols)
-    table.style = "Table Grid"  # byt vid behov
+    _safe_table_style(table, "Table Grid")  # försöker sätta stil om den finns
 
     for r_idx, label in enumerate(labels_order):
         row = table.rows[r_idx]
-        row.cells[0].text = label
-        val = int(section_ratings.get(label, 3))
+
+        # ---------- Första cellen: rubrik + beskrivning ----------
+        label_cell = row.cells[0]
+
+        # rubrik
+        p_label = label_cell.paragraphs[0]
+        run_label = p_label.add_run(label)
+        run_label.bold = True
+        run_label.font.size = Pt(10)
+
+        # beskrivning (om vi har en)
+        desc = SUBSCALE_DESCRIPTIONS.get(section_key, {}).get(label)
+        if desc:
+            p_desc = label_cell.add_paragraph(desc)
+            p_desc.paragraph_format.space_before = 0
+            p_desc.paragraph_format.space_after = 0
+            for run in p_desc.runs:
+                run.font.size = Pt(8)
+
+        # ---------- Poäng: 1–5 cirklar ----------
+        raw_score = section_ratings.get(label, 3)
+        try:
+            score = int(raw_score)
+        except Exception:
+            score = 3
+        score = max(1, min(5, score))
 
         for c in range(1, 6):
             cell = row.cells[c]
-            cell.text = "●" if c == val else "○"
+            p = cell.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = p.add_run("●" if c == score else "○")
+            run.font.size = Pt(9)
 
     return table
 
+
 def replace_table_placeholder(doc, placeholder: str, ratings: dict, section_key: str):
+    """
+    Hittar paragrafen som innehåller t.ex. {leda_table},
+    lägger in tabellen direkt efter paragrafen (i samma cell eller i body),
+    och tar bort själva taggen.
+    """
+
+    def _handle_paragraph(p):
+        if placeholder not in p.text:
+            return False
+
+        # Skapa tabellen (först i dokumentets body)
+        table = build_ratings_table_for_section(doc, ratings, section_key)
+
+        # Flytta tabellen så att den hamnar direkt efter paragrafen p
+        p._p.addnext(table._tbl)
+
+        # Ta bort taggen ur paragrafens text
+        for run in p.runs:
+            if placeholder in run.text:
+                run.text = run.text.replace(placeholder, "")
+        return True
+
+    # 1) Sök i body-paragrafer
     for p in doc.paragraphs:
-        if placeholder in p.text:
-            # skapa tabell sist i dokumentet
-            table = build_ratings_table_for_section(doc, ratings, section_key)
+        if _handle_paragraph(p):
+            return
 
-            # flytta tabellen direkt efter paragrafen med taggen
-            p_elem = p._p
-            tbl_elem = table._tbl
-            p_elem.addnext(tbl_elem)
-
-            # ta bort taggtexten
-            for run in p.runs:
-                run.text = p.runs[0].text.replace(placeholder, "")
-            break
+    # 2) Sök i alla tabellceller
+    for t in doc.tables:
+        for row in t.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    if _handle_paragraph(p):
+                        return
 
 # ── NYTT: statisk skalförklaring (HTML) med header ───────────────────────────
 def _scale_demo_html() -> str:
@@ -1138,11 +1272,17 @@ def index(request):
         # Skapa Word endast på sista steget
         elif "build_doc" in request.POST and step == 10:
             from django.http import HttpResponse
+            from docx import Document
 
-            template_path = os.path.join(settings.BASE_DIR, "reports", "domarnamnden_template.docx")
+            # 1) Ladda mallen
+            template_path = os.path.join(
+                settings.BASE_DIR,
+                "reports",
+                "domarnamnden_template.docx"
+            )
             doc = Document(template_path)
 
-            # 1) Text-taggar
+            # 2) Text-taggar – använd *_text, inte *_html
             mapping = {
                 "{candidate_name}": context.get("candidate_name", ""),
                 "{candidate_role}": context.get("candidate_role", ""),
@@ -1157,23 +1297,51 @@ def index(request):
             }
             docx_replace_text(doc, mapping)
 
-            # 2) Tabeller – om vi har ratings_json
-            ratings_json_str = context.get("ratings_json")
-            if ratings_json_str:
-                ratings = json.loads(ratings_json_str)
+            # 3) Tabeller – ratings_json kan ligga i POST eller context
+            ratings_json_raw = (
+                request.POST.get("ratings_json")
+                or context.get("ratings_json")
+                or ""
+            )
 
-                replace_table_placeholder(doc, "{leda_table}", ratings, "leda_utveckla_och_engagera")
-                replace_table_placeholder(doc, "{mod_table}", ratings, "mod_och_handlingskraft")
-                replace_table_placeholder(doc, "{sjalkannedom_table}", ratings, "sjalkannedom_och_emotionell_stabilitet")
-                replace_table_placeholder(doc, "{strategi_table}", ratings, "strategiskt_tankande_och_anpassningsformaga")
-                replace_table_placeholder(doc, "{kommunikation_table}", ratings, "kommunikation_och_samarbete")
+            ratings = {}
+            if isinstance(ratings_json_raw, dict):
+                ratings = ratings_json_raw
+            elif isinstance(ratings_json_raw, str) and ratings_json_raw.strip():
+                try:
+                    ratings = json.loads(ratings_json_raw)
+                except json.JSONDecodeError:
+                    ratings = {}
 
-            # 3) Skicka ner filen
+            if ratings:
+                replace_table_placeholder(
+                    doc, "{leda_table}", ratings, "leda_utveckla_och_engagera"
+                )
+                replace_table_placeholder(
+                    doc, "{mod_table}", ratings, "mod_och_handlingskraft"
+                )
+                replace_table_placeholder(
+                    doc, "{sjalkannedom_table}", ratings,
+                    "sjalkannedom_och_emotionell_stabilitet"
+                )
+                replace_table_placeholder(
+                    doc, "{strategi_table}", ratings,
+                    "strategiskt_tankande_och_anpassningsformaga"
+                )
+                replace_table_placeholder(
+                    doc, "{kommunikation_table}", ratings,
+                    "kommunikation_och_samarbete"
+                )
+
+            # 4) Skicka ner filen
             response = HttpResponse(
-                content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                content_type=(
+                    "application/vnd.openxmlformats-"
+                    "officedocument.wordprocessingml.document"
+                )
             )
             filename = f"bedomning_{context.get('candidate_name','rapport')}.docx"
-            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+            response["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
             doc.save(response)
             return response
 
