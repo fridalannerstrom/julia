@@ -230,7 +230,11 @@ def _ratings_table_html(
     ]
     section_order = section_filter or default_order
 
-    def row(label, val: int):
+    def row(section_key: str, label: str, val: int):
+        # Hämta ev. definitionstext
+        desc = SUBSCALE_DESCRIPTIONS.get(section_key, {}).get(label, "")
+        desc_html = f'<div class="dn-sub-desc">{desc}</div>' if desc else ""
+
         # 5 cirklar, en fylld
         cells = []
         for i in range(1, 6):
@@ -238,7 +242,16 @@ def _ratings_table_html(
             cells.append(
                 f'<td class="dn-cell"><span class="dn-dot{active_class}"></span></td>'
             )
-        return f'<tr><th class="dn-sub">{label}</th>{"".join(cells)}</tr>'
+
+        return (
+            '<tr>'
+            '<th class="dn-sub">'
+            f'<div class="dn-sub-title ">{label}</div>'
+            f'<div class="dn-sub-desc ">{desc_html}</div>'
+            '</th>'
+            f'{"".join(cells)}'
+            '</tr>'
+        )
 
     sections_html = []
 
@@ -249,7 +262,6 @@ def _ratings_table_html(
         section_ratings = ratings.get(key, {})
         rows_html = []
 
-        # använd fasta rader från TARGETS om de finns
         target_labels = TARGETS.get(key)
         if target_labels:
             for label in target_labels:
@@ -259,16 +271,15 @@ def _ratings_table_html(
                 except Exception:
                     v = 3
                 v = max(1, min(5, v))
-                rows_html.append(row(label, v))
+                rows_html.append(row(key, label, v))
         else:
-            # fallback om ingen TARGETS finns
             for label, raw_score in section_ratings.items():
                 try:
                     v = int(raw_score)
                 except Exception:
                     v = 3
                 v = max(1, min(5, v))
-                rows_html.append(row(label, v))
+                rows_html.append(row(key, label, v))
 
         if rows_html:
             sections_html.append(f"""
@@ -281,8 +292,26 @@ def _ratings_table_html(
             </div>
             """)
 
-        css = """
-        <style>
+    css = """
+    <style>
+    .dn-sub {
+        font-weight: 500;
+        padding: 10px 10px;
+        white-space: normal;
+        color: #111827;
+        background: transparent;
+    }
+    .dn-sub-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .dn-sub-desc {
+        font-weight: 400;
+        font-size: 0.7rem;
+        color: #4b5563;
+        line-height: 1.3;
+    }
         .dn-section{
             margin:24px 0;
         }
@@ -348,6 +377,7 @@ def _ratings_table_html(
 
     return (css if include_css else "") + "\n".join(sections_html)
 
+
 # --- Målmönster: vad i Excel-raden betyder vilken skala-rad? -----------------
 # Flera varianter/engelska namn om dina mallar ändras.
 TARGET_PATTERNS = {
@@ -376,6 +406,7 @@ TARGET_PATTERNS = {
     },
 }
 
+
 TARGETS = {
     "leda_utveckla_och_engagera": [
         "Leda andra",
@@ -401,6 +432,59 @@ TARGETS = {
         "Inflytelserik",
     ],
 }
+
+SUBSCALE_DESCRIPTIONS = {
+    "leda_utveckla_och_engagera": {
+        "Leda andra": (
+            "Ger tydlig riktning och följer upp så att mål och uppdrag uppnås."
+        ),
+        "Engagera andra": (
+            "Skapar engagemang och delaktighet genom att visa intresse, energi och närvaro."
+        ),
+        "Delegera": (
+            "Fördelar uppgifter utifrån kompetens och tillgänglighet och följer upp utan att detaljstyra."
+        ),
+        "Utveckla andra": (
+            "Ger återkoppling och skapar möjligheter till lärande för att stärka andras utveckling."
+        ),
+    },
+    "mod_och_handlingskraft": {
+        "Beslutsamhet": (
+            "Fattar bra beslut i rätt tid på sund logik och vettiga resonemang, handlar med övertygelse när ett beslut behöver tas, även med begränsad information tillhanda. "
+        ),
+        "Integritet": (
+            "Visar prov på höga etiska standarder och arbetar på ett autentiskt och ärligt sätt, svarar på etiska konflikter med integritet. "
+        ),
+        "Hantera konflikter": (
+            "Hanterar och löser konflikter och oenigheter bland andra, taktfullt men ändå öppet. "
+        ),
+    },
+    "sjalkannedom_och_emotionell_stabilitet": {
+        "Självmedvetenhet": (
+            "Försöker förstå sig själv och sina känslor, efterfrågar feedback i detta hänseende och är uppmärksam på sin inverkan på andra. "
+        ),
+        "Uthållighet": (
+            "Fungerar bra under press och kommer snabbt igen efter motgångar på ett positivt sätt. "
+        ),
+    },
+    "strategiskt_tankande_och_anpassningsformaga": {
+        "Strategiskt fokus": (
+            "Visar prov på ett strategiskt förhållningssätt i sitt arbete, tar hänsyn till hur olika aspekter av organisationen interagerar, helhetsbilden och företagets framtid på längre sikt. "
+        ),
+        "Anpassningsförmåga": (
+            "Anpassar sitt tillvägagångssätt och reagerar effektivt på olika situationer, människor och möjligheter. "
+        ),
+    },
+    "kommunikation_och_samarbete": {
+        "Teamarbete": (
+            "Arbetar tillsammans med teamet för att uppnå gemensamma mål, lösa potentiella utmaningar och främja ett gemensamt agerande."
+        ),
+        "Inflytelserik": (
+            "Påverkar andras handlingar och åsikter med hjälp av övertygande argument och strategier. "
+        ),
+    },
+}
+
 
 SECTION_AI_CONFIG = [
     {
