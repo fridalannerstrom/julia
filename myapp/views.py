@@ -1915,12 +1915,21 @@ def chat_send(request, session_id):
     """
     session = get_object_or_404(ChatSession, id=session_id, user=request.user)
     if request.method != "POST":
-        return StreamingHttpResponse(iter(["Only POST allowed"]), content_type="text/plain; charset=utf-8", status=405)
+        return StreamingHttpResponse(
+            iter(["Only POST allowed"]),
+            content_type="text/plain; charset=utf-8",
+            status=405
+        )
 
     user_text = (request.POST.get("message") or "").strip()
     if not user_text and not request.FILES:
-        resp = StreamingHttpResponse(iter([""]), content_type="text/plain; charset=utf-8", status=200)
-        resp["Cache-Control"] = "no-cache"; resp["X-Accel-Buffering"] = "no"
+        resp = StreamingHttpResponse(
+            iter([""]),
+            content_type="text/plain; charset=utf-8",
+            status=200
+        )
+        resp["Cache-Control"] = "no-cache"
+        resp["X-Accel-Buffering"] = "no"
         return resp
 
     # 1) Spara user-meddelande (utan filutdrag i content)
@@ -1961,20 +1970,6 @@ def chat_send(request, session_id):
     def token_stream():
         pieces = []
 
-        # >>> NYTT: skicka tillbaka bilagelänkar direkt som första rad
-        att_links = []
-        try:
-            # hämta URL + namn från de bilagor vi nyss sparade
-            for a in user_msg.attachments.all():
-                if a.file and hasattr(a.file, "url"):
-                    att_links.append({"name": a.original_name, "url": a.file.url})
-        except Exception:
-            att_links = []
-
-        # Skicka en kontrollrad som klienten fångar upp (sedan kommer AI-text)
-        # Viktigt med newline på slutet, så vi kan särskilja i klienten
-        yield "__ATTACH_JSON__" + json.dumps(att_links) + "\n"
-
         try:
             stream = client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -2012,7 +2007,6 @@ def chat_send(request, session_id):
     resp["X-Accel-Buffering"] = "no"
     return resp
 
-from django.http import JsonResponse
 
 @require_POST
 @login_required

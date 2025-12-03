@@ -787,72 +787,100 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // ---- Tabs i högerspalten ----
+  /* ---------- TABBAR I HÖGERSPALT ---------- */
   const tabButtons = document.querySelectorAll('.right-tab');
   const tabPanels  = document.querySelectorAll('.right-panel-pane');
 
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      const target = btn.dataset.tab;          // "data" eller "chat"
+      const target = btn.dataset.tab;      // "data" eller "chat"
 
-      // aktivera vald knapp
       tabButtons.forEach(b =>
         b.classList.toggle('right-tab--active', b === btn)
       );
 
-      // visa rätt panel
       tabPanels.forEach(p =>
         p.classList.toggle('is-active', p.id === 'tab-' + target)
       );
     });
   });
 
-  // ---- Sidebar-chatt ----
-  const chatRoot   = document.getElementById('sidebar-chat');
+  /* ---------- SIDEBAR-CHATT ---------- */
+  const chatRoot = document.getElementById('sidebar-chat');
   if (!chatRoot) return;
 
-  const sessionId  = chatRoot.dataset.sessionId;
-  const ctxJson    = chatRoot.dataset.sidebarContext || "{}";
-  const chatForm   = document.getElementById('sidebar-chat-form');
-  const chatInput  = document.getElementById('sidebar-chat-input');
-  const chatMsgs   = document.getElementById('sidebar-chat-messages');
+  const sessionId = chatRoot.dataset.sessionId;
+  const ctxJson   = chatRoot.dataset.sidebarContext || "{}";
+  const chatForm  = document.getElementById('sidebar-chat-form');
+  const chatInput = document.getElementById('sidebar-chat-input');
+  const chatMsgs  = document.getElementById('sidebar-chat-messages');
 
-  function appendMessage(role, text) {
-    const div = document.createElement('div');
-    div.className = 'sidebar-chat-msg sidebar-chat-msg--' + role;
-    div.textContent = text;
-    chatMsgs.appendChild(div);
-    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+  function renderMarkdown(text) {
+    // Enkel guard om marked inte laddats av någon anledning
+    if (window.marked) {
+      return marked.parse(text);
+    }
+    // fallback: ersätt bara radbrytningar
+    return text.replace(/\n/g, '<br>');
   }
 
-  chatForm.addEventListener('submit', function (e) {
+  function createMessageElement(role) {
+    const div = document.createElement('div');
+    div.className = 'sidebar-chat-msg sidebar-chat-msg--' + role;
+    chatMsgs.appendChild(div);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    return div;
+  }
+
+  chatForm.addEventListener('submit', async function (e) {
     e.preventDefault();
     const msg = (chatInput.value || "").trim();
     if (!msg) return;
 
-    appendMessage('user', msg);
+    // visa användarens bubblan
+    const userDiv = createMessageElement('user');
+    userDiv.innerHTML = renderMarkdown(msg);
     chatInput.value = '';
 
-    const url = `/chat/${sessionId}/send/`;  // ev. justera url här
+    const url = `/chat/${sessionId}/send/`;  // justera om din URL heter något annat
     const formData = new FormData();
     formData.append('message', msg);
     formData.append('sidebar_context', ctxJson);
 
-    fetch(url, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+    // för streaming
+    let assistantDiv = createMessageElement('assistant');
+    let assistantText = "";
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+      });
+
+      if (!res.ok || !res.body) {
+        assistantDiv.innerHTML = '(Kunde inte hämta svar från chatten.)';
+        return;
       }
-    })
-    .then(r => r.text())
-    .then(text => {
-      appendMessage('assistant', text.trim());
-    })
-    .catch(err => {
-      appendMessage('assistant', '(Fel i chatt-anropet: ' + err + ')');
-    });
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        assistantText += decoder.decode(value, { stream: true });
+        assistantDiv.innerHTML = renderMarkdown(assistantText);
+        chatMsgs.scrollTop = chatMsgs.scrollHeight;
+      }
+    } catch (err) {
+      assistantDiv.innerHTML = '(Fel i chatt-anropet: ' + err + ')';
+      console.error(err);
+    }
   });
 });
 </script>
@@ -869,6 +897,8 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 
 </html>

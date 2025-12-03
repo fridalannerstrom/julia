@@ -1092,6 +1092,73 @@ body {
   color: #6b7280;
 }
 
+/* ---- Högerspalts-chatt ---- */
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Själva chattcontainern */
+#sidebar-chat {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 120px); /* justera vid behov */
+}
+
+/* Där meddelandena hamnar */
+.sidebar-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+/* Bubbla generellt */
+.sidebar-chat-msg {
+  max-width: 95%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+/* Användaren: höger, lila */
+.sidebar-chat-msg--user {
+  align-self: flex-end;
+  background: #7b2cbf;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+/* Assistenten: vänster, ljusgrå */
+.sidebar-chat-msg--assistant {
+  align-self: flex-start;
+  background: #f3f4f6;
+  color: #111827;
+  border-bottom-left-radius: 4px;
+}
+
+/* Form & knapp längst ner */
+#sidebar-chat-form {
+  padding: 0px;
+  border-top: 1px solid #e5e7eb;
+}
+
+#sidebar-chat-input {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.adminui-button.adminui-button-small {
+  padding: 6px 16px;
+  font-size: 0.9rem;
+  float: right;
+}
+
 /* Responsivitet för kortet */
 @media (max-width: 768px) {
   .main-area {
