@@ -130,6 +130,58 @@ def _round_to_1_5(x) -> int:
 
     return int(math.floor(v + 0.5))
 
+def _build_sidebar_context(owner, step, context, ratings_json_str):
+    """
+    Bygger ett context-paket till sidobarschattens AI.
+    Innehåller kandidatinfo, test/intervju/CV + aktuell sektion och dess prompt(er).
+    """
+    base = {
+        "step": step,
+        "candidate_name": context.get("candidate_name", ""),
+        "candidate_role": context.get("candidate_role", ""),
+        "test_text": context.get("test_text", ""),
+        "intervju_text": context.get("intervju_text", ""),
+        "cv_text": context.get("uploaded_files_markdown", "") or context.get("cv_text", ""),
+        "ratings_json": ratings_json_str or context.get("ratings_json", ""),
+        "sections": [],
+    }
+
+    def add_section(field_label, field_key, prompt_name):
+        try:
+            prompt_obj = Prompt.objects.get(user=owner, name=prompt_name)
+            prompt_text = prompt_obj.text
+        except Prompt.DoesNotExist:
+            prompt_text = ""
+
+        base["sections"].append({
+            "field_label": field_label,         # t.ex. "Leda, utveckla och engagera"
+            "field_key": field_key,             # t.ex. "leda_text"
+            "current_text": context.get(field_key, ""),
+            "prompt_name": prompt_name,         # t.ex. "leda"
+            "prompt_text": prompt_text,
+        })
+
+    # Vilka sektioner hör till vilket steg?
+    if step == 2:
+        add_section("TQ Färdighet", "tq_fardighet_text", "tq_fardighet")
+        add_section("TQ Motivation", "tq_motivation_text", "tq_motivation")
+    elif step == 3:
+        add_section("Leda, utveckla och engagera", "leda_text", "leda")
+    elif step == 4:
+        add_section("Mod och handlingskraft", "mod_text", "mod")
+    elif step == 5:
+        add_section("Självkännedom och emotionell stabilitet", "sjalkannedom_text", "sjalkannedom")
+    elif step == 6:
+        add_section("Strategiskt tänkande och anpassningsförmåga", "strategi_text", "strategi")
+    elif step == 7:
+        add_section("Kommunikation och samarbete", "kommunikation_text", "kommunikation")
+    elif step == 8:
+        add_section("Styrkor / Utvecklingsområden / Riskbeteenden", "sur_text", "styrkor_utveckling_risk")
+    elif step == 9:
+        add_section("Sammanfattande slutsats", "slutsats_text", "sammanfattande_slutsats")
+
+    return base
+
 def _ai_text_and_ratings_for_section(config, base_prompt_text, style, excel_text, intervju_text=""):
     """
     Kör en prompt som:
@@ -1239,6 +1291,15 @@ def index(request):
         "error": "",
     }
 
+    sidebar_ctx = _build_sidebar_context(
+        owner=owner,
+        step=step,
+        context=context,
+        ratings_json_str=context.get("ratings_json", "")
+    )
+
+    context["sidebar_context_json"] = json.dumps(sidebar_ctx, ensure_ascii=False)
+
     # Om markdown finns i POST → skapa HTML igen
     if context["uploaded_files_markdown"]:
         context["uploaded_files_html"] = markdown(context["uploaded_files_markdown"])
@@ -1282,6 +1343,15 @@ def index(request):
             include_css=True,
         ))
         context["ratings_sidebar"] = _build_sidebar_ratings(ratings)
+
+            # 🔁 Bygg context till sidobarschatt
+    sidebar_ctx = _build_sidebar_context(
+        owner=owner,
+        step=step,
+        context=context,
+        ratings_json_str=context.get("ratings_json", ratings_json_str or "")
+    )
+    context["sidebar_context_json"] = json.dumps(sidebar_ctx, ensure_ascii=False)
 
     # ---------- 4) POST-actions ----------
     if request.method == "POST":
@@ -1785,6 +1855,57 @@ def chat_session(request, session_id):
         {"session": session, "messages": messages, "sessions": sessions}
     )
 
+def _build_sidebar_context_message(ctx: dict) -> str:
+    """
+    Gör om sidebar_context-json till en text som skickas som extra system-meddelande.
+    """
+    parts = []
+    parts.append(
+        "Du är en sidopanel-assistent i ett rapportverktyg för Domarnämnden. "
+        "Du hjälper användaren att förbättra, korta ner eller förtydliga texter."
+    )
+
+    name = ctx.get("candidate_name") or ""
+    role = ctx.get("candidate_role") or ""
+    if name or role:
+        parts.append(f"Kandidat: {name or 'okänd'}, roll/tjänst: {role or 'ej angiven'}.")
+
+    step = ctx.get("step")
+    if step:
+        parts.append(f"Aktuellt steg i verktyget: steg {step}.")
+
+    test_text = ctx.get("test_text") or ""
+    intervju_text = ctx.get("intervju_text") or ""
+    cv_text = ctx.get("cv_text") or ""
+
+    if test_text:
+        parts.append("Testdata (kort utdrag):\n" + _trim(test_text, 1200))
+    if intervju_text:
+        parts.append("Intervjuanteckningar (kort utdrag):\n" + _trim(intervju_text, 1200))
+    if cv_text:
+        parts.append("CV-text (kort utdrag):\n" + _trim(cv_text, 1200))
+
+    for sec in ctx.get("sections", []):
+        label = sec.get("field_label") or sec.get("field_key")
+        prompt_name = sec.get("prompt_name")
+        prompt_text = sec.get("prompt_text") or ""
+        current_text = sec.get("current_text") or ""
+
+        parts.append(
+            f"Sektion: {label}.\n"
+            f"Prompt som används för denna sektion (namn: {prompt_name}):\n"
+            f"{_trim(prompt_text, 1200)}\n\n"
+            f"Nuvarande text i denna sektion:\n{_trim(current_text, 1200)}"
+        )
+
+    parts.append(
+        "När användaren ber dig ändra, förbättra eller korta 'texten', ska du utgå från "
+        "den nuvarande texten i den aktuella sektionen och svara med ett färdigt förbättrat "
+        "textförslag på svenska, utan extra förklaringar."
+    )
+
+    return "\n\n".join(parts)
+
 @csrf_exempt
 @login_required
 def chat_send(request, session_id):
@@ -1818,6 +1939,20 @@ def chat_send(request, session_id):
 
     # 3) Historik + ersätt sista user content med dold filtext (endast i prompten)
     messages = _build_openai_messages(session)
+
+    # 🧠 Lägg till extra context från verktyget om det skickats med
+    sidebar_ctx_raw = request.POST.get("sidebar_context")
+    if sidebar_ctx_raw:
+        try:
+            sidebar_ctx = json.loads(sidebar_ctx_raw)
+        except Exception:
+            sidebar_ctx = None
+
+        if sidebar_ctx:
+            ctx_text = _build_sidebar_context_message(sidebar_ctx)
+            # Lägg in efter grund-systemprompten så att den alltid finns med
+            messages.insert(1, {"role": "system", "content": ctx_text})
+
     combined = user_msg.content
     if file_texts:
         combined += "\n\n(Bifogade filer – textutdrag, visas ej för användaren)" + "".join(file_texts)

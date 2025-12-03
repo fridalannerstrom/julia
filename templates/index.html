@@ -664,19 +664,17 @@
 
       <!-- 🔹 TAB: Chatt -->
       <div id="tab-chat" class="right-panel-pane">
-        <h3 class="assistant-title">Chatt</h3>
-
-        <div id="sidebar-chat-messages" class="sidebar-chat-box"></div>
-
-        <form id="sidebar-chat-form" class="sidebar-chat-form">
-          <textarea id="sidebar-chat-input" rows="2"
-                    placeholder="Skriv t.ex. 'kan du göra den här texten kortare?'"></textarea>
-          <button type="submit" class="adminui-button adminui-button-small">Skicka</button>
-        </form>
-
-        <p class="sidebar-chat-hint">
-          Chatten använder automatiskt texten i det steg du är på just nu.
-        </p>
+        <div id="sidebar-chat"
+            data-session-id="{{ sidebar_session_id }}"
+            data-sidebar-context='{{ sidebar_context_json|escapejs }}'>
+          <div id="sidebar-chat-messages" class="sidebar-chat-messages"></div>
+          <form id="sidebar-chat-form">
+            {% csrf_token %}
+            <textarea id="sidebar-chat-input" class="adminui-textarea" rows="2"
+                      placeholder="Skriv t.ex. ‘gör texten kortare’"></textarea>
+            <button type="submit" class="adminui-button adminui-button-small">Skicka</button>
+          </form>
+        </div>
       </div>
     </aside>
   </div>
@@ -788,118 +786,74 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  // 🔹 Tabs
-  const tabButtons = document.querySelectorAll(".right-tab");
-  const dataPane = document.getElementById("tab-data");
-  const chatPane = document.getElementById("tab-chat");
+document.addEventListener('DOMContentLoaded', function () {
+  // ---- Tabs i högerspalten ----
+  const tabButtons = document.querySelectorAll('.right-tab');
+  const tabPanels  = document.querySelectorAll('.right-panel-pane');
 
   tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      tabButtons.forEach(b => b.classList.remove("right-tab--active"));
-      btn.classList.add("right-tab--active");
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;          // "data" eller "chat"
 
-      const tab = btn.dataset.tab;
-      if (tab === "data") {
-        dataPane.classList.add("is-active");
-        chatPane.classList.remove("is-active");
-      } else {
-        chatPane.classList.add("is-active");
-        dataPane.classList.remove("is-active");
-      }
+      // aktivera vald knapp
+      tabButtons.forEach(b =>
+        b.classList.toggle('right-tab--active', b === btn)
+      );
+
+      // visa rätt panel
+      tabPanels.forEach(p =>
+        p.classList.toggle('is-active', p.id === 'tab-' + target)
+      );
     });
   });
 
-  // 🔹 Chatt
-  const chatForm = document.getElementById("sidebar-chat-form");
-  const chatInput = document.getElementById("sidebar-chat-input");
-  const chatBox = document.getElementById("sidebar-chat-messages");
-  const sidebarSessionId = "{{ sidebar_session_id }}";
-  const step = "{{ step }}";
-  const csrfToken = "{{ csrf_token }}";
+  // ---- Sidebar-chatt ----
+  const chatRoot   = document.getElementById('sidebar-chat');
+  if (!chatRoot) return;
 
-  function appendMessage(text, who) {
-    const div = document.createElement("div");
-    div.className = "chat-msg chat-msg--" + who;
+  const sessionId  = chatRoot.dataset.sessionId;
+  const ctxJson    = chatRoot.dataset.sidebarContext || "{}";
+  const chatForm   = document.getElementById('sidebar-chat-form');
+  const chatInput  = document.getElementById('sidebar-chat-input');
+  const chatMsgs   = document.getElementById('sidebar-chat-messages');
+
+  function appendMessage(role, text) {
+    const div = document.createElement('div');
+    div.className = 'sidebar-chat-msg sidebar-chat-msg--' + role;
     div.textContent = text;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    chatMsgs.appendChild(div);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
   }
 
-  function getCurrentStepText() {
-    // Läs direkt från de textfält som syns i steget
-    try {
-      if (step === "2") {
-        const a = document.querySelector('textarea[name="tq_fardighet_text"]');
-        const b = document.querySelector('textarea[name="tq_motivation_text"]');
-        return (a?.value || "") + "\n\n" + (b?.value || "");
-      }
-      if (step === "3") {
-        return document.querySelector('textarea[name="leda_text"]')?.value || "";
-      }
-      if (step === "4") {
-        return document.querySelector('textarea[name="mod_text"]')?.value || "";
-      }
-      if (step === "5") {
-        return document.querySelector('textarea[name="sjalkannedom_text"]')?.value || "";
-      }
-      if (step === "6") {
-        return document.querySelector('textarea[name="strategi_text"]')?.value || "";
-      }
-      if (step === "7") {
-        return document.querySelector('textarea[name="kommunikation_text"]')?.value || "";
-      }
-      if (step === "8") {
-        return document.querySelector('textarea[name="sur_text"]')?.value || "";
-      }
-      if (step === "9") {
-        return document.querySelector('textarea[name="slutsats_text"]')?.value || "";
-      }
-    } catch (e) {
-      console.error("Kunde inte läsa text för nuvarande steg", e);
-    }
-    return "";
-  }
+  chatForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const msg = (chatInput.value || "").trim();
+    if (!msg) return;
 
-  if (chatForm) {
-    chatForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const message = chatInput.value.trim();
-      if (!message) return;
+    appendMessage('user', msg);
+    chatInput.value = '';
 
-      appendMessage(message, "user");
-      chatInput.value = "";
+    const url = `/chat/${sessionId}/send/`;  // ev. justera url här
+    const formData = new FormData();
+    formData.append('message', msg);
+    formData.append('sidebar_context', ctxJson);
 
-      const contextText = getCurrentStepText();
-
-      const formData = new FormData();
-      formData.append("session_id", sidebarSessionId);
-      formData.append("message", message);
-      formData.append("context", contextText);
-
-      // Liten "tänker..."-placeholder
-      const thinking = document.createElement("div");
-      thinking.className = "chat-msg chat-msg--assistant";
-      thinking.textContent = "Tänker...";
-      chatBox.appendChild(thinking);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      try {
-        const res = await fetch("{% url 'sidebar_chat' %}", {
-          method: "POST",
-          headers: { "X-CSRFToken": csrfToken },
-          body: formData
-        });
-        const data = await res.json();
-        thinking.remove();
-        appendMessage(data.reply || "(Inget svar)", "assistant");
-      } catch (err) {
-        thinking.remove();
-        appendMessage("(Kunde inte hämta svar från chatten.)", "assistant");
-        console.error(err);
+    fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
       }
+    })
+    .then(r => r.text())
+    .then(text => {
+      appendMessage('assistant', text.trim());
+    })
+    .catch(err => {
+      appendMessage('assistant', '(Fel i chatt-anropet: ' + err + ')');
     });
-  }
+  });
 });
 </script>
 
