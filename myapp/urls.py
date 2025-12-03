@@ -13,4 +13,5 @@ urlpatterns = [
     path("chat/<int:session_id>/", views.chat_session, name="chat_session"),
     path("chat/<int:session_id>/send/", views.chat_send, name="chat_send"),
     path("chat/<int:session_id>/delete/", views.chat_delete, name="chat_delete"),
+    path("sidebar-chat/", views.sidebar_chat, name="sidebar_chat"),
 ]

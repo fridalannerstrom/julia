@@ -17,7 +17,7 @@ from django.utils.safestring import mark_safe
 from dotenv import load_dotenv
 from openai import OpenAI
 from django.conf import settings
-from .models import Prompt
+from .models import Prompt, ChatSession, ChatMessage, ChatAttachment
 from django.http import StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -1086,6 +1086,11 @@ def prompt_editor(request):
     owner = get_prompt_owner(request.user)
     ensure_default_prompts_exist(owner)
 
+    sidebar_session, _ = ChatSession.objects.get_or_create(
+        user=request.user,
+        title="Domarnämnden-verktygschatt",
+    )
+
     prompts = Prompt.objects.filter(user=owner)
 
     # ✅ Bara prompt-ägaren (t.ex. Veronika) får ändra
@@ -1185,6 +1190,20 @@ def index(request):
     owner = get_prompt_owner(request.user)
     ensure_default_prompts_exist(request.user)
 
+    sidebar_session, _ = ChatSession.objects.get_or_create(
+        user=request.user,
+        title="Sidebar chatt",
+        defaults={
+            "system_prompt": (
+                "Du är en hjälpassistent i Domarnämnden-verktyget. "
+                "Användaren jobbar med rapporttext i olika steg. "
+                "När användaren säger t.ex. 'den här texten är för lång', "
+                "hjälper du till att förbättra/korta ner texten. "
+                "Skriv alltid svar som färdiga textförslag på svenska."
+            )
+        },
+    )
+
     # ---------- 1) Läs nuvarande steg ----------
     try:
         step = int(request.POST.get("step", "1"))
@@ -1206,6 +1225,7 @@ def index(request):
         "sur_text": request.POST.get("sur_text", ""),
         "slutsats_text": request.POST.get("slutsats_text", ""),
         "cv_text": request.POST.get("cv_text", ""),
+        "sidebar_session_id": sidebar_session.id,
 
         # NYTT – kandidatinfo
         "candidate_name": request.POST.get("candidate_name", ""),
@@ -1855,6 +1875,69 @@ def chat_send(request, session_id):
     resp["Cache-Control"] = "no-cache"
     resp["X-Accel-Buffering"] = "no"
     return resp
+
+from django.http import JsonResponse
+
+@require_POST
+@login_required
+@csrf_exempt
+def sidebar_chat(request):
+    """
+    Enkel chatt-endpoint för sidopanelen.
+    Tar emot:
+      - session_id
+      - message
+      - context  (texten i nuvarande steg / textarea)
+    Returnerar JSON: {"reply": "..."}
+    """
+    session_id = request.POST.get("session_id")
+    message = (request.POST.get("message") or "").strip()
+    context_blob = (request.POST.get("context") or "").strip()
+
+    if not session_id or not message:
+        return JsonResponse({"error": "session_id och message krävs"}, status=400)
+
+    session = get_object_or_404(ChatSession, id=session_id, user=request.user)
+
+    # 1) Spara användarens meddelande
+    user_msg = ChatMessage.objects.create(session=session, role="user", content=message)
+
+    # 2) Bygg historik för OpenAI
+    messages = _build_openai_messages(session)
+
+    # Lägg in kontexten snyggt innan användarens text
+    combined = message
+    if context_blob:
+        combined = (
+            "Du är en assistent som hjälper användaren att förbättra texten i ett verktyg.\n"
+            "Nedanför finns den text som hör till det steg användaren jobbar i just nu.\n"
+            "När användaren skriver saker som 'den här texten', 'det här stycket' etc, "
+            "så syftar de på texten nedan.\n\n"
+            "=== AKTUELL TEXT I VERKTYGET ===\n"
+            f"{context_blob}\n\n"
+            "=== ANVÄNDARENS MEDDELANDE ===\n"
+            f"{message}"
+        )
+
+    messages.append({"role": "user", "content": combined})
+
+    # 3) Anropa OpenAI
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.3,
+            max_tokens=800,
+        )
+        reply = resp.choices[0].message.content.strip()
+    except Exception as e:
+        reply = f"(Ett fel inträffade i chatten: {e})"
+
+    # 4) Spara AI-svaret
+    ChatMessage.objects.create(session=session, role="assistant", content=reply)
+    session.save()
+
+    return JsonResponse({"reply": reply})
 
 @require_POST
 @login_required

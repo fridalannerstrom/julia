@@ -626,31 +626,58 @@
 
     <!-- HÖGERSPALT / PLATS FÖR CHATT -->
     <aside class="right-panel">
-      <h3 class="assistant-title">Din data</h3>
 
-      {% if ratings_sidebar %}
-      {% for section_title, items in ratings_sidebar.items %}
-      <div class="assistant-section">
-        <h4 class="assistant-section-title">{{ section_title }}</h4>
-        <ul class="assistant-list">
-          {% for item in items %}
-          <li class="assistant-list-item">
-            <span class="assistant-label">{{ item.label }}:</span>
-            <span class="assistant-value">{{ item.value }}</span>
-          </li>
-          {% endfor %}
-        </ul>
+      <!-- 🔹 Tabbar -->
+      <div class="right-panel-tabs">
+        <button class="right-tab right-tab--active" data-tab="data">Din data</button>
+        <button class="right-tab" data-tab="chat">Chatt</button>
       </div>
-      {% endfor %}
-      {% else %}
-      <p class="adminui-intro">När du laddat upp material kommer det hamna här.</p>
-      {% endif %}
 
-      {% if uploaded_files_markdown %}
-      <button type="button" class="adminui-button adminui-button-secondary" id="showPdfTextBtn">
-        Visa CV
-      </button>
-      {% endif %}
+      <!-- 🔹 TAB: Din data (din gamla innehållsdel flyttad hit) -->
+      <div id="tab-data" class="right-panel-pane is-active">
+        <h3 class="assistant-title">Din data</h3>
+
+        {% if ratings_sidebar %}
+        {% for section_title, items in ratings_sidebar.items %}
+        <div class="assistant-section">
+          <h4 class="assistant-section-title">{{ section_title }}</h4>
+          <ul class="assistant-list">
+            {% for item in items %}
+            <li class="assistant-list-item">
+              <span class="assistant-label">{{ item.label }}:</span>
+              <span class="assistant-value">{{ item.value }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="adminui-intro">När du laddat upp material kommer det hamna här.</p>
+        {% endif %}
+
+        {% if uploaded_files_markdown %}
+        <button type="button" class="adminui-button adminui-button-secondary" id="showPdfTextBtn">
+          Visa CV
+        </button>
+        {% endif %}
+      </div>
+
+      <!-- 🔹 TAB: Chatt -->
+      <div id="tab-chat" class="right-panel-pane">
+        <h3 class="assistant-title">Chatt</h3>
+
+        <div id="sidebar-chat-messages" class="sidebar-chat-box"></div>
+
+        <form id="sidebar-chat-form" class="sidebar-chat-form">
+          <textarea id="sidebar-chat-input" rows="2"
+                    placeholder="Skriv t.ex. 'kan du göra den här texten kortare?'"></textarea>
+          <button type="submit" class="adminui-button adminui-button-small">Skicka</button>
+        </form>
+
+        <p class="sidebar-chat-hint">
+          Chatten använder automatiskt texten i det steg du är på just nu.
+        </p>
+      </div>
     </aside>
   </div>
 
@@ -757,6 +784,122 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Kunde inte skapa bild av tabell:', err);
         });
     });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // 🔹 Tabs
+  const tabButtons = document.querySelectorAll(".right-tab");
+  const dataPane = document.getElementById("tab-data");
+  const chatPane = document.getElementById("tab-chat");
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tabButtons.forEach(b => b.classList.remove("right-tab--active"));
+      btn.classList.add("right-tab--active");
+
+      const tab = btn.dataset.tab;
+      if (tab === "data") {
+        dataPane.classList.add("is-active");
+        chatPane.classList.remove("is-active");
+      } else {
+        chatPane.classList.add("is-active");
+        dataPane.classList.remove("is-active");
+      }
+    });
+  });
+
+  // 🔹 Chatt
+  const chatForm = document.getElementById("sidebar-chat-form");
+  const chatInput = document.getElementById("sidebar-chat-input");
+  const chatBox = document.getElementById("sidebar-chat-messages");
+  const sidebarSessionId = "{{ sidebar_session_id }}";
+  const step = "{{ step }}";
+  const csrfToken = "{{ csrf_token }}";
+
+  function appendMessage(text, who) {
+    const div = document.createElement("div");
+    div.className = "chat-msg chat-msg--" + who;
+    div.textContent = text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function getCurrentStepText() {
+    // Läs direkt från de textfält som syns i steget
+    try {
+      if (step === "2") {
+        const a = document.querySelector('textarea[name="tq_fardighet_text"]');
+        const b = document.querySelector('textarea[name="tq_motivation_text"]');
+        return (a?.value || "") + "\n\n" + (b?.value || "");
+      }
+      if (step === "3") {
+        return document.querySelector('textarea[name="leda_text"]')?.value || "";
+      }
+      if (step === "4") {
+        return document.querySelector('textarea[name="mod_text"]')?.value || "";
+      }
+      if (step === "5") {
+        return document.querySelector('textarea[name="sjalkannedom_text"]')?.value || "";
+      }
+      if (step === "6") {
+        return document.querySelector('textarea[name="strategi_text"]')?.value || "";
+      }
+      if (step === "7") {
+        return document.querySelector('textarea[name="kommunikation_text"]')?.value || "";
+      }
+      if (step === "8") {
+        return document.querySelector('textarea[name="sur_text"]')?.value || "";
+      }
+      if (step === "9") {
+        return document.querySelector('textarea[name="slutsats_text"]')?.value || "";
+      }
+    } catch (e) {
+      console.error("Kunde inte läsa text för nuvarande steg", e);
+    }
+    return "";
+  }
+
+  if (chatForm) {
+    chatForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      appendMessage(message, "user");
+      chatInput.value = "";
+
+      const contextText = getCurrentStepText();
+
+      const formData = new FormData();
+      formData.append("session_id", sidebarSessionId);
+      formData.append("message", message);
+      formData.append("context", contextText);
+
+      // Liten "tänker..."-placeholder
+      const thinking = document.createElement("div");
+      thinking.className = "chat-msg chat-msg--assistant";
+      thinking.textContent = "Tänker...";
+      chatBox.appendChild(thinking);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const res = await fetch("{% url 'sidebar_chat' %}", {
+          method: "POST",
+          headers: { "X-CSRFToken": csrfToken },
+          body: formData
+        });
+        const data = await res.json();
+        thinking.remove();
+        appendMessage(data.reply || "(Inget svar)", "assistant");
+      } catch (err) {
+        thinking.remove();
+        appendMessage("(Kunde inte hämta svar från chatten.)", "assistant");
+        console.error(err);
+      }
+    });
+  }
 });
 </script>
 
