@@ -55,27 +55,27 @@ SECTION_KEYS = [
 # ── Koppling från STIVE-kompetenser -> (sektion_key, svensk_rad) ────────────
 HEADER_TO_TARGET = {
     # Leda, utveckla och engagera
-    "Leading others":        ("leda_utveckla_och_engagera", "Leda andra"),
-    "Engaging others":       ("leda_utveckla_och_engagera", "Engagera andra"),
-    "Delegating":            ("leda_utveckla_och_engagera", "Delegera"),
-    "Developing others":     ("leda_utveckla_och_engagera", "Utveckla andra"),
+    "directing others":        ("leda_utveckla_och_engagera", "Leda andra"),
+    "engaging others":         ("leda_utveckla_och_engagera", "Engagera andra"),
+    "delegating":              ("leda_utveckla_och_engagera", "Delegera"),
+    "developing others":       ("leda_utveckla_och_engagera", "Utveckla andra"),
 
     # Mod och handlingskraft
-    "Decisiveness":          ("mod_och_handlingskraft", "Beslutsamhet"),
-    "Integrity":             ("mod_och_handlingskraft", "Integritet"),
-    "Managing conflict":     ("mod_och_handlingskraft", "Hantera konflikter"),
+    "decisiveness":            ("mod_och_handlingskraft", "Beslutsamhet"),
+    "integrity":               ("mod_och_handlingskraft", "Integritet"),
+    "managing conflict":       ("mod_och_handlingskraft", "Hantera konflikter"),
 
     # Självkännedom och emotionell stabilitet
-    "Self-awareness":        ("sjalkannedom_och_emotionell_stabilitet", "Självmedvetenhet"),
-    "Resilience":            ("sjalkannedom_och_emotionell_stabilitet", "Uthållighet"),
+    "self-awareness":          ("sjalkannedom_och_emotionell_stabilitet", "Självmedvetenhet"),
+    "resilience":              ("sjalkannedom_och_emotionell_stabilitet", "Uthållighet"),
 
     # Strategiskt tänkande och anpassningsförmåga
-    "Strategic thinking":    ("strategiskt_tankande_och_anpassningsformaga", "Strategiskt fokus"),
-    "Adaptability":          ("strategiskt_tankande_och_anpassningsformaga", "Anpassningsförmåga"),
+    "strategic focus":         ("strategiskt_tankande_och_anpassningsformaga", "Strategiskt fokus"),
+    "adaptability":            ("strategiskt_tankande_och_anpassningsformaga", "Anpassningsförmåga"),
 
     # Kommunikation och samarbete
-    "Teamwork":              ("kommunikation_och_samarbete", "Teamarbete"),
-    "Influencing":           ("kommunikation_och_samarbete", "Inflytelserik"),
+    "teamwork":                ("kommunikation_och_samarbete", "Teamarbete"),
+    "influencing":             ("kommunikation_och_samarbete", "Inflytelserik"),
 }
 
 
@@ -617,8 +617,9 @@ def html_to_text(html: str) -> str:
 
 def _normalize_header_cell(value: str) -> str:
     """
-    Tar t.ex. 'Competency Score: Leading others (STIVE)'
-    -> 'Leading others'
+    Tar t.ex. 'Competency Score: Directing others (STIVE)'
+    -> 'directing others'
+    (lowercase + trimmad, utan 'Competency Score:' och '(STIVE)')
     """
     if not value:
         return ""
@@ -627,7 +628,7 @@ def _normalize_header_cell(value: str) -> str:
         text = text.split("Competency Score:")[-1]
     if "(" in text:
         text = text.split("(")[0]
-    return text.strip()
+    return text.strip().lower()
 
 
 def _ratings_from_worksheet(ws):
