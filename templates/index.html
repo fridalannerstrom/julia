@@ -755,32 +755,32 @@
 <script src="https://cdn.jsdelivr.net/npm/trumbowyg@2.27.3/dist/trumbowyg.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Kör bara på sista steget om du vill vara extra säker
     const ratingBlocks = document.querySelectorAll('.rating-export');
     if (!ratingBlocks.length) return;
 
     ratingBlocks.forEach(function (block) {
-        // Se till att bakgrund blir vit (snyggare i Word)
+
         block.style.backgroundColor = '#ffffff';
 
         html2canvas(block, {
-            scale: 2      // bättre upplösning
+            scale: 2,               // eller 3 om du vill maxa skärpan
+            backgroundColor: '#ffffff',
+            useCORS: true
         }).then(function (canvas) {
-            // Skapa en <img> av canvasen
             const img = document.createElement('img');
             img.src = canvas.toDataURL('image/png');
             img.alt = 'Kompetenstabell';
             img.style.maxWidth = '100%';
             img.style.display = 'block';
 
-            // Byt ut original-tabellen mot bilden
             block.innerHTML = '';
             block.appendChild(img);
-        }).catch(function (err) {
-            console.error('Kunde inte skapa bild av tabell:', err);
-        });
+                })
+        .catch(err => console.error('Canvas error:', err));
     });
 });
 </script>

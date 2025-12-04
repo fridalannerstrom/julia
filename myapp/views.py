@@ -352,7 +352,6 @@ def _ratings_table_html(
 
         css = """
         <style>
-
         .dn-section{
             margin:24px 0;
         }
@@ -371,29 +370,32 @@ def _ratings_table_html(
             padding:10px 10px;
             white-space:normal;
             color:#111827;
+            font-family: 'Segoe UI', Calibri, sans-serif;
+            font-size:1.2rem;          /* större grundtext i vänsterkolumnen */
         }
 
         .dn-sub-title {
             font-weight:600;
-            margin-bottom:2px;
+            font-size:1.4rem;          /* större rubrik */
+            margin-bottom:4px;
         }
 
         .dn-sub-desc {
             font-weight:400;
-            font-size:0.7rem;
+            font-size:1.1rem;           /* större brödtext */
             color:#4b5563;
-            line-height:1.3;
+            line-height:1.5;
         }
 
         .dn-cell{
             text-align:center;
-            padding:8px 2px;
+            padding:12px 4px;           /* lite mer vertikal luft runt prickarna */
         }
 
         .dn-dot{
             display:inline-flex;
-            width:15px;
-            height:15px;
+            width:20px;
+            height:20px;
             border-radius:999px;
             border:1px solid #d1d5db;
             background:#f9fafb;
@@ -411,32 +413,30 @@ def _ratings_table_html(
         ───────────────────────────── */
 
         .rating-export{
-            width:640px;          /* <– ÄNNU smalare */
-            max-width:640px;
+            width:900px;          /* smalare = högre bild i Word */
+            max-width:900px;
             margin:0 auto;
             background:#ffffff;
-            padding:10px 0;
+            padding:2px 2px;
         }
 
         .rating-export .dn-table{
-            width:640px;
-            max-width:640px;
+            width:100%;
             table-layout:fixed;
         }
 
-        /* vänster textkolumn smalare */
+        /* vänster textkolumn */
         .rating-export .dn-sub{
-            width:280px;
-            max-width:280px;
+            width:360px;
+            max-width:360px;
         }
 
-        /* 5 prickkolumner fördelar ca 360px → 72px var */
+        /* prick-cellerna får dela på resten */
         .rating-export .dn-cell{
-            width:72px;
-            max-width:72px;
+            width:auto;
         }
-
         </style>
+
         """
 
     return (css if include_css else "") + "\n".join(sections_html)

@@ -765,6 +765,8 @@ body {
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
   overflow: hidden;
   margin-top: 24px;
+  max-width: 900px;
+  margin: 24px auto 0;
 }
 
 /* toppband med logga */
@@ -790,6 +792,17 @@ body {
   width: 250px;
   height: auto;
   object-fit: contain;
+}
+
+/* Se till att bilden fyller rutan utan glipa */
+.dn-report-table.rating-export img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dn-report-table.rating-export {
+  box-sizing: border-box;
 }
 
 /* raderna i tabellen */
