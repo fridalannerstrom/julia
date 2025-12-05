@@ -988,25 +988,38 @@ document.addEventListener('DOMContentLoaded', function () {
         const { value, done } = await reader.read();
         if (done) break;
 
+        // bygg upp rå text från streamen
         assistantText += decoder.decode(value, { stream: true });
 
-        // Extrahera ev. <copy>…</copy>-block
-        const copyMatch = assistantText.match(/<copy>([\s\S]*?)<\/copy>/);
+        // ---- STÄDA RADBRYTNINGAR & WHITESPACE ----
+        let cleaned = assistantText
+          .replace(/\r/g, '')
+          .replace(/\n{2,}/g, '\n')      // ALLA dubbelradbrytningar → en rad
+          .replace(/[ \t]+\n/g, '\n')
+          .trimStart();
 
-        let html = assistantText;
+        // ---- LETA EFTER <copy>...</copy> ----
+        const copyMatch = cleaned.match(/<copy>([\s\S]*?)<\/copy>/);
+
+        let htmlOutput = '';
 
         if (copyMatch) {
-          const before = assistantText.split("<copy>")[0];
-          const copyText = copyMatch[1].trim();
+          const before = cleaned.split('<copy>')[0].trim();
 
-          html =
-            renderMarkdown(before) +
-            renderMarkdown("```text\n" + copyText + "\n```");
+          const copyText = copyMatch[1]
+            .replace(/\r/g, '')
+            .replace(/\n{2,}/g, '\n')
+            .replace(/[ \t]+\n/g, '\n')
+            .trim();
+
+          htmlOutput =
+            (before ? renderMarkdown(before) : '') +
+            renderMarkdown('```text\n' + copyText + '\n```');
         } else {
-          html = renderMarkdown(assistantText);
+          htmlOutput = renderMarkdown(cleaned);
         }
 
-        assistantDiv.innerHTML = html;
+        assistantDiv.innerHTML = htmlOutput;
         chatMsgs.scrollTop = chatMsgs.scrollHeight;
       }
     } catch (err) {
@@ -1021,6 +1034,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 </script>
+
 
 
 <script>
