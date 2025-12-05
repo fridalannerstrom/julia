@@ -1130,6 +1130,7 @@ body {
   font-size: 0.9rem;
 }
 
+
 /* Bubbla generellt */
 .sidebar-chat-msg {
   max-width: 95%;
@@ -1155,16 +1156,6 @@ body {
   border-bottom-left-radius: 4px;
 }
 
-/* Form & knapp längst ner */
-#sidebar-chat-form {
-  padding: 0px;
-  border-top: 1px solid #e5e7eb;
-}
-
-#sidebar-chat-input {
-  width: 100%;
-  margin-bottom: 8px;
-}
 
 .adminui-button.adminui-button-small {
   padding: 6px 16px;

@@ -805,22 +805,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  /* ---------- SIDEBAR-CHATT ---------- */
+  /* ---------- SIDEBAR-CHATT MED STREAMING ---------- */
   const chatRoot = document.getElementById('sidebar-chat');
   if (!chatRoot) return;
 
   const sessionId = chatRoot.dataset.sessionId;
-  const ctxJson   = chatRoot.dataset.sidebarContext || "{}";
   const chatForm  = document.getElementById('sidebar-chat-form');
   const chatInput = document.getElementById('sidebar-chat-input');
   const chatMsgs  = document.getElementById('sidebar-chat-messages');
+  const stepInput = document.querySelector('input[name="step"]');
+
+  const csrfTokenEl = chatForm.querySelector('input[name="csrfmiddlewaretoken"]');
+  const csrftoken = csrfTokenEl ? csrfTokenEl.value : "";
 
   function renderMarkdown(text) {
-    // Enkel guard om marked inte laddats av någon anledning
     if (window.marked) {
       return marked.parse(text);
     }
-    // fallback: ersätt bara radbrytningar
     return text.replace(/\n/g, '<br>');
   }
 
@@ -832,23 +833,137 @@ document.addEventListener('DOMContentLoaded', function () {
     return div;
   }
 
-  chatForm.addEventListener('submit', async function (e) {
-    e.preventDefault();
+  function getFieldText(name) {
+    const el = document.querySelector('[name="' + name + '"]');
+    if (!el) return "";
+    if ('value' in el) return el.value || "";
+    return el.textContent || "";
+  }
+
+  // Plockar texten för aktuellt steg i formuläret
+  function getCurrentStepText() {
+    const step = parseInt(stepInput ? stepInput.value : "1", 10);
+
+    switch (step) {
+      case 2:
+        return (
+          getFieldText("tq_fardighet_text") +
+          "\n\n" +
+          getFieldText("tq_motivation_text")
+        );
+      case 3:
+        return getFieldText("leda_text");
+      case 4:
+        return getFieldText("mod_text");
+      case 5:
+        return getFieldText("sjalkannedom_text");
+      case 6:
+        return getFieldText("strategi_text");
+      case 7:
+        return getFieldText("kommunikation_text");
+      case 8:
+        return getFieldText("sur_text");
+      case 9:
+        return getFieldText("slutsats_text");
+      default:
+        return "";
+    }
+  }
+
+  // Bygger en sidebar_context som servern kan förstå
+  function buildSidebarContext() {
+    const step = parseInt(stepInput ? stepInput.value : "1", 10);
+    const ctx = {
+      step: step,
+      candidate_name: getFieldText("candidate_name"),
+      candidate_role: getFieldText("candidate_role"),
+      test_text: getFieldText("test_text"),
+      intervju_text: getFieldText("intervju_text"),
+      cv_text: getFieldText("cv_text"),
+      sections: []
+    };
+
+    const currentText = getCurrentStepText();
+
+    // Vi lägger bara in EN sektion: den användaren jobbar med nu
+    if (step === 2) {
+      ctx.sections.push({
+        field_label: "TQ Färdighet & TQ Motivation",
+        field_key: "step2",
+        prompt_name: "tq_fardighet_motivation",
+        prompt_text: "",
+        current_text: currentText
+      });
+    } else if (step === 3) {
+      ctx.sections.push({
+        field_label: "Leda, utveckla och engagera",
+        field_key: "leda_text",
+        prompt_name: "leda",
+        current_text: currentText
+      });
+    } else if (step === 4) {
+      ctx.sections.push({
+        field_label: "Mod och handlingskraft",
+        field_key: "mod_text",
+        prompt_name: "mod",
+        current_text: currentText
+      });
+    } else if (step === 5) {
+      ctx.sections.push({
+        field_label: "Självkännedom och emotionell stabilitet",
+        field_key: "sjalkannedom_text",
+        prompt_name: "sjalkannedom",
+        current_text: currentText
+      });
+    } else if (step === 6) {
+      ctx.sections.push({
+        field_label: "Strategiskt tänkande och anpassningsförmåga",
+        field_key: "strategi_text",
+        prompt_name: "strategi",
+        current_text: currentText
+      });
+    } else if (step === 7) {
+      ctx.sections.push({
+        field_label: "Kommunikation och samarbete",
+        field_key: "kommunikation_text",
+        prompt_name: "kommunikation",
+        current_text: currentText
+      });
+    } else if (step === 8) {
+      ctx.sections.push({
+        field_label: "Styrkor / Utvecklingsområden / Riskbeteenden",
+        field_key: "sur_text",
+        prompt_name: "styrkor_utveckling_risk",
+        current_text: currentText
+      });
+    } else if (step === 9) {
+      ctx.sections.push({
+        field_label: "Sammanfattande slutsats",
+        field_key: "slutsats_text",
+        prompt_name: "sammanfattande_slutsats",
+        current_text: currentText
+      });
+    }
+
+    return JSON.stringify(ctx);
+  }
+
+  async function sendSidebarMessage() {
     const msg = (chatInput.value || "").trim();
     if (!msg) return;
 
-    // visa användarens bubblan
+    // användarens bubbla
     const userDiv = createMessageElement('user');
     userDiv.innerHTML = renderMarkdown(msg);
     chatInput.value = '';
 
-    const url = `/chat/${sessionId}/send/`;  // justera om din URL heter något annat
+    const url = `/chat/${sessionId}/send/`;
     const formData = new FormData();
     formData.append('message', msg);
-    formData.append('sidebar_context', ctxJson);
+    formData.append('sidebar_context', buildSidebarContext());
 
-    // för streaming
-    let assistantDiv = createMessageElement('assistant');
+    // assistent-bubbla med streaming
+    const assistantDiv = createMessageElement('assistant');
     let assistantText = "";
 
     try {
@@ -857,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function () {
         body: formData,
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          'X-CSRFToken': csrftoken
         }
       });
 
@@ -866,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      const reader = res.body.getReader();
+      const reader  = res.body.getReader();
       const decoder = new TextDecoder();
 
       while (true) {
@@ -874,16 +989,39 @@ document.addEventListener('DOMContentLoaded', function () {
         if (done) break;
 
         assistantText += decoder.decode(value, { stream: true });
-        assistantDiv.innerHTML = renderMarkdown(assistantText);
+
+        // Extrahera ev. <copy>…</copy>-block
+        const copyMatch = assistantText.match(/<copy>([\s\S]*?)<\/copy>/);
+
+        let html = assistantText;
+
+        if (copyMatch) {
+          const before = assistantText.split("<copy>")[0];
+          const copyText = copyMatch[1].trim();
+
+          html =
+            renderMarkdown(before) +
+            renderMarkdown("```text\n" + copyText + "\n```");
+        } else {
+          html = renderMarkdown(assistantText);
+        }
+
+        assistantDiv.innerHTML = html;
         chatMsgs.scrollTop = chatMsgs.scrollHeight;
       }
     } catch (err) {
       assistantDiv.innerHTML = '(Fel i chatt-anropet: ' + err + ')';
       console.error(err);
     }
+  }
+
+  chatForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    sendSidebarMessage();
   });
 });
 </script>
+
 
 <script>
 $(document).ready(function() {

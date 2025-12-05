@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from django.conf import settings
 from .models import Prompt, ChatSession, ChatMessage, ChatAttachment
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
@@ -1248,11 +1248,14 @@ def index(request):
         title="Sidebar chatt",
         defaults={
             "system_prompt": (
-                "Du är en hjälpassistent i Domarnämnden-verktyget. "
-                "Användaren jobbar med rapporttext i olika steg. "
-                "När användaren säger t.ex. 'den här texten är för lång', "
-                "hjälper du till att förbättra/korta ner texten. "
+                "Du är en skrivassistent i sidopanelen bredvid ett verktyg för Domarnämnden. "
+                "Användaren arbetar stegvis med att skriva en bedömningsrapport för en kandidat. "
+                "Din uppgift är att hjälpa till att korta ner, förtydliga eller förbättra texter "
+                "utifrån den information som skickas i sidopanelens kontext. "
                 "Skriv alltid svar som färdiga textförslag på svenska."
+                "När du returnerar förslag till förbättrad text, ska du markera den förbättrade texten "
+                "genom att omge den med taggarna <p class='copy'> och </p>."
+                "Du får gärna skriva en kort kommentar först i naturlig text."
             )
         },
     )
