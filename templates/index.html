@@ -1043,6 +1043,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  chatInput.addEventListener('keydown', function (e) {
+    // Shift+Enter = ny rad
+    if (e.key === "Enter" && e.shiftKey) {
+        return; 
+    }
+
+    // Enter = skicka meddelandet
+    if (e.key === "Enter") {
+        e.preventDefault();
+        chatForm.dispatchEvent(new Event('submit'));
+    }
+  });
+
+
   chatForm.addEventListener('submit', function (e) {
     e.preventDefault();
     sendSidebarMessage();
