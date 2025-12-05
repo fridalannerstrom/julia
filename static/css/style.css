@@ -1065,11 +1065,6 @@ body {
 
 /* ---- Högerspalts-chatt ---- */
 
-.right-panel {
-  display: flex;
-  flex-direction: column;
-}
-
 /* Själva chattcontainern */
 #sidebar-chat {
   display: flex;
@@ -1103,11 +1098,18 @@ body {
 
 /* Hela högerpanelen */
 .right-panel {
+  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 249, 253, 0.98);
+  padding: 20px 18px;
+
+  /* 🔽 Sticky + egen scroll */
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+
   display: flex;
   flex-direction: column;
-  padding: 18px 16px;
-  background: #f8fafc;
-  border-left: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 /* Själva chattcontainern */
@@ -1115,7 +1117,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  height: calc(100vh - 150px); /* justera vid behov */
+  flex: 1;                /* fyll höjden i right-panel */
 }
 
 /* Lista med meddelanden */
@@ -1255,13 +1257,13 @@ body {
 .sidebar-chat-empty strong {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #b9bbca;
+  color: #757786;
 }
 
 .sidebar-chat-arrow {
   margin-top: 10px;
   font-size: 2rem;
-  opacity: 0.8;
+  opacity: 1;
   animation: chat-arrow-bounce 1.8s infinite ease-in-out;
 }
 
