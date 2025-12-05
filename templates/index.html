@@ -667,7 +667,18 @@
         <div id="sidebar-chat"
             data-session-id="{{ sidebar_session_id }}"
             data-sidebar-context='{{ sidebar_context_json|escapejs }}'>
+
+            <p id="sidebar-chat-empty" class="sidebar-chat-empty">
+              <strong>Välkommen till chatten</strong>
+              <span>Skriv ett meddelande för att komma igång</span>
+
+              <span class="sidebar-chat-arrow">
+                ↓
+              </span>
+            </p>
+
           <div id="sidebar-chat-messages" class="sidebar-chat-messages"></div>
+
           <form id="sidebar-chat-form">
             {% csrf_token %}
             <textarea id="sidebar-chat-input" class="adminui-textarea" rows="2"
@@ -826,6 +837,10 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function createMessageElement(role) {
+
+    const empty = document.getElementById('sidebar-chat-empty');
+    if (empty) empty.style.display = 'none';
+
     const div = document.createElement('div');
     div.className = 'sidebar-chat-msg sidebar-chat-msg--' + role;
     chatMsgs.appendChild(div);

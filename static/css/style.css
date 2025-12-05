@@ -1229,6 +1229,47 @@ body {
   padding: 0;
 }
 
+.sidebar-chat-hint {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+/* =========================================
+   CHATT TOM-STATE
+   ========================================= */
+
+.sidebar-chat-empty {
+  text-align: center;
+  margin-top: 40%;
+  color: #c5c7d3;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none; /* så klick går igenom */
+}
+
+.sidebar-chat-empty strong {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #b9bbca;
+}
+
+.sidebar-chat-arrow {
+  margin-top: 10px;
+  font-size: 2rem;
+  opacity: 0.8;
+  animation: chat-arrow-bounce 1.8s infinite ease-in-out;
+}
+
+@keyframes chat-arrow-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50%      { transform: translateY(6px); opacity: 0.9; }
+}
+
 /* Responsivitet för kortet */
 @media (max-width: 768px) {
   .main-area {
