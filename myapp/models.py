@@ -19,6 +19,11 @@ from django.db import models
 class ChatSession(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=200, default="Ny chatt")
+
+    # lägg till dessa två
+    flow = models.CharField(max_length=50, blank=True, null=True)  # t.ex. "domarnamnden"
+    step = models.PositiveSmallIntegerField(blank=True, null=True) # 1–10
+
     system_prompt = models.TextField(
         default=(
             "Du är en hjälpsam, saklig och diplomatisk assistent. "

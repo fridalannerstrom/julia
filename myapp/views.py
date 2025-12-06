@@ -1236,47 +1236,15 @@ def _build_sidebar_ratings(ratings: dict):
 # Huvudvy
 # ──────────────────────────────────────────────────────────────────────────────
 
-
 @login_required
 @csrf_exempt
 def index(request):
     owner = get_prompt_owner(request.user)
     ensure_default_prompts_exist(request.user)
 
-    sidebar_session, _ = ChatSession.objects.get_or_create(
-        user=request.user,
-        title="Sidebar chatt",
-        defaults={
-            "system_msg": """
-    Du är en skrivassistent som hjälper användaren att förbättra korta textavsnitt
-    i ett rapportverktyg.
-
-    När du ger en färdig version som användaren ska klistra in i rapporten:
-
-    - Skriv först en kort, vanlig förklaring om vad du gjort (max 1–2 meningar).
-    - Sedan ska den text som användaren ska kopiera ALLTID ligga inuti
-    taggarna <copy> och </copy>.
-    - Inuti <copy>...</copy>:
-    - ska det bara finnas den rena texten,
-    - inga hälsningsfraser,
-    - inga extra tomma rader (ingen blankrad mellan punkt 1 och 2),
-    - använd numrerade punkter: "1. ...", "2. ...", osv.
-
-    Exempel på korrekt svar:
-
-    Jag har kortat ner texten och gjort den mer formell.
-
-    <copy>
-    1. Syfte: ...
-    2. Funktioner: ...
-    </copy>
-    """,
-        },
-    )
-
-    # ---------- 1) Läs nuvarande steg ----------
+    # ---------- 1) Läs nuvarande steg (GET eller POST) ----------
     try:
-        step = int(request.POST.get("step", "1"))
+        step = int(request.POST.get("step", request.GET.get("step", "1")))
     except ValueError:
         step = 1
 
@@ -1295,33 +1263,23 @@ def index(request):
         "sur_text": request.POST.get("sur_text", ""),
         "slutsats_text": request.POST.get("slutsats_text", ""),
         "cv_text": request.POST.get("cv_text", ""),
-        "sidebar_session_id": sidebar_session.id,
 
-        # NYTT – kandidatinfo
+        # kandidatinfo
         "candidate_name": request.POST.get("candidate_name", ""),
         "candidate_role": request.POST.get("candidate_role", ""),
 
-        # dessa två ersätts av markdown + html
+        # CV som markdown/HTML
         "uploaded_files_markdown": request.POST.get("uploaded_files_markdown", ""),
         "uploaded_files_html": "",
 
         "error": "",
     }
 
-    sidebar_ctx = _build_sidebar_context(
-        owner=owner,
-        step=step,
-        context=context,
-        ratings_json_str=context.get("ratings_json", "")
-    )
-
-    context["sidebar_context_json"] = json.dumps(sidebar_ctx, ensure_ascii=False)
-
     # Om markdown finns i POST → skapa HTML igen
     if context["uploaded_files_markdown"]:
         context["uploaded_files_html"] = markdown(context["uploaded_files_markdown"])
 
-    # Ratings JSON (som string + ev. dict för tabeller)
+    # ---------- 3) Ratings (JSON + tabeller) ----------
     ratings_json_str = request.POST.get("ratings_json", "")
     ratings = None
     if ratings_json_str:
@@ -1330,7 +1288,6 @@ def index(request):
         except Exception:
             ratings = None
 
-    # ---------- 3) Bygg tabeller (CSS alltid med) ----------
     if ratings:
         context["ratings_json"] = ratings_json_str
 
@@ -1361,16 +1318,7 @@ def index(request):
         ))
         context["ratings_sidebar"] = _build_sidebar_ratings(ratings)
 
-            # 🔁 Bygg context till sidobarschatt
-    sidebar_ctx = _build_sidebar_context(
-        owner=owner,
-        step=step,
-        context=context,
-        ratings_json_str=context.get("ratings_json", ratings_json_str or "")
-    )
-    context["sidebar_context_json"] = json.dumps(sidebar_ctx, ensure_ascii=False)
-
-    # ---------- 4) POST-actions ----------
+    # ---------- 4) POST-actions (prev/next/build_doc) ----------
     if request.method == "POST":
 
         # Föregående
@@ -1382,7 +1330,6 @@ def index(request):
             from django.http import HttpResponse
             from docx import Document
 
-            # 1) Ladda mallen
             template_path = os.path.join(
                 settings.BASE_DIR,
                 "reports",
@@ -1390,7 +1337,6 @@ def index(request):
             )
             doc = Document(template_path)
 
-            # 2) Text-taggar – använd *_text, inte *_html
             mapping = {
                 "{candidate_name}": context.get("candidate_name", ""),
                 "{candidate_role}": context.get("candidate_role", ""),
@@ -1405,43 +1351,41 @@ def index(request):
             }
             docx_replace_text(doc, mapping)
 
-            # 3) Tabeller – ratings_json kan ligga i POST eller context
             ratings_json_raw = (
                 request.POST.get("ratings_json")
                 or context.get("ratings_json")
                 or ""
             )
 
-            ratings = {}
+            ratings_doc = {}
             if isinstance(ratings_json_raw, dict):
-                ratings = ratings_json_raw
+                ratings_doc = ratings_json_raw
             elif isinstance(ratings_json_raw, str) and ratings_json_raw.strip():
                 try:
-                    ratings = json.loads(ratings_json_raw)
+                    ratings_doc = json.loads(ratings_json_raw)
                 except json.JSONDecodeError:
-                    ratings = {}
+                    ratings_doc = {}
 
-            if ratings:
+            if ratings_doc:
                 replace_table_placeholder(
-                    doc, "{leda_table}", ratings, "leda_utveckla_och_engagera"
+                    doc, "{leda_table}", ratings_doc, "leda_utveckla_och_engagera"
                 )
                 replace_table_placeholder(
-                    doc, "{mod_table}", ratings, "mod_och_handlingskraft"
+                    doc, "{mod_table}", ratings_doc, "mod_och_handlingskraft"
                 )
                 replace_table_placeholder(
-                    doc, "{sjalkannedom_table}", ratings,
+                    doc, "{sjalkannedom_table}", ratings_doc,
                     "sjalkannedom_och_emotionell_stabilitet"
                 )
                 replace_table_placeholder(
-                    doc, "{strategi_table}", ratings,
+                    doc, "{strategi_table}", ratings_doc,
                     "strategiskt_tankande_och_anpassningsformaga"
                 )
                 replace_table_placeholder(
-                    doc, "{kommunikation_table}", ratings,
+                    doc, "{kommunikation_table}", ratings_doc,
                     "kommunikation_och_samarbete"
                 )
 
-            # 4) Skicka ner filen
             response = HttpResponse(
                 content_type=(
                     "application/vnd.openxmlformats-"
@@ -1459,10 +1403,8 @@ def index(request):
             try:
                 style = Prompt.objects.get(user=request.user, name="global_style").text
             except Prompt.DoesNotExist:
-                # fallback om något strular
                 style = getattr(settings, "STYLE_INSTRUCTION", "")
 
-            # hämtar förklaringen till betygsskalan (ny prompt)
             try:
                 betygsskala_prompt = Prompt.objects.get(
                     user=request.user, name="betygsskala_forklaring"
@@ -1472,14 +1414,13 @@ def index(request):
 
             ratings_json_str = context.get("ratings_json", ratings_json_str or "")
 
-            # ---------- STEG 1 : Excel + Intervju + CV PDF ----------
+            # ---------- STEG 1 ----------
             if step == 1:
                 excel_text = ""
                 ws = None
 
                 name = (request.POST.get("candidate_name") or "").strip()
                 role = (request.POST.get("candidate_role") or "").strip()
-
                 context["candidate_name"] = name
                 context["candidate_role"] = role
 
@@ -1507,40 +1448,32 @@ def index(request):
                 if not intervju_raw and not context["error"]:
                     context["error"] = "Klistra in intervjuanteckningar."
 
-                # CV PDF
-                # CV-TEXT (klistra in)
+                # CV-text
                 cv_raw = (request.POST.get("cv_text") or "").strip()
-
                 if not cv_raw:
-                    # Lägg bara felmeddelande om vi inte redan har något annat fel
                     if not context["error"]:
                         context["error"] = "Klistra in kandidatens CV som text."
                 else:
-                    # AI-städa CV-text → markdown
                     clean_prompt = (
                         "Du är en text- och strukturassistent.\n\n"
                         "Rensa och strukturera texten från ett CV, behåll endast relevant innehåll.\n"
                         "Formatera med tydliga rubriker (t.ex. Erfarenhet, Utbildning, Kompetenser) i markdown.\n\n"
                         "Råtext:\n{uploaded_files}"
                     )
-
                     cleaned = _run_openai(
                         clean_prompt,
                         style,
                         uploaded_files=_trim(cv_raw),
                     )
-
                     context["uploaded_files_markdown"] = cleaned
                     context["uploaded_files_html"] = markdown(cleaned)
 
-                # Validering
                 if context["error"]:
                     step = 1
                 else:
                     context["test_text"] = excel_text
                     context["intervju_text"] = intervju_raw
 
-                    # ratings
                     try:
                         ratings, dbg = _ratings_from_worksheet(ws)
                         ratings_json_str = json.dumps(ratings, ensure_ascii=False)
@@ -1550,7 +1483,6 @@ def index(request):
                         context["error"] = "Kunde inte tolka betyg från Excel: " + str(e)[:400]
                         step = 1
 
-                    # AI: TQ F/M
                     if not context["error"]:
                         uploaded_trimmed = _trim(context["uploaded_files_markdown"])
 
@@ -1567,6 +1499,7 @@ def index(request):
                                 candidate_name=context["candidate_name"],
                                 candidate_role=context["candidate_role"],
                             )
+
                         if not context["tq_motivation_text"]:
                             P = Prompt.objects.get(user=owner, name="tq_motivation").text
                             context["tq_motivation_text"] = _run_openai(
@@ -1574,15 +1507,16 @@ def index(request):
                                 style,
                                 excel_text=_trim(excel_text),
                                 intervju_text=_trim(intervju_raw),
-                                ratings_json=ratings_json_str,    
+                                ratings_json=ratings_json_str,
                                 betygsskala_forklaring=betygsskala_prompt,
                                 uploaded_files=uploaded_trimmed,
                                 candidate_name=context["candidate_name"],
                                 candidate_role=context["candidate_role"],
                             )
+
                         step = 2
 
-            # 2 -> 3: Leda, utveckla och engagera
+            # 2 -> 3
             elif step == 2:
                 if not context["leda_text"]:
                     P = Prompt.objects.get(user=owner, name="leda").text
@@ -1600,7 +1534,7 @@ def index(request):
                     )
                 step = 3
 
-            # 3 -> 4: Mod och handlingskraft
+            # 3 -> 4
             elif step == 3:
                 if not context["mod_text"]:
                     P = Prompt.objects.get(user=owner, name="mod").text
@@ -1618,7 +1552,7 @@ def index(request):
                     )
                 step = 4
 
-            # 4 -> 5: Självkännedom och emotionell stabilitet
+            # 4 -> 5
             elif step == 4:
                 if not context["sjalkannedom_text"]:
                     P = Prompt.objects.get(user=owner, name="sjalkannedom").text
@@ -1636,7 +1570,7 @@ def index(request):
                     )
                 step = 5
 
-            # 5 -> 6: Strategiskt tänkande och anpassningsförmåga
+            # 5 -> 6
             elif step == 5:
                 if not context["strategi_text"]:
                     P = Prompt.objects.get(user=owner, name="strategi").text
@@ -1654,7 +1588,7 @@ def index(request):
                     )
                 step = 6
 
-            # 6 -> 7: Kommunikation och samarbete
+            # 6 -> 7
             elif step == 6:
                 if not context["kommunikation_text"]:
                     P = Prompt.objects.get(user=owner, name="kommunikation").text
@@ -1672,7 +1606,7 @@ def index(request):
                     )
                 step = 7
 
-            # 7 -> 8: SUR (styrkor/utvecklingsområden/risk)
+            # 7 -> 8
             elif step == 7:
                 if not context["sur_text"]:
                     P = Prompt.objects.get(user=owner, name="styrkor_utveckling_risk").text
@@ -1693,7 +1627,7 @@ def index(request):
                     )
                 step = 8
 
-            # 8 -> 9: Sammanfattande slutsats
+            # 8 -> 9
             elif step == 8:
                 if not context["slutsats_text"]:
                     P = Prompt.objects.get(user=owner, name="sammanfattande_slutsats").text
@@ -1715,25 +1649,58 @@ def index(request):
                     )
                 step = 9
 
-            # 9 -> 10: Sammanställning (ingen AI)
+            # 9 -> 10
             elif step == 9:
                 step = 10
 
-        context["step"] = step
+    # uppdatera step i context efter POST-logik
+    context["step"] = step
+
+    # ---------- 4.5) Skapa sidopanelens chattsession (per steg) ----------
+    sidebar_session, _ = ChatSession.objects.get_or_create(
+        user=request.user,
+        flow="domarnamnden",
+        step=context["step"],
+        defaults={
+            "title": f"Domarnämnden – steg {context['step']}",
+            "system_prompt": """
+Du är en skrivassistent som hjälper användaren att förbättra korta textavsnitt
+i ett rapportverktyg.
+""",
+        },
+    )
+
+    sidebar_messages = ChatMessage.objects.filter(
+        session=sidebar_session
+    ).order_by("created_at")
+
+    context["sidebar_session_id"] = sidebar_session.id
+    context["sidebar_messages"] = sidebar_messages
+
+    # Bygg context som skickas till AI i sidopanelen
+    ratings_json_for_sidebar = context.get("ratings_json", ratings_json_str or "")
+    sidebar_ctx = _build_sidebar_context(
+        owner=owner,
+        step=context["step"],
+        context=context,
+        ratings_json_str=ratings_json_for_sidebar,
+    )
+    context["sidebar_context_json"] = json.dumps(sidebar_ctx, ensure_ascii=False)
 
     # ---------- 5) Förbered HTML-versioner till sammanställningen ----------
-    context["tq_fardighet_html"] = _markdown_to_html(context.get("tq_fardighet_text", ""))
-    context["sur_html"]          = _markdown_to_html(context.get("sur_text", ""))
-    context["tq_motivation_html"] = _markdown_to_html(context.get("tq_motivation_text", ""))
-    context["leda_html"]         = _markdown_to_html(context.get("leda_text", ""))
-    context["mod_html"]          = _markdown_to_html(context.get("mod_text", ""))
-    context["sjalkannedom_html"] = _markdown_to_html(context.get("sjalkannedom_text", ""))
-    context["strategi_html"]     = _markdown_to_html(context.get("strategi_text", ""))
-    context["kommunikation_html"] = _markdown_to_html(context.get("kommunikation_text", ""))
-    context["slutsats_html"]     = _markdown_to_html(context.get("slutsats_text", ""))
+    context["tq_fardighet_html"]   = _markdown_to_html(context.get("tq_fardighet_text", ""))
+    context["sur_html"]            = _markdown_to_html(context.get("sur_text", ""))
+    context["tq_motivation_html"]  = _markdown_to_html(context.get("tq_motivation_text", ""))
+    context["leda_html"]           = _markdown_to_html(context.get("leda_text", ""))
+    context["mod_html"]            = _markdown_to_html(context.get("mod_text", ""))
+    context["sjalkannedom_html"]   = _markdown_to_html(context.get("sjalkannedom_text", ""))
+    context["strategi_html"]       = _markdown_to_html(context.get("strategi_text", ""))
+    context["kommunikation_html"]  = _markdown_to_html(context.get("kommunikation_text", ""))
+    context["slutsats_html"]       = _markdown_to_html(context.get("slutsats_text", ""))
 
     # ---------- 6) Render ----------
     return render(request, "index.html", context)
+
 
 
 

@@ -666,18 +666,24 @@
       <div id="tab-chat" class="right-panel-pane">
         <div id="sidebar-chat"
             data-session-id="{{ sidebar_session_id }}"
-            data-sidebar-context='{{ sidebar_context_json|escapejs }}'>
+            data-sidebar-context='{{ sidebar_context_json|escapejs }}'
+            data-session-id="{{ sidebar_session_id }}">
 
-            <p id="sidebar-chat-empty" class="sidebar-chat-empty">
-              <strong>Välkommen till chatten</strong>
-              <span>Skriv ett meddelande för att komma igång</span>
+              {% if not sidebar_messages %}
+              <p id="sidebar-chat-empty" class="sidebar-chat-empty">
+                <strong>Välkommen till chatten</strong>
+                <span>Skriv ett meddelande för att komma igång</span>
+                <span class="sidebar-chat-arrow">↓</span>
+              </p>
+              {% endif %}
 
-              <span class="sidebar-chat-arrow">
-                ↓
-              </span>
-            </p>
-
-          <div id="sidebar-chat-messages" class="sidebar-chat-messages"></div>
+          <div id="sidebar-chat-messages" class="sidebar-chat-messages">
+  {% for msg in sidebar_messages %}
+    <div class="sidebar-chat-msg sidebar-chat-msg--{{ msg.role }}">
+      {{ msg.content|linebreaksbr }}
+    </div>
+  {% endfor %}
+</div>
 
           <form id="sidebar-chat-form">
             {% csrf_token %}
