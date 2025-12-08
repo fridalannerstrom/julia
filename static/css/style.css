@@ -970,13 +970,18 @@ body {
 }
 
 .dn-row {
-  display: flex;
+  display: grid;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .dn-row--two .dn-field-group {
   flex: 1;
+}
+
+/* Två kolumner */
+.dn-row--two {
+  grid-template-columns: 1fr 1fr;
 }
 
 /* Lite tajtare label/input så det matchar övrig design */

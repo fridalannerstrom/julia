@@ -183,36 +183,40 @@
                 </p>
 
               <div class="dn-row dn-row--two">
-                <div class="dn-field-group">
-                  <label for="candidate_first_name">Förnamn *</label>
-                  <input
-                    type="text"
-                    id="candidate_first_name"
-                    name="candidate_first_name"
-                    value="{{ candidate_first_name }}"
-                    class="dn-input"
-                    placeholder="Ange förnamn"
-                    required
-                  >
+  <div class="dn-field-group">
+    <label for="candidate_first_name">Förnamn *</label>
+    <input type="text"
+           id="candidate_first_name"
+           name="candidate_first_name"
+           value="{{ candidate_first_name }}"
+           class="dn-input"
+           placeholder="Ange förnamn"
+           required>
+  </div>
 
-                  <label for="candidate_last_name" style="margin-top:8px;">Efternamn *</label>
-                  <input
-                    type="text"
-                    id="candidate_last_name"
-                    name="candidate_last_name"
-                    value="{{ candidate_last_name }}"
-                    class="dn-input"
-                    placeholder="Ange efternamn"
-                    required
-                  >
-                </div>
+  <div class="dn-field-group">
+    <label for="candidate_last_name">Efternamn *</label>
+    <input type="text"
+           id="candidate_last_name"
+           name="candidate_last_name"
+           value="{{ candidate_last_name }}"
+           class="dn-input"
+           placeholder="Ange efternamn"
+           required>
+  </div>
+</div>
 
-                <div class="dn-field-group">
-                  <label for="candidate_role">Roll / tjänst (valfritt)</label>
-                  <input type="text" id="candidate_role" name="candidate_role"
-                        value="{{ candidate_role }}" class="dn-input" placeholder="Ange ev. roll">
-                </div>
-              </div>
+<div class="dn-row">
+  <div class="dn-field-group">
+    <label for="candidate_role">Roll / tjänst (valfritt)</label>
+    <input type="text"
+           id="candidate_role"
+           name="candidate_role"
+           value="{{ candidate_role }}"
+           class="dn-input"
+           placeholder="Ange ev. roll">
+  </div>
+</div>
 
 
                 <h3 class="adminui-label">1. Excelfil</h3>
