@@ -394,11 +394,11 @@ def _ratings_table_html(
 
         .dn-dot{
             display:inline-flex;
-            width:20px;
-            height:20px;
+            width:25px;
+            height:25px;
             border-radius:999px;
-            border:1px solid #d1d5db;
-            background:#f9fafb;
+            border:1px solid #BEBEBE;
+            background:#E4E4E4;
             box-shadow:0 0 0 1px rgba(255,255,255,0.9);
         }
 

@@ -740,7 +740,7 @@ body {
 
 /* Rubriker inne i dokumentet */
 .adminui-report-preview .report-section h3 {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
   margin-bottom: 8px;
 }
