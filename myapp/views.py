@@ -1419,13 +1419,13 @@ def index(request):
         elif "next" in request.POST:
 
             try:
-                style = Prompt.objects.get(user=request.user, name="global_style").text
+                style = Prompt.objects.get(user=owner, name="global_style").text
             except Prompt.DoesNotExist:
                 style = getattr(settings, "STYLE_INSTRUCTION", "")
 
             try:
                 betygsskala_prompt = Prompt.objects.get(
-                    user=request.user, name="betygsskala_forklaring"
+                    user=owner, name="betygsskala_forklaring"
                 ).text
             except Prompt.DoesNotExist:
                 betygsskala_prompt = ""
