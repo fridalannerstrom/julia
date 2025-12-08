@@ -1254,6 +1254,13 @@ def index(request):
         step = int(request.POST.get("step", request.GET.get("step", "1")))
     except ValueError:
         step = 1
+    
+    # 🔹 NYTT: plocka ut namnvarianter och normalisera
+    raw_first = (request.POST.get("candidate_first_name") or "").strip()
+    raw_last  = (request.POST.get("candidate_last_name") or "").strip()
+    raw_full  = (request.POST.get("candidate_name") or "").strip()
+
+    full_name = (raw_first + " " + raw_last).strip()
 
     # ---------- 2) Plocka in state från POST ----------
     context = {
@@ -1272,6 +1279,8 @@ def index(request):
         "cv_text": request.POST.get("cv_text", ""),
 
         # kandidatinfo
+        "candidate_first_name": raw_first,
+        "candidate_last_name": raw_last,
         "candidate_name": request.POST.get("candidate_name", ""),
         "candidate_role": request.POST.get("candidate_role", ""),
 
@@ -1346,6 +1355,8 @@ def index(request):
 
             mapping = {
                 "{candidate_name}": context.get("candidate_name", ""),
+                "{candidate_first_name}": context.get("candidate_first_name", ""),
+                "{candidate_last_name}": context.get("candidate_last_name", ""),
                 "{candidate_role}": context.get("candidate_role", ""),
                 "{tq_fardighet_text}": html_to_text(context.get("tq_fardighet_text", "")),
                 "{sur_text}": html_to_text(context.get("sur_text", "")),
@@ -1426,13 +1437,21 @@ def index(request):
                 excel_text = ""
                 ws = None
 
-                name = (request.POST.get("candidate_name") or "").strip()
-                role = (request.POST.get("candidate_role") or "").strip()
-                context["candidate_name"] = name
+                # 🔹 Läs för- och efternamn från formuläret
+                first = (request.POST.get("candidate_first_name") or "").strip()
+                last  = (request.POST.get("candidate_last_name") or "").strip()
+                role  = (request.POST.get("candidate_role") or "").strip()
+
+                full_name = (first + " " + last).strip()
+
+                # uppdatera context så det följer med vidare
+                context["candidate_first_name"] = first
+                context["candidate_last_name"] = last
+                context["candidate_name"] = full_name
                 context["candidate_role"] = role
 
-                if not name:
-                    context["error"] = "Skriv in kandidatens namn."
+                if not first or not last:
+                    context["error"] = "Fyll i både förnamn och efternamn."
 
                 # Excel
                 if "excel" in request.FILES:
@@ -1505,6 +1524,8 @@ def index(request):
                                 uploaded_files=uploaded_trimmed,
                                 candidate_name=context["candidate_name"],
                                 candidate_role=context["candidate_role"],
+                                candidate_first_name=context["candidate_first_name"],
+                                candidate_last_name=context["candidate_last_name"],
                             )
 
                         if not context["tq_motivation_text"]:
@@ -1519,6 +1540,8 @@ def index(request):
                                 uploaded_files=uploaded_trimmed,
                                 candidate_name=context["candidate_name"],
                                 candidate_role=context["candidate_role"],
+                                candidate_first_name=context["candidate_first_name"],
+                                candidate_last_name=context["candidate_last_name"],
                             )
 
                         step = 2
@@ -1538,6 +1561,8 @@ def index(request):
                                              context.get("uploaded_files_text", "")),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
+                        candidate_first_name=context["candidate_first_name"],
+                        candidate_last_name=context["candidate_last_name"],
                     )
                 step = 3
 
@@ -1556,6 +1581,8 @@ def index(request):
                                              context.get("uploaded_files_text", "")),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
+                        candidate_first_name=context["candidate_first_name"],
+                        candidate_last_name=context["candidate_last_name"],
                     )
                 step = 4
 
@@ -1574,6 +1601,8 @@ def index(request):
                                              context.get("uploaded_files_text", "")),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
+                        candidate_first_name=context["candidate_first_name"],
+                        candidate_last_name=context["candidate_last_name"],
                     )
                 step = 5
 
@@ -1592,6 +1621,8 @@ def index(request):
                                              context.get("uploaded_files_text", "")),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
+                        candidate_first_name=context["candidate_first_name"],
+                        candidate_last_name=context["candidate_last_name"],
                     )
                 step = 6
 
@@ -1610,6 +1641,8 @@ def index(request):
                                              context.get("uploaded_files_text", "")),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
+                        candidate_first_name=context["candidate_first_name"],
+                        candidate_last_name=context["candidate_last_name"],
                     )
                 step = 7
 
@@ -1631,6 +1664,8 @@ def index(request):
                                              context.get("uploaded_files_text", "")),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
+                        candidate_first_name=context["candidate_first_name"],
+                        candidate_last_name=context["candidate_last_name"],
                     )
                 step = 8
 
@@ -1653,6 +1688,8 @@ def index(request):
                                              context.get("uploaded_files_text", "")),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
+                        candidate_first_name=context["candidate_first_name"],
+                        candidate_last_name=context["candidate_last_name"],
                     )
                 step = 9
 
@@ -1664,18 +1701,31 @@ def index(request):
     context["step"] = step
 
     # ---------- 4.5) Skapa sidopanelens chattsession (per steg) ----------
-    sidebar_session, _ = ChatSession.objects.get_or_create(
-        user=request.user,
-        flow="domarnamnden",
-        step=context["step"],
-        defaults={
-            "title": f"Domarnämnden – steg {context['step']}",
-            "system_prompt": """
-Du är en skrivassistent som hjälper användaren att förbättra korta textavsnitt
-i ett rapportverktyg.
-""",
-        },
-    )
+    if context["step"] == 1:
+        # 🔥 NY RAPPORT = NY SIDOPANEL-CHATT
+        sidebar_session = ChatSession.objects.create(
+            user=request.user,
+            flow="domarnamnden",
+            step=1,
+            title="Domarnämnden – ny rapport",
+            system_prompt="""
+    Du är en skrivassistent som hjälper användaren att förbättra korta textavsnitt
+    i ett rapportverktyg.
+    """,
+        )
+    else:
+        sidebar_session, _ = ChatSession.objects.get_or_create(
+            user=request.user,
+            flow="domarnamnden",
+            step=context["step"],
+            defaults={
+                "title": f"Domarnämnden – steg {context['step']}",
+                "system_prompt": """
+    Du är en skrivassistent som hjälper användaren att förbättra korta textavsnitt
+    i ett rapportverktyg.
+    """,
+            },
+        )
 
     sidebar_messages = ChatMessage.objects.filter(
         session=sidebar_session

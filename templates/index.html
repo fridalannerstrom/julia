@@ -152,7 +152,13 @@
                 <input type="hidden" name="test_text" value="{{ test_text|escape }}">
                 <input type="hidden" name="uploaded_files_markdown"
                   value="{{ uploaded_files_markdown|default_if_none:''|escape }}">
-                <input type="hidden" name="candidate_name" value="{{ candidate_name }}">
+                <!-- NYTT: separata fält för för- och efternamn -->
+                <input type="hidden" name="candidate_first_name" value="{{ candidate_first_name }}">
+                <input type="hidden" name="candidate_last_name" value="{{ candidate_last_name }}">
+
+                <!-- Behåll fullständigt namn för bakåtkompatibilitet (används av JS m.m.) -->
+                <input type="hidden" name="candidate_name" value="{{ candidate_first_name }} {{ candidate_last_name }}">
+
                 <input type="hidden" name="candidate_role" value="{{ candidate_role }}">
                 <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
                 <input type="hidden" name="tq_fardighet_text" value="{{ tq_fardighet_text|escape }}">
@@ -176,19 +182,37 @@
                   Klicka på <strong>Nästa</strong> för att skapa din rapport.
                 </p>
 
-                <div class="dn-row dn-row--two">
-                  <div class="dn-field-group">
-                    <label for="candidate_name">Kandidatens namn *</label>
-                    <input type="text" id="candidate_name" name="candidate_name"
-                          value="{{ candidate_name }}" class="dn-input" placeholder="Ange för- och efternamn" required>
-                  </div>
+              <div class="dn-row dn-row--two">
+                <div class="dn-field-group">
+                  <label for="candidate_first_name">Förnamn *</label>
+                  <input
+                    type="text"
+                    id="candidate_first_name"
+                    name="candidate_first_name"
+                    value="{{ candidate_first_name }}"
+                    class="dn-input"
+                    placeholder="Ange förnamn"
+                    required
+                  >
 
-                  <div class="dn-field-group">
-                    <label for="candidate_role">Roll / tjänst (valfritt)</label>
-                    <input type="text" id="candidate_role" name="candidate_role"
-                          value="{{ candidate_role }}" class="dn-input" placeholder="Ange ev. roll">
-                  </div>
+                  <label for="candidate_last_name" style="margin-top:8px;">Efternamn *</label>
+                  <input
+                    type="text"
+                    id="candidate_last_name"
+                    name="candidate_last_name"
+                    value="{{ candidate_last_name }}"
+                    class="dn-input"
+                    placeholder="Ange efternamn"
+                    required
+                  >
                 </div>
+
+                <div class="dn-field-group">
+                  <label for="candidate_role">Roll / tjänst (valfritt)</label>
+                  <input type="text" id="candidate_role" name="candidate_role"
+                        value="{{ candidate_role }}" class="dn-input" placeholder="Ange ev. roll">
+                </div>
+              </div>
 
 
                 <h3 class="adminui-label">1. Excelfil</h3>
