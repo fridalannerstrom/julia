@@ -644,26 +644,33 @@ def html_to_text(html: str) -> str:
     """
     if not html:
         return ""
+
     soup = BeautifulSoup(html, "html.parser")
 
-    # Hantera <br> som radbrytning
+    # <br> -> radbrytning
     for br in soup.find_all("br"):
         br.replace_with("\n")
 
-    # Hantera listor lite snyggare
     lines = []
+
     for elem in soup.recursiveChildGenerator():
         if elem.name == "li":
-            lines.append("• " + elem.get_text(strip=True))
+            # punktlista
+            text = elem.get_text(separator=" ", strip=True)
+            if text:
+                lines.append("• " + text)
+
         elif elem.name in ("p", "div"):
-            text = elem.get_text(strip=True)
+            # viktig ändring: separator="\n" gör att radbrytningar inne i <p> bevaras
+            text = elem.get_text(separator="\n", strip=True)
             if text:
                 lines.append(text)
 
-    # Om det fanns inga <p> eller <li>, fall tillbaka
+    # Om vi inte hittade några p/div/li: fallback
     if not lines:
         return soup.get_text("\n", strip=True)
 
+    # En tom rad mellan block kan du få med "\n\n" om du vill ha mer luft.
     return "\n".join(lines)
 
 
