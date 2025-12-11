@@ -1719,19 +1719,9 @@ def index(request):
                     if not context["error"]:
                         context["error"] = "Klistra in kandidatens CV som text."
                 else:
-                    clean_prompt = (
-                        "Du är en text- och strukturassistent.\n\n"
-                        "Rensa och strukturera texten från ett CV, behåll endast relevant innehåll.\n"
-                        "Formatera med tydliga rubriker (t.ex. Erfarenhet, Utbildning, Kompetenser) i markdown.\n\n"
-                        "Råtext:\n{uploaded_files}"
-                    )
-                    cleaned = _run_openai(
-                        clean_prompt,
-                        style,
-                        uploaded_files=_trim(cv_raw),
-                    )
-                    context["uploaded_files_markdown"] = cleaned
-                    context["uploaded_files_html"] = markdown(cleaned)
+                    # ✅ Spara EXAKT den text användaren klistrat in
+                    context["uploaded_files_markdown"] = cv_raw
+                    context["uploaded_files_html"] = markdown(cv_raw)
 
                 if context["error"]:
                     step = 1
