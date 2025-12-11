@@ -1417,6 +1417,13 @@ def index(request):
     except ValueError:
         step = 1
 
+    # 🔹 RESET när man kommer in "från början" (GET på steg 1)
+    if request.method == "GET" and step == 1:
+        request.session.pop("selected_motivation_keys", None)
+        # om du i framtiden sparar fler saker i sessionen för rapporten
+        # kan du tömma dem här också med fler .pop(...)
+        # request.session.pop("some_other_key", None)
+
      # 🔹 Ladda ev. sparade motivationsval från session
     selected_motivation_keys = request.session.get("selected_motivation_keys", [])
     
