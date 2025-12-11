@@ -78,6 +78,168 @@ HEADER_TO_TARGET = {
     "influencing":             ("kommunikation_och_samarbete", "Inflytelserik"),
 }
 
+MOTIVATION_FACTORS = {
+    "anknytning": {
+        "label": "Anknytning",
+        "definition": (
+            "Värdesätter social interaktion med andra på jobbet, detta är en primär drivkraft. "
+            "Trivs med känslan av att tillhöra ett team och drivs av att utveckla starka band "
+            "och goda arbetsrelationer."
+        ),
+    },
+    "kundservice": {
+        "label": "Kundservice",
+        "definition": (
+            "Trivs i en kundorienterad roll där de får hjälpa och stödja andra. Lägger värde på "
+            "att bygga relationer med kunder och förstå kundernas behov, och lägger stor vikt vid "
+            "att möta och överträffa kunders behov och förväntningar."
+        ),
+    },
+    "work_life_balance": {
+        "label": "Work life balance",
+        "definition": (
+            "Balans mellan arbete och privatliv, så de kan uppfylla sina åtaganden både i arbetet "
+            "och utanför. Söker tydliga gränser så de kan stänga av när arbetsdagen är slut och "
+            "ägna tid åt andra aktiviteter som är viktiga."
+        ),
+    },
+    "manniskors_utveckling": {
+        "label": "Människors utveckling",
+        "definition": (
+            "Hjälpa och stödja andra och aktivt bidra till deras utveckling. Trivs med att vägleda "
+            "andra genom svåra tider och hjälper andra att övervinna motgångar eller utmaningar, "
+            "samt erbjuder proaktivt stöd så att andra kan växa."
+        ),
+    },
+    "stabilitet": {
+        "label": "Stabilitet",
+        "definition": (
+            "Känna trygghet på jobbet och föredra att arbeta i en bransch eller organisation som "
+            "upplevs stabil. Lägger vikt vid att känna att deras position är säker och värdesätter "
+            "stabilitet i sin roll."
+        ),
+    },
+    "auktoritet": {
+        "label": "Auktoritet",
+        "definition": (
+            "Värdesätter möjligheten att ta på sig ledande befattningar och möjlighet till befordran. "
+            "Uppskattar roller där de kan ange riktningen, organisera andra och säkerställa att arbetet "
+            "utförs som det ska."
+        ),
+    },
+    "forvarv": {
+        "label": "Förvärv",
+        "definition": (
+            "Motiveras av ekonomisk belöning och att arbeta i en välbetald roll så de har råd med de "
+            "saker de vill ha utan att behöva oroa sig för kostnader. Fokus på lön och förmåner är "
+            "starkt, och attraktiv ersättning är motiverande."
+        ),
+    },
+    "autonomi": {
+        "label": "Autonomi",
+        "definition": (
+            "Friheten att fatta egna beslut om hur de ska planera sin tid och organisera sitt arbete. "
+            "Presterar som bäst när de får förtroende att sätta sin egen arbetsriktning och slutföra "
+            "arbetet på det sätt de tycker är lämpligt."
+        ),
+    },
+    "erkannande": {
+        "label": "Erkännande",
+        "definition": (
+            "Motiveras av erkännande, beröm och uppskattning. Prioriterar aktiviteter eller projekt "
+            "som är synliga i organisationen så att andra kan se arbetet de gör och värdet de tillför. "
+            "Positiv feedback och beröm är starkt motiverande."
+        ),
+    },
+    "gora_skillnad": {
+        "label": "Göra skillnad",
+        "definition": (
+            "Känna att de gör en positiv skillnad för andra. Vill vara del av en organisation vars mål "
+            "och syfte upplevs som ’värdigt’ och uppskattar att se hur deras arbete har en gynnsam "
+            "inverkan på samhället i stort."
+        ),
+    },
+    "prestation": {
+        "label": "Prestation",
+        "definition": (
+            "Får energi av definierade och utmanande mål att arbeta mot. Möjligheter som utmanar "
+            "professionellt har stor betydelse, och de trivs med konkurrens och en miljö där de kan "
+            "jämföra sin prestation med andras."
+        ),
+    },
+    "kvalitet": {
+        "label": "Kvalitet",
+        "definition": (
+            "Vill leverera högkvalitativa resultat på en konsekvent basis. Är stolta över att producera "
+            "arbete som ligger i linje med både vad de lovat och vad som förväntas av dem, och de "
+            "säkerställer att arbetet slutförs så perfekt som möjligt."
+        ),
+    },
+    "larande": {
+        "label": "Lärande",
+        "definition": (
+            "Drivs av möjligheten att lära sig och utveckla sin expertis. Trivs i en miljö där det finns "
+            "gott om möjligheter till fortlöpande utbildning och utveckling, och motiveras av att bemästra "
+            "nya färdigheter."
+        ),
+    },
+    "etik": {
+        "label": "Etik",
+        "definition": (
+            "Upprätthåller hög etisk standard för sig själv och sin organisation. Följer branschriktlinjer "
+            "och krav på bästa praxis. Är stolta över sin professionella integritet och trivs i en organisation "
+            "vars etiska värderingar ligger i linje med de egna."
+        ),
+    },
+    "marknadsvarde": {
+        "label": "Marknadsvärde",
+        "definition": (
+            "Trivs i en roll som är kommersiellt fokuserad och bidrar till organisationens ekonomiska "
+            "framgång. Motiveras av att se kopplingen mellan sin roll och organisationens resultat och "
+            "får energi av att se hur deras arbete leder till kommersiell vinst."
+        ),
+    },
+    "nyfikenhet": {
+        "label": "Nyfikenhet",
+        "definition": (
+            "Vill utforska och upptäcka nya saker. Eftersträvar kunskap och erfarenhet, tar gärna möjligheter "
+            "till nya upplevelser, ny information och att utforska sådant som fångar deras intresse."
+        ),
+    },
+    "kreativitet": {
+        "label": "Kreativitet",
+        "definition": (
+            "Motiveras av att utöva sin kreativitet, tänka utanför ramarna, generera nya idéer och identifiera "
+            "nya lösningar. Deras idéer är ofta användbara, inte bara originella för sakens skull."
+        ),
+    },
+    "gladje": {
+        "label": "Glädje",
+        "definition": (
+            "Värdesätter en miljö där man trivs med sitt arbete och kan ha roligt med kollegor. Trivs i en "
+            "lättsam miljö där de kan uttrycka sin lekfulla sida, dela humor med kollegor och bli accepterade "
+            "för den de är."
+        ),
+    },
+    "variation": {
+        "label": "Variation",
+        "definition": (
+            "Motiveras av en roll med mycket variation och möjlighet att arbeta med olika saker. Trivs i en "
+            "mångsidig roll med en blandning av uppgifter och projekt där de kan rikta sin uppmärksamhet mot "
+            "olika arbetskrav och använda sina olika färdigheter."
+        ),
+    },
+    "risk": {
+        "label": "Risk",
+        "definition": (
+            "Motiveras av risk i arbetet och att få möta situationer där utfallet är osäkert. Är bekväma med att "
+            "ta riskfyllda beslut och trivs i roller där de får uppleva spänningen i att ta en risk och se om "
+            "den lönar sig."
+        ),
+    },
+}
+
+
 
 # ── NYTT: liten wrapper för OpenAI-anrop per rubrik ───────────────────────────
 def _run_openai(prompt_text: str, style: str, **vars_) -> str:
@@ -1254,6 +1416,9 @@ def index(request):
         step = int(request.POST.get("step", request.GET.get("step", "1")))
     except ValueError:
         step = 1
+
+     # 🔹 Ladda ev. sparade motivationsval från session
+    selected_motivation_keys = request.session.get("selected_motivation_keys", [])
     
     # 🔹 NYTT: plocka ut namnvarianter och normalisera
     raw_first = (request.POST.get("candidate_first_name") or "").strip()
@@ -1277,6 +1442,13 @@ def index(request):
         "sur_text": request.POST.get("sur_text", ""),
         "slutsats_text": request.POST.get("slutsats_text", ""),
         "cv_text": request.POST.get("cv_text", ""),
+        "selected_motivation_keys": selected_motivation_keys,
+
+        # 🔹 NYTT: extra inputs
+        "job_ad_text": request.POST.get("job_ad_text", ""),
+        "motivation_notes": request.POST.get("motivation_notes", ""),
+        "logical_score": request.POST.get("logical_score", ""),
+        "verbal_score": request.POST.get("verbal_score", ""),
 
         # kandidatinfo
         "candidate_first_name": raw_first,
@@ -1453,6 +1625,50 @@ def index(request):
                 if not first or not last:
                     context["error"] = "Fyll i både förnamn och efternamn."
 
+                # 🔹 NYTT: jobbannons + motivationsanteckningar
+                job_ad_text = (request.POST.get("job_ad_text") or "").strip()
+                motivation_notes = (request.POST.get("motivation_notes") or "").strip()
+                context["job_ad_text"] = job_ad_text
+                context["motivation_notes"] = motivation_notes
+
+                # 🔹 NYTT: Hämta valda motivationsfaktorer (max 3)
+                motivation_choices = request.POST.getlist("motivation_choices")
+                motivation_choices = motivation_choices[:3]  # klipp efter 3 för säkerhets skull
+
+                # spara både i context och session (så de överlever stegbyten)
+                context["selected_motivation_keys"] = motivation_choices
+                request.session["selected_motivation_keys"] = motivation_choices
+
+                # 🔹 NYTT: färdighetsvärden 0–99
+                logical_raw = (request.POST.get("logical_score") or "").strip()
+                verbal_raw = (request.POST.get("verbal_score") or "").strip()
+                context["logical_score"] = logical_raw
+                context["verbal_score"] = verbal_raw
+
+                # Backend-validering av 0–99
+                def _validate_0_99(label, raw):
+                    if not raw:
+                        return None, f"Ange en siffra 0–99 för {label}."
+                    try:
+                        val = int(raw)
+                    except ValueError:
+                        return None, f"Ange en siffra 0–99 för {label}."
+                    if not (0 <= val <= 99):
+                        return None, f"Ange en siffra 0–99 för {label}."
+                    return val, ""
+
+                logical_val, err_log = _validate_0_99("logisk färdighet", logical_raw)
+                verbal_val, err_verb = _validate_0_99("verbal färdighet", verbal_raw)
+
+                if err_log:
+                    context["error"] = err_log
+                elif err_verb:
+                    context["error"] = err_verb
+
+                # Om du vill ha dem som int i resten av koden:
+                context["logical_score"] = logical_val if logical_val is not None else ""
+                context["verbal_score"] = verbal_val if verbal_val is not None else ""
+
                 # Excel
                 if "excel" in request.FILES:
                     try:
@@ -1526,23 +1742,35 @@ def index(request):
                                 candidate_role=context["candidate_role"],
                                 candidate_first_name=context["candidate_first_name"],
                                 candidate_last_name=context["candidate_last_name"],
+
+                                # 🔹 NYA TAGGAR
+                                job_ad_text=context.get("job_ad_text", ""),
+                                motivation_notes=context.get("motivation_notes", ""),
+                                logical_score=str(context.get("logical_score") or ""),
+                                verbal_score=str(context.get("verbal_score") or ""),
                             )
 
-                        if not context["tq_motivation_text"]:
-                            P = Prompt.objects.get(user=owner, name="tq_motivation").text
-                            context["tq_motivation_text"] = _run_openai(
-                                P,
-                                style,
-                                excel_text=_trim(excel_text),
-                                intervju_text=_trim(intervju_raw),
-                                ratings_json=ratings_json_str,
-                                betygsskala_forklaring=betygsskala_prompt,
-                                uploaded_files=uploaded_trimmed,
-                                candidate_name=context["candidate_name"],
-                                candidate_role=context["candidate_role"],
-                                candidate_first_name=context["candidate_first_name"],
-                                candidate_last_name=context["candidate_last_name"],
-                            )
+                            if not context["tq_motivation_text"]:
+                                P = Prompt.objects.get(user=owner, name="tq_motivation").text
+                                context["tq_motivation_text"] = _run_openai(
+                                    P,
+                                    style,
+                                    excel_text=_trim(excel_text),
+                                    intervju_text=_trim(intervju_raw),
+                                    ratings_json=ratings_json_str,
+                                    betygsskala_forklaring=betygsskala_prompt,
+                                    uploaded_files=uploaded_trimmed,
+                                    candidate_name=context["candidate_name"],
+                                    candidate_role=context["candidate_role"],
+                                    candidate_first_name=context["candidate_first_name"],
+                                    candidate_last_name=context["candidate_last_name"],
+
+                                    # 🔹 NYA TAGGAR
+                                    job_ad_text=context.get("job_ad_text", ""),
+                                    motivation_notes=context.get("motivation_notes", ""),
+                                    logical_score=str(context.get("logical_score") or ""),
+                                    verbal_score=str(context.get("verbal_score") or ""),
+                                )
 
                         step = 2
 
@@ -1699,6 +1927,17 @@ def index(request):
 
     # uppdatera step i context efter POST-logik
     context["step"] = step
+
+        # 🔹 Bygg lista med fulla objekt för de valda motivationsfaktorerna
+    selected_motivation_keys = context.get("selected_motivation_keys") or \
+                               request.session.get("selected_motivation_keys", [])
+
+    context["selected_motivation_keys"] = selected_motivation_keys
+    context["selected_motivations"] = [
+        MOTIVATION_FACTORS[k]
+        for k in selected_motivation_keys
+        if k in MOTIVATION_FACTORS
+    ]
 
     # ---------- 4.5) Skapa sidopanelens chattsession (per steg) ----------
     if context["step"] == 1:
