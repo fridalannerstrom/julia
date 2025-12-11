@@ -71,6 +71,93 @@ body {
 .tag-example-btn:hover {
   background: #d0cdd6;
 }
+/* SIDEBAR: layoutblock */
+#tab-data .dn-data-block {
+  padding: 16px 0 8px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 16px;
+}
+
+/* rubriker i sidopanelen */
+#tab-data .dn-section-header {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+/* definition list = två kolumner: label / värde */
+#tab-data .dn-deflist {
+  margin: 0;
+}
+
+#tab-data .dn-deflist .dn-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+#tab-data .dn-deflist dt {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+#tab-data .dn-deflist dd {
+  margin: 0;
+  font-weight: 500;
+  color: #111827;
+}
+
+/* lite tätare variant för ratings */
+#tab-data .dn-deflist--compact .dn-row {
+  padding: 2px 0;
+}
+
+/* motivationskort */
+#tab-data .dn-motivation-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#tab-data .dn-motivation-card {
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 12px 14px;
+}
+
+#tab-data .dn-motivation-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+#tab-data .dn-motivation-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
+/* chip-knappar för längre texter */
+#tab-data .dn-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+#tab-data .dn-chip-button {
+  border-radius: 999px;
+  padding-inline: 14px;
+  font-size: 12px;
+}
 
 .tag-box {
     background: #fafafa;

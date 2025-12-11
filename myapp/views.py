@@ -2056,6 +2056,23 @@ def index(request):
         if k in MOTIVATION_FACTORS
     ]
 
+        # ── Har vi någon data till sidopanelen? ─────────────────────────────
+    has_sidebar_data = any([
+        context.get("candidate_name"),
+        context.get("candidate_role"),
+        context.get("logical_score") not in ("", None),
+        context.get("verbal_score") not in ("", None),
+        context.get("selected_motivations"),
+        context.get("ratings_sidebar"),
+        context.get("cv_text"),
+        context.get("job_ad_text"),
+        context.get("motivation_notes"),
+        context.get("intervju_text"),
+    ])
+    context["has_sidebar_data"] = has_sidebar_data
+
+    return render(request, "index.html", context)
+
     return render(request, "index.html", context)
 
 

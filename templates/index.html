@@ -510,111 +510,121 @@
 <div id="tab-data" class="right-panel-pane is-active">
   <h3 class="assistant-title">Din data</h3>
 
-  {# 1) Kandidatinformation #}
-  <div class="assistant-section">
-    <h4 class="assistant-section-title">Kandidat</h4>
-    <ul class="assistant-list">
-      {% if candidate_name %}
-      <li class="assistant-list-item">
-        <span class="assistant-label">Namn:</span>
-        <span class="assistant-value">{{ candidate_name }}</span>
-      </li>
-      {% endif %}
+  {% if has_sidebar_data %}
 
-      {% if candidate_role %}
-      <li class="assistant-list-item">
-        <span class="assistant-label">Roll / tjänst:</span>
-        <span class="assistant-value">{{ candidate_role }}</span>
-      </li>
-      {% endif %}
+    {# ▸ KANDIDAT #}
+    <section class="dn-data-block">
+      <h4 class="dn-section-header">Kandidat</h4>
+      <dl class="dn-deflist">
+        {% if candidate_name %}
+        <div class="dn-row">
+          <dt>Namn</dt>
+          <dd>{{ candidate_name }}</dd>
+        </div>
+        {% endif %}
 
-      {% if logical_score %}
-      <li class="assistant-list-item">
-        <span class="assistant-label">Logisk färdighet:</span>
-        <span class="assistant-value">{{ logical_score }}</span>
-      </li>
-      {% endif %}
+        {% if candidate_role %}
+        <div class="dn-row">
+          <dt>Roll / tjänst</dt>
+          <dd>{{ candidate_role }}</dd>
+        </div>
+        {% endif %}
 
-      {% if verbal_score %}
-      <li class="assistant-list-item">
-        <span class="assistant-label">Verbal färdighet:</span>
-        <span class="assistant-value">{{ verbal_score }}</span>
-      </li>
-      {% endif %}
-    </ul>
-  </div>
+        {% if logical_score %}
+        <div class="dn-row">
+          <dt>Logisk färdighet</dt>
+          <dd>{{ logical_score }}</dd>
+        </div>
+        {% endif %}
 
-  {# 2) Motivationsfaktorer (de tre valda) #}
-  {% if selected_motivations %}
-  <div class="assistant-section">
-    <h4 class="assistant-section-title">Motivationsfaktorer (valda)</h4>
-    <ul class="assistant-list">
-      {% for mot in selected_motivations %}
-      <li class="assistant-list-item">
-        <span class="assistant-label">{{ mot.label }}</span>
-        <span class="assistant-value">{{ mot.definition }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
+        {% if verbal_score %}
+        <div class="dn-row">
+          <dt>Verbal färdighet</dt>
+          <dd>{{ verbal_score }}</dd>
+        </div>
+        {% endif %}
+      </dl>
+    </section>
 
-  {# 3) Betygstabeller (din befintliga ratings_sidebar) #}
-  {% if ratings_sidebar %}
-    {% for section_title, items in ratings_sidebar.items %}
-    <div class="assistant-section">
-      <h4 class="assistant-section-title">{{ section_title }}</h4>
-      <ul class="assistant-list">
-        {% for item in items %}
-        <li class="assistant-list-item">
-          <span class="assistant-label">{{ item.label }}:</span>
-          <span class="assistant-value">{{ item.value }}</span>
-        </li>
+    {# ▸ MOTIVATIONSFAKTORER #}
+    {% if selected_motivations %}
+    <section class="dn-data-block">
+      <h4 class="dn-section-header">Motivationsfaktorer (valda)</h4>
+      <div class="dn-motivation-grid">
+        {% for mot in selected_motivations %}
+        <article class="dn-motivation-card">
+          <h5 class="dn-motivation-title">{{ mot.label }}</h5>
+          <p class="dn-motivation-text">{{ mot.definition }}</p>
+        </article>
         {% endfor %}
-      </ul>
-    </div>
-    {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {# ▸ BETYG / RATINGS #}
+    {% if ratings_sidebar %}
+    <section class="dn-data-block">
+      {% for section_title, items in ratings_sidebar.items %}
+      <div class="dn-ratings-section">
+        <h4 class="dn-section-header">{{ section_title }}</h4>
+        <dl class="dn-deflist dn-deflist--compact">
+          {% for item in items %}
+          <div class="dn-row">
+            <dt>{{ item.label }}</dt>
+            <dd>{{ item.value }}</dd>
+          </div>
+          {% endfor %}
+        </dl>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {# ▸ LÄNGRE TEXTER #}
+    {% if cv_text or job_ad_text or motivation_notes or intervju_text %}
+    <section class="dn-data-block">
+      <h4 class="dn-section-header">Längre texter</h4>
+      <div class="dn-chip-row">
+        {% if cv_text %}
+        <button type="button"
+                class="adminui-button adminui-button-secondary dn-chip-button"
+                id="showPdfTextBtn">
+          Visa CV
+        </button>
+        {% endif %}
+
+        {% if job_ad_text %}
+        <button type="button"
+                class="adminui-button adminui-button-secondary dn-chip-button"
+                id="showJobAdBtn">
+          Visa jobbannons
+        </button>
+        {% endif %}
+
+        {% if motivation_notes %}
+        <button type="button"
+                class="adminui-button adminui-button-secondary dn-chip-button"
+                id="showMotivationNotesBtn">
+          Visa motivationsanteckningar
+        </button>
+        {% endif %}
+
+        {% if intervju_text %}
+        <button type="button"
+                class="adminui-button adminui-button-secondary dn-chip-button"
+                id="showInterviewNotesBtn">
+          Visa intervjuanteckningar
+        </button>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
   {% else %}
-  <p class="adminui-intro">När du laddat upp material kommer det hamna här.</p>
+    <p class="adminui-intro">
+      När du laddat upp material kommer det att visas här.
+    </p>
   {% endif %}
-
-  {# 4) Knappar för längre texter #}
-  <div class="assistant-section">
-    <h4 class="assistant-section-title">Längre texter</h4>
-    <div class="assistant-button-group">
-      {% if uploaded_files_markdown %}
-      <button type="button"
-              class="adminui-button adminui-button-secondary"
-              id="showPdfTextBtn">
-        Visa CV
-      </button>
-      {% endif %}
-
-      {% if job_ad_text %}
-      <button type="button"
-              class="adminui-button adminui-button-secondary"
-              id="showJobAdBtn">
-        Visa jobbannons
-      </button>
-      {% endif %}
-
-      {% if motivation_notes %}
-      <button type="button"
-              class="adminui-button adminui-button-secondary"
-              id="showMotivationNotesBtn">
-        Visa motivationsanteckningar
-      </button>
-      {% endif %}
-
-      {% if intervju_text %}
-      <button type="button"
-              class="adminui-button adminui-button-secondary"
-              id="showInterviewNotesBtn">
-        Visa intervjuanteckningar
-      </button>
-      {% endif %}
-    </div>
-  </div>
 </div>
 
       <div id="tab-chat" class="right-panel-pane">
