@@ -325,22 +325,49 @@ def _build_sidebar_context(owner, step, context, ratings_json_str):
 
     # Vilka sektioner hör till vilket steg?
     if step == 2:
+        # Steg 2 – TQ Färdighet
         add_section("TQ Färdighet", "tq_fardighet_text", "tq_fardighet")
-        add_section("TQ Motivation", "tq_motivation_text", "tq_motivation")
+
     elif step == 3:
-        add_section("Leda, utveckla och engagera", "leda_text", "leda")
+        # Steg 3 – TQ Motivation
+        add_section("TQ Motivation", "tq_motivation_text", "tq_motivation")
+
     elif step == 4:
-        add_section("Mod och handlingskraft", "mod_text", "mod")
+        add_section("Leda, utveckla och engagera", "leda_text", "leda")
+
     elif step == 5:
-        add_section("Självkännedom och emotionell stabilitet", "sjalkannedom_text", "sjalkannedom")
+        add_section("Mod och handlingskraft", "mod_text", "mod")
+
     elif step == 6:
-        add_section("Strategiskt tänkande och anpassningsförmåga", "strategi_text", "strategi")
+        add_section(
+            "Självkännedom och emotionell stabilitet",
+            "sjalkannedom_text",
+            "sjalkannedom",
+        )
+
     elif step == 7:
-        add_section("Kommunikation och samarbete", "kommunikation_text", "kommunikation")
+        add_section(
+            "Strategiskt tänkande och anpassningsförmåga",
+            "strategi_text",
+            "strategi",
+        )
+
     elif step == 8:
-        add_section("Styrkor / Utvecklingsområden / Riskbeteenden", "sur_text", "styrkor_utveckling_risk")
+        add_section("Kommunikation och samarbete", "kommunikation_text", "kommunikation")
+
     elif step == 9:
-        add_section("Sammanfattande slutsats", "slutsats_text", "sammanfattande_slutsats")
+        add_section(
+            "Styrkor / Utvecklingsområden / Riskbeteenden",
+            "sur_text",
+            "styrkor_utveckling_risk",
+        )
+
+    elif step == 10:
+        add_section(
+            "Sammanfattande slutsats",
+            "slutsats_text",
+            "sammanfattande_slutsats",
+        )
 
     return base
 
@@ -1537,7 +1564,7 @@ def index(request):
             step = max(1, step - 1)
 
         # Skapa Word endast på sista steget
-        elif "build_doc" in request.POST and step == 10:
+        elif "build_doc" in request.POST and step == 11:
             from django.http import HttpResponse
             from docx import Document
 
@@ -1789,8 +1816,13 @@ def index(request):
 
                         step = 2
 
-            # 2 -> 3
+             # 2 -> 3  (TQ Färdighet -> TQ Motivation, ingen ny AI-körning)
             elif step == 2:
+                # här gör vi bara nästa steg, texterna är redan genererade i steg 1
+                step = 3
+
+            # 3 -> 4  (TQ Motivation -> Leda, utveckla och engagera)
+            elif step == 3:
                 if not context["leda_text"]:
                     P = Prompt.objects.get(user=owner, name="leda").text
                     context["leda_text"] = _run_openai(
@@ -1800,32 +1832,10 @@ def index(request):
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
-                        uploaded_files=_trim(context.get("uploaded_files_markdown") or
-                                             context.get("uploaded_files_text", "")),
-                        candidate_name=context["candidate_name"],
-                        candidate_role=context["candidate_role"],
-                        candidate_first_name=context["candidate_first_name"],
-                        candidate_last_name=context["candidate_last_name"],
-                        motivation_notes=context.get("motivation_notes", ""),
-                        logical_score=context.get("logical_score", ""),
-                        verbal_score=context.get("verbal_score", ""),
-                        motivation_factors=context.get("motivation_factors", []),
-                    )
-                step = 3
-
-            # 3 -> 4
-            elif step == 3:
-                if not context["mod_text"]:
-                    P = Prompt.objects.get(user=owner, name="mod").text
-                    context["mod_text"] = _run_openai(
-                        P,
-                        style,
-                        excel_text=_trim(context["test_text"]),
-                        intervju_text=_trim(context["intervju_text"]),
-                        ratings_json=ratings_json_str,
-                        betygsskala_forklaring=betygsskala_prompt,
-                        uploaded_files=_trim(context.get("uploaded_files_markdown") or
-                                             context.get("uploaded_files_text", "")),
+                        uploaded_files=_trim(
+                            context.get("uploaded_files_markdown")
+                            or context.get("uploaded_files_text", "")
+                        ),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
@@ -1837,19 +1847,21 @@ def index(request):
                     )
                 step = 4
 
-            # 4 -> 5
+            # 4 -> 5  (Mod och handlingskraft)
             elif step == 4:
-                if not context["sjalkannedom_text"]:
-                    P = Prompt.objects.get(user=owner, name="sjalkannedom").text
-                    context["sjalkannedom_text"] = _run_openai(
+                if not context["mod_text"]:
+                    P = Prompt.objects.get(user=owner, name="mod").text
+                    context["mod_text"] = _run_openai(
                         P,
                         style,
                         excel_text=_trim(context["test_text"]),
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
-                        uploaded_files=_trim(context.get("uploaded_files_markdown") or
-                                             context.get("uploaded_files_text", "")),
+                        uploaded_files=_trim(
+                            context.get("uploaded_files_markdown")
+                            or context.get("uploaded_files_text", "")
+                        ),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
@@ -1861,19 +1873,21 @@ def index(request):
                     )
                 step = 5
 
-            # 5 -> 6
+            # 5 -> 6  (Självkännedom och emotionell stabilitet)
             elif step == 5:
-                if not context["strategi_text"]:
-                    P = Prompt.objects.get(user=owner, name="strategi").text
-                    context["strategi_text"] = _run_openai(
+                if not context["sjalkannedom_text"]:
+                    P = Prompt.objects.get(user=owner, name="sjalkannedom").text
+                    context["sjalkannedom_text"] = _run_openai(
                         P,
                         style,
                         excel_text=_trim(context["test_text"]),
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
-                        uploaded_files=_trim(context.get("uploaded_files_markdown") or
-                                             context.get("uploaded_files_text", "")),
+                        uploaded_files=_trim(
+                            context.get("uploaded_files_markdown")
+                            or context.get("uploaded_files_text", "")
+                        ),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
@@ -1885,19 +1899,21 @@ def index(request):
                     )
                 step = 6
 
-            # 6 -> 7
+            # 6 -> 7  (Strategiskt tänkande och anpassningsförmåga)
             elif step == 6:
-                if not context["kommunikation_text"]:
-                    P = Prompt.objects.get(user=owner, name="kommunikation").text
-                    context["kommunikation_text"] = _run_openai(
+                if not context["strategi_text"]:
+                    P = Prompt.objects.get(user=owner, name="strategi").text
+                    context["strategi_text"] = _run_openai(
                         P,
                         style,
                         excel_text=_trim(context["test_text"]),
                         intervju_text=_trim(context["intervju_text"]),
                         ratings_json=ratings_json_str,
                         betygsskala_forklaring=betygsskala_prompt,
-                        uploaded_files=_trim(context.get("uploaded_files_markdown") or
-                                             context.get("uploaded_files_text", "")),
+                        uploaded_files=_trim(
+                            context.get("uploaded_files_markdown")
+                            or context.get("uploaded_files_text", "")
+                        ),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
@@ -1909,8 +1925,34 @@ def index(request):
                     )
                 step = 7
 
-            # 7 -> 8
+            # 7 -> 8  (Kommunikation och samarbete)
             elif step == 7:
+                if not context["kommunikation_text"]:
+                    P = Prompt.objects.get(user=owner, name="kommunikation").text
+                    context["kommunikation_text"] = _run_openai(
+                        P,
+                        style,
+                        excel_text=_trim(context["test_text"]),
+                        intervju_text=_trim(context["intervju_text"]),
+                        ratings_json=ratings_json_str,
+                        betygsskala_forklaring=betygsskala_prompt,
+                        uploaded_files=_trim(
+                            context.get("uploaded_files_markdown")
+                            or context.get("uploaded_files_text", "")
+                        ),
+                        candidate_name=context["candidate_name"],
+                        candidate_role=context["candidate_role"],
+                        candidate_first_name=context["candidate_first_name"],
+                        candidate_last_name=context["candidate_last_name"],
+                        motivation_notes=context.get("motivation_notes", ""),
+                        logical_score=context.get("logical_score", ""),
+                        verbal_score=context.get("verbal_score", ""),
+                        motivation_factors=context.get("motivation_factors", []),
+                    )
+                step = 8
+
+            # 8 -> 9  (Styrkor / Utvecklingsområden / Riskbeteenden)
+            elif step == 8:
                 if not context["sur_text"]:
                     P = Prompt.objects.get(user=owner, name="styrkor_utveckling_risk").text
                     context["sur_text"] = _run_openai(
@@ -1923,8 +1965,10 @@ def index(request):
                         sjalkannedom_text=context["sjalkannedom_text"],
                         strategi_text=context["strategi_text"],
                         kommunikation_text=context["kommunikation_text"],
-                        uploaded_files=_trim(context.get("uploaded_files_markdown") or
-                                             context.get("uploaded_files_text", "")),
+                        uploaded_files=_trim(
+                            context.get("uploaded_files_markdown")
+                            or context.get("uploaded_files_text", "")
+                        ),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
@@ -1934,10 +1978,10 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
                         motivation_factors=context.get("motivation_factors", []),
                     )
-                step = 8
+                step = 9
 
-            # 8 -> 9
-            elif step == 8:
+            # 9 -> 10  (Sammanfattande slutsats)
+            elif step == 9:
                 if not context["slutsats_text"]:
                     P = Prompt.objects.get(user=owner, name="sammanfattande_slutsats").text
                     context["slutsats_text"] = _run_openai(
@@ -1951,8 +1995,10 @@ def index(request):
                         sjalkannedom_text=context["sjalkannedom_text"],
                         strategi_text=context["strategi_text"],
                         kommunikation_text=context["kommunikation_text"],
-                        uploaded_files=_trim(context.get("uploaded_files_markdown") or
-                                             context.get("uploaded_files_text", "")),
+                        uploaded_files=_trim(
+                            context.get("uploaded_files_markdown")
+                            or context.get("uploaded_files_text", "")
+                        ),
                         candidate_name=context["candidate_name"],
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
@@ -1962,11 +2008,11 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
                         motivation_factors=context.get("motivation_factors", []),
                     )
-                step = 9
-
-            # 9 -> 10
-            elif step == 9:
                 step = 10
+
+            # 10 -> 11  (Sista "nästa" till Word-export-steget)
+            elif step == 10:
+                step = 11
 
     # uppdatera step i context efter POST-logik
     context["step"] = step

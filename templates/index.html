@@ -345,18 +345,22 @@
                 {% endif %}
 
                 {% if step == 2 %}
-                <h3 class="adminui-subtitle">Steg 2 – TQ Färdighet &amp; TQ Motivation</h3>
+                <h3 class="adminui-subtitle">Steg 2 – TQ Färdighet</h3>
 
                 <label class="adminui-label">TQ Färdighet</label>
                 <textarea class="adminui-textarea rich-text" rows="5"
                           name="tq_fardighet_text">{{ tq_fardighet_html|default:tq_fardighet_text|safe }}</textarea>
+                {% endif %}
 
+                {# Steg 3 – TQ Motivation #}
+                {% if step == 3 %}
+                <h3 class="adminui-subtitle">Steg 3 – TQ Motivation</h3>
                 <label class="adminui-label">TQ Motivation – tre främsta drivkrafter</label>
                 <textarea class="adminui-textarea rich-text" rows="5"
                           name="tq_motivation_text">{{ tq_motivation_html|default:tq_motivation_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 3 %}
+                {% if step == 4 %}
                 <h3 class="adminui-subtitle">Steg 3 – Leda, utveckla och engagera</h3>
                 {% if leda_table_html %}
                 <div class="adminui-assessment-box">{{ leda_table_html|safe }}</div>
@@ -366,7 +370,7 @@
                           name="leda_text">{{ leda_html|default:leda_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 4 %}
+                {% if step == 5 %}
                 <h3 class="adminui-subtitle">Steg 4 – Mod och handlingskraft</h3>
                 {% if mod_table_html %}
                 <div class="adminui-assessment-box">{{ mod_table_html|safe }}</div>
@@ -376,7 +380,7 @@
                           name="mod_text">{{ mod_html|default:mod_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 5 %}
+                {% if step == 6 %}
                 <h3 class="adminui-subtitle">Steg 5 – Självkännedom och emotionell stabilitet</h3>
                 {% if sjalkannedom_table_html %}
                 <div class="adminui-assessment-box">{{ sjalkannedom_table_html|safe }}</div>
@@ -386,7 +390,7 @@
                           name="sjalkannedom_text">{{ sjalkannedom_html|default:sjalkannedom_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 6 %}
+                {% if step == 7 %}
                 <h3 class="adminui-subtitle">Steg 6 – Strategiskt tänkande och anpassningsförmåga</h3>
                 {% if strategi_table_html %}
                 <div class="adminui-assessment-box">{{ strategi_table_html|safe }}</div>
@@ -396,7 +400,7 @@
                           name="strategi_text">{{ strategi_html|default:strategi_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 7 %}
+                {% if step == 8 %}
                 <h3 class="adminui-subtitle">Steg 7 – Kommunikation och samarbete</h3>
                 {% if kommunikation_table_html %}
                 <div class="adminui-assessment-box">{{ kommunikation_table_html|safe }}</div>
@@ -406,21 +410,21 @@
                           name="kommunikation_text">{{ kommunikation_html|default:kommunikation_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 8 %}
+                {% if step == 9 %}
                 <h3 class="adminui-subtitle">Steg 8 – Styrkor / Utvecklingsområden / Riskbeteenden</h3>
                 <p class="adminui-intro">Här sammanfattas allt ovan till tre tydliga listor. Justera fritt.</p>
                 <textarea class="adminui-textarea rich-text" rows="8"
                           name="sur_text">{{ sur_html|default:sur_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 9 %}
+                {% if step == 10 %}
                 <h3 class="adminui-subtitle">Steg 9 – Sammanfattande slutsats</h3>
                 <p class="adminui-intro">Skriv eller justera slutbedömningen baserat på hela bilden.</p>
                 <textarea class="adminui-textarea rich-text" rows="8"
                           name="slutsats_text">{{ slutsats_html|default:slutsats_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 10 %}
+                {% if step == 11 %}
                 <h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
 
                 <div class="dn-report">
@@ -477,15 +481,15 @@
                   </button>
                   {% endif %}
 
-                  {% if step < 9 %}
+                  {% if step < 10 %}
                   <button class="adminui-button" type="submit" name="next" value="1">
                     Nästa ➜
                   </button>
-                  {% elif step == 9 %}
+                  {% elif step == 10 %}
                   <button class="adminui-button" type="submit" name="next" value="1">
                     Sammanställ ➜
                   </button>
-                  {% elif step == 10 %}
+                  {% elif step == 11 %}
                   <button class="adminui-button" type="submit" name="build_doc" value="1">
                     📄 Ladda ner som Word
                   </button>
