@@ -536,7 +536,11 @@
               </tr>
             </tbody>
           </table>
+          <br>
+          <div class="dn-report-text">Denna rapport bygger på TQ-testresultat och intervju. Fokus ligger på kandidatens typiska arbetssätt, styrkor, utvecklingsområden och möjliga riskbeteenden vid hög press.
+<br><br>Resultaten beskriver beteendepreferenser, inte fastlagda sanningar om kandidaten som person. Kandidaten kan agera utanför sina naturliga mönster, men det kräver mer medveten ansträngning och energi. Om arbetsrollen under lång tid kräver beteenden långt ifrån kandidatens preferenser finns en risk att det blir mer ansträngande att bibehålla samma nivå av prestation.
         </div>
+</div>
       </div>
     </div>
 
@@ -569,21 +573,31 @@
       </div>
     </div>
 
-    {# RAD 4 – Motivation #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">Definition av kandidatens 3 främsta motivationsfaktorer</h4>
+{# RAD 4 – Motivation #}
+<div class="dn-report-row">
+  <div class="dn-report-col dn-report-col--left">
+    <h4 class="dn-label">Definition av kandidatens<br>3 främsta motivationsfaktorer</h4>
+
+    {% if selected_motivations %}
+      {% for mot in selected_motivations %}
         <p class="dn-body-text">
-          Här beskrivs kort vad respektive motivationsfaktor står för, till exempel
-          kreativitet, nyfikenhet och prestation.
+          <strong>{{ mot.label }}</strong> {{ mot.definition }}
         </p>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        <div class="dn-report-text">
-          {{ tq_motivation_html|default:tq_motivation_text|safe }}
-        </div>
-      </div>
+      {% endfor %}
+    {% else %}
+      <p class="dn-body-text">
+        Inga motivationsfaktorer har valts i verktyget.
+      </p>
+    {% endif %}
+  </div>
+
+  <div class="dn-report-col dn-report-col--right">
+    <div class="dn-report-text">
+      {{ tq_motivation_html|default:tq_motivation_text|safe }}
     </div>
+  </div>
+</div>
+
 
     {# RAD 5 – Leda, utveckla och engagera #}
     <div class="dn-report-row">

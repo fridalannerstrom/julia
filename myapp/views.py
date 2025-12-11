@@ -1575,6 +1575,24 @@ def index(request):
             )
             doc = Document(template_path)
 
+            # --- NYTT: bygg text för valda motivationsfaktorer ---
+            selected_motivations = context.get("selected_motivations") or []
+
+            motivation_lines = []
+            for mot in selected_motivations:
+                # mot kan vara dict eller objekt, vi hanterar båda
+                if isinstance(mot, dict):
+                    label = mot.get("label", "")
+                    definition = mot.get("definition", "")
+                else:
+                    label = getattr(mot, "label", "")
+                    definition = getattr(mot, "definition", "")
+
+                if label or definition:
+                    motivation_lines.append(f"{label} {definition}".strip())
+
+            selected_motivations_text = "\n\n".join(motivation_lines)
+
             mapping = {
                 "{candidate_name}": context.get("candidate_name", ""),
                 "{candidate_first_name}": context.get("candidate_first_name", ""),
@@ -1588,6 +1606,7 @@ def index(request):
                 "{sjalkannedom_text}": html_to_text(context.get("sjalkannedom_text", "")),
                 "{strategi_text}": html_to_text(context.get("strategi_text", "")),
                 "{kommunikation_text}": html_to_text(context.get("kommunikation_text", "")),
+                "{selected_motivations}": selected_motivations_text,
             }
             docx_replace_text(doc, mapping)
 
