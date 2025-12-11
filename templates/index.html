@@ -424,53 +424,288 @@
                           name="slutsats_text">{{ slutsats_html|default:slutsats_text|safe }}</textarea>
                 {% endif %}
 
-                {% if step == 11 %}
-                <h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
+{% if step == 11 %}
+<h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
 
-                <div class="dn-report">
-                  <div class="dn-report-header">
-                    <img src="{% static 'jurek_logo.png' %}" alt="Logotyp" class="dn-report-logo">
-                  </div>
+<div class="dn-report">
 
-                  <div class="dn-report-body">
-                    <div class="dn-report-row">
-                      <div class="dn-report-col dn-report-col--left">
-                        <h5 class="dn-subheading">{{ candidate_name }}</h5>
-                      </div>
-                      <div class="dn-report-col dn-report-col--right">
-                        <h5 class="dn-subheading">{% if candidate_role %} {{ candidate_role }}{% endif %}</h5>
-                      </div>
-                    </div>
+  <!-- HEADER-BANNER (logga / gradient) -->
+  <div class="dn-report-header">
+    <img src="{% static 'jurek_logo.png' %}" alt="Logotyp" class="dn-report-logo">
+  </div>
 
-                    <div class="dn-report-row">
-                      <div class="dn-report-col dn-report-col--left">
-                        <p class="dn-body-text">
-                          Alla har beteendepreferenser på arbetet som påverkar vårt agerande. En individs
-                          preferenser påverkar, men dikterar inte individens beteende. Det är möjligt att arbeta
-                          utanför våra naturliga preferenser, men det kräver självkännedom, en medveten insats
-                          och energi.
-                          <br><br>
-                          Skalan visar hur sannolikt en kompetens är stark eller ej hos en individ.
-                        </p>
-                      </div>
-                      <div class="dn-report-col dn-report-col--right">
-                        <!-- Poängskale-tabellen som tidigare -->
-                        <!-- ... (oförändrat innehåll här) ... -->
-                        <!-- Jag lämnar din befintliga skaltabell oförändrad -->
-                        {{ block.super|default:'' }}
-                      </div>
-                    </div>
+  <div class="dn-report-body">
 
-                    <!-- Resten av dina rader (TQ Färdighet, Styrkor/Utvecklingsområden/Risk, Motivation, Leda osv)  -->
-                    <!-- Jag låter innehållet vara oförändrat här, du hade redan en fin layout -->
-                    {{ tq_fardighet_html|safe }}
-                    {{ sur_html|safe }}
-                    {{ tq_motivation_html|safe }}
-                    <!-- ... + övriga sektioner ... -->
+    {# RAD 0 – Namn #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h5 class="dn-subheading">{{ candidate_name }}</h5>
+        {% if candidate_role %}
+        <p class="dn-body-text">{{ candidate_role }}</p>
+        {% endif %}
+      </div>
+      <div class="dn-report-col dn-report-col--right"></div>
+    </div>
 
-                  </div>
-                </div>
-                {% endif %}
+    {# RAD 1 – Intro + Poängskala #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <p class="dn-body-text">
+          Alla har beteendepreferenser på arbetet som påverkar vårt agerande.
+          En individs preferenser påverkar, men dikterar inte individens beteende.
+          Det är möjligt att arbeta utanför våra naturliga preferenser, men det
+          kräver självkännedom, en medveten insats och energi. Om en individs
+          föredragna eller typiska beteende inte sammanfaller med kraven för en
+          särskild roll, kan det innebära att individen upplever det som
+          utmanande och dränerande att upprätthålla prestation över tid.
+          <br><br>
+          Skalan visar hur sannolikt en kompetens är stark eller ej hos en individ.
+        </p>
+      </div>
+
+      <div class="dn-report-col dn-report-col--right">
+        <h5 class="dn-subheading">Poängskala</h5>
+        <div class="dn-report-table dn-report-table--scale">
+          <table class="dn-table dn-table-scale">
+            <thead>
+              <tr>
+                <th class="dn-scale-head dn-scale-head--empty"></th>
+                <th class="dn-scale-head">Utrymme för<br>utveckling</th>
+                <th class="dn-scale-head">Tillräcklig</th>
+                <th class="dn-scale-head">God</th>
+                <th class="dn-scale-head">Mycket god</th>
+                <th class="dn-scale-head">Utmärkt</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="dn-scale-desc">
+                  Kandidaten är sannolikt <strong>mycket mindre effektiv</strong> än de flesta
+                  när det gäller att visa denna kompetens på arbetet.
+                </td>
+                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+              </tr>
+              <tr>
+                <td class="dn-scale-desc">
+                  Kandidaten är sannolikt <strong>mindre effektiv</strong> än många när det
+                  gäller att visa denna kompetens på arbetet.
+                </td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+              </tr>
+              <tr>
+                <td class="dn-scale-desc">
+                  Kandidaten är sannolikt <strong>lika effektiv</strong> som de flesta
+                  när det gäller att visa denna kompetens på arbetet.
+                </td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+              </tr>
+              <tr>
+                <td class="dn-scale-desc">
+                  Kandidaten är sannolikt <strong>mer effektiv</strong> än många när det
+                  gäller att visa denna kompetens på arbetet.
+                </td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+              </tr>
+              <tr>
+                <td class="dn-scale-desc">
+                  Kandidaten är sannolikt <strong>mycket mer effektiv</strong> än de
+                  flesta när det gäller att visa denna kompetens på arbetet.
+                </td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# RAD 2 – TQ Färdighet #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">TQ Färdighet</h4>
+        <p class="dn-body-text">
+          Resultatet i dessa tester avgörs av hur snabb och noggrann kandidaten i fråga är.
+          Frågorna är adaptiva vilket innebär att svårighetsgraden ändras beroende på om man
+          svarar rätt eller fel.
+        </p>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        <div class="dn-report-text">
+          {{ tq_fardighet_html|default:tq_fardighet_text|safe }}
+        </div>
+      </div>
+    </div>
+
+    {# RAD 3 – Styrkor / Utvecklingsområden / Risk #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">1. Styrkor<br>2. Utvecklingsområden<br>3. Riskbeteenden</h4>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        <div class="dn-report-text">
+          {{ sur_html|default:sur_text|safe }}
+        </div>
+      </div>
+    </div>
+
+    {# RAD 4 – Motivation #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">Definition av kandidatens 3 främsta motivationsfaktorer</h4>
+        <p class="dn-body-text">
+          Här beskrivs kort vad respektive motivationsfaktor står för, till exempel
+          kreativitet, nyfikenhet och prestation.
+        </p>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        <div class="dn-report-text">
+          {{ tq_motivation_html|default:tq_motivation_text|safe }}
+        </div>
+      </div>
+    </div>
+
+    {# RAD 5 – Leda, utveckla och engagera #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">Leda, utveckla och engagera</h4>
+        <p class="dn-body-text">
+          En chef ska kunna sätta upp och arbeta uthålligt mot tydliga mål som bidrar till
+          verksamhetens resultat och utveckling, samt motivera och engagera medarbetarna.
+        </p>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        {% if leda_table_html %}
+        <div class="dn-report-table rating-export">
+          {{ leda_table_html|safe }}
+        </div>
+        {% endif %}
+        <div class="dn-report-text">
+          {{ leda_html|default:leda_text|safe }}
+        </div>
+      </div>
+    </div>
+
+    {# RAD 6 – Mod och handlingskraft #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">Mod och handlingskraft</h4>
+        <p class="dn-body-text">
+          Att visa mod och handlingskraft innebär att kunna ta ansvar och hantera svåra
+          situationer samt fatta beslut även under press.
+        </p>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        {% if mod_table_html %}
+        <div class="dn-report-table rating-export">
+          {{ mod_table_html|safe }}
+        </div>
+        {% endif %}
+        <div class="dn-report-text">
+          {{ mod_html|default:mod_text|safe }}
+        </div>
+      </div>
+    </div>
+
+    {# RAD 7 – Självkännedom #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">Självkännedom och emotionell stabilitet</h4>
+        <p class="dn-body-text">
+          En chef behöver vara trygg, empatisk och medveten om sina egna styrkor och
+          svagheter, samt kunna hantera stress i krävande situationer.
+        </p>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        {% if sjalkannedom_table_html %}
+        <div class="dn-report-table rating-export">
+          {{ sjalkannedom_table_html|safe }}
+        </div>
+        {% endif %}
+        <div class="dn-report-text">
+          {{ sjalkannedom_html|default:sjalkannedom_text|safe }}
+        </div>
+      </div>
+    </div>
+
+    {# RAD 8 – Strategiskt tänkande #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">Strategiskt tänkande och anpassningsförmåga</h4>
+        <p class="dn-body-text">
+          En chef ska kunna tänka strategiskt, väga långsiktiga och kortsiktiga konsekvenser
+          och anpassa sig efter förändrade omständigheter.
+        </p>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        {% if strategi_table_html %}
+        <div class="dn-report-table rating-export">
+          {{ strategi_table_html|safe }}
+        </div>
+        {% endif %}
+        <div class="dn-report-text">
+          {{ strategi_html|default:strategi_text|safe }}
+        </div>
+      </div>
+    </div>
+
+    {# RAD 9 – Kommunikation och samarbete #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">Kommunikation och samarbete</h4>
+        <p class="dn-body-text">
+          Som chef är det viktigt att kommunicera tydligt, vara lyhörd och aktivt skapa
+          samarbeten och relationer, både internt och externt.
+        </p>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        {% if kommunikation_table_html %}
+        <div class="dn-report-table rating-export">
+          {{ kommunikation_table_html|safe }}
+        </div>
+        {% endif %}
+        <div class="dn-report-text">
+          {{ kommunikation_html|default:kommunikation_text|safe }}
+        </div>
+      </div>
+    </div>
+
+    {# RAD 10 – Sammanfattande slutsats #}
+    <div class="dn-report-row">
+      <div class="dn-report-col dn-report-col--left">
+        <h4 class="dn-label">Sammanfattande slutsats</h4>
+      </div>
+      <div class="dn-report-col dn-report-col--right">
+        <div class="dn-report-text">
+          {{ slutsats_html|default:slutsats_text|safe }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+
 
                 <!-- NAVIGATION -->
                 <div class="adminui-button-row">
