@@ -2002,6 +2002,7 @@ def index(request):
     context["slutsats_html"]       = _markdown_to_html(context.get("slutsats_text", ""))
 
     # ---------- 6) Render ----------
+    context["motivation_factors"] = MOTIVATION_FACTORS
     return render(request, "index.html", context)
 
 

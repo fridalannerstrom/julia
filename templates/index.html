@@ -279,186 +279,19 @@
   Välj upp till <strong>tre</strong> motivationsfaktorer som bäst beskriver vad som driver kandidaten.
 </p>
 
-<div class="dn-row dn-row--checkbox-grid">
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="anknytning"
-           class="motivation-checkbox"
-           {% if 'anknytning' in selected_motivation_keys %}checked{% endif %}>
-    <span>Anknytning</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="kundservice"
-           class="motivation-checkbox"
-           {% if 'kundservice' in selected_motivation_keys %}checked{% endif %}>
-    <span>Kundservice</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="work_life_balance"
-           class="motivation-checkbox"
-           {% if 'work_life_balance' in selected_motivation_keys %}checked{% endif %}>
-    <span>Work life balance</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="manniskors_utveckling"
-           class="motivation-checkbox"
-           {% if 'manniskors_utveckling' in selected_motivation_keys %}checked{% endif %}>
-    <span>Människors utveckling</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="stabilitet"
-           class="motivation-checkbox"
-           {% if 'stabilitet' in selected_motivation_keys %}checked{% endif %}>
-    <span>Stabilitet</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="auktoritet"
-           class="motivation-checkbox"
-           {% if 'auktoritet' in selected_motivation_keys %}checked{% endif %}>
-    <span>Auktoritet</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="forvarv"
-           class="motivation-checkbox"
-           {% if 'forvarv' in selected_motivation_keys %}checked{% endif %}>
-    <span>Förvärv</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="autonomi"
-           class="motivation-checkbox"
-           {% if 'autonomi' in selected_motivation_keys %}checked{% endif %}>
-    <span>Autonomi</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="erkannande"
-           class="motivation-checkbox"
-           {% if 'erkannande' in selected_motivation_keys %}checked{% endif %}>
-    <span>Erkännande</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="gora_skillnad"
-           class="motivation-checkbox"
-           {% if 'gora_skillnad' in selected_motivation_keys %}checked{% endif %}>
-    <span>Göra skillnad</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="prestation"
-           class="motivation-checkbox"
-           {% if 'prestation' in selected_motivation_keys %}checked{% endif %}>
-    <span>Prestation</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="kvalitet"
-           class="motivation-checkbox"
-           {% if 'kvalitet' in selected_motivation_keys %}checked{% endif %}>
-    <span>Kvalitet</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="larande"
-           class="motivation-checkbox"
-           {% if 'larande' in selected_motivation_keys %}checked{% endif %}>
-    <span>Lärande</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="etik"
-           class="motivation-checkbox"
-           {% if 'etik' in selected_motivation_keys %}checked{% endif %}>
-    <span>Etik</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="marknadsvarde"
-           class="motivation-checkbox"
-           {% if 'marknadsvarde' in selected_motivation_keys %}checked{% endif %}>
-    <span>Marknadsvärde</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="nyfikenhet"
-           class="motivation-checkbox"
-           {% if 'nyfikenhet' in selected_motivation_keys %}checked{% endif %}>
-    <span>Nyfikenhet</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="kreativitet"
-           class="motivation-checkbox"
-           {% if 'kreativitet' in selected_motivation_keys %}checked{% endif %}>
-    <span>Kreativitet</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="gladje"
-           class="motivation-checkbox"
-           {% if 'gladje' in selected_motivation_keys %}checked{% endif %}>
-    <span>Glädje</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="variation"
-           class="motivation-checkbox"
-           {% if 'variation' in selected_motivation_keys %}checked{% endif %}>
-    <span>Variation</span>
-  </label>
-
-  <label class="dn-checkbox">
-    <input type="checkbox"
-           name="motivation_choices"
-           value="risk"
-           class="motivation-checkbox"
-           {% if 'risk' in selected_motivation_keys %}checked{% endif %}>
-    <span>Risk</span>
-  </label>
+<div class="motivation-grid">
+  {% for key, mot in motivation_factors.items %}
+    <label class="motivation-card">
+      <input
+        type="checkbox"
+        name="motivation_choices"
+        value="{{ key }}"
+        class="motivation-checkbox"
+        {% if key in selected_motivation_keys %}checked{% endif %}
+      >
+      <span class="motivation-title">{{ mot.label }}</span>
+    </label>
+  {% endfor %}
 </div>
 
 {# ───────── Motivation ───────── #}

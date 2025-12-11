@@ -969,6 +969,65 @@ body {
   }
 }
 
+.motivation-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 per rad */
+  gap: 14px;
+  margin-top: 1rem;
+}
+
+.motivation-card {
+  position: relative;
+  cursor: pointer;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff;
+  transition: all 0.18s ease;
+  user-select: none;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 60px;
+}
+
+/* Dölj checkboxen */
+.motivation-card input[type="checkbox"] {
+  display: none;
+}
+
+/* När man hovrar */
+.motivation-card:hover {
+  border-color: #b39ddb; /* mjuk lila */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+}
+
+/* När den är vald */
+.motivation-card input[type="checkbox"]:checked + .motivation-title {
+  color: #4a2ab8; /* lila text */
+}
+
+.motivation-card input[type="checkbox"]:checked ~ .motivation-title {
+  font-weight: 600;
+}
+
+/* Ramen ändras vid check */
+.motivation-card input[type="checkbox"]:checked ~ * {
+  border-color: #6a4be7;
+}
+
+.motivation-card input[type="checkbox"]:checked {
+  /* we attach styling to the parent using :has(), modern browsers support it */
+}
+
+.motivation-card:has(input[type="checkbox"]:checked) {
+  border-color: #6a4be7;
+  background: #f5f0ff;
+  box-shadow: 0 0 0 2px #d9caff;
+}
+
 .dn-row {
   display: grid;
   gap: 1.5rem;
