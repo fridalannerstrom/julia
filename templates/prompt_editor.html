@@ -209,165 +209,225 @@
     </main>
 
     <!-- HÖGERSPALT -->
-    <aside class="right-panel">
-        <h3 class="assistant-title">Tillgängliga taggar</h3>
-        <p class="assistant-help adminui-intro">
-          Klistra in dessa i dina prompts där du vill att data ska ersättas automatiskt.
-        </p>
+<!-- HÖGERSPALT – TILLGÄNGLIGA TAGGAR -->
+<aside class="right-panel prompt-tags-panel">
+  <h3 class="assistant-title">Tillgängliga taggar</h3>
+  <p class="assistant-help adminui-intro">
+    Klistra in dessa taggar i dina prompts där du vill att data ska ersättas automatiskt.
+  </p>
 
-        <h3 class="assistant-title">Grunddata</h3>
+  <!-- =====================================================
+       SEKTION 1: GRUNDDATA (kommer direkt från formuläret)
+  ====================================================== -->
+  <div class="tag-section">
+    <h4 class="tag-section-title">Grunddata</h4>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{excel_text}</code>
-                <p>Rådata från excel. Använd ej.</p>
-            </div>
+    <!-- Grupp: Excel & betyg -->
+    <h5 class="tag-subtitle">Excel & betyg</h5>
 
-            <button class="tag-example-btn" data-modal="modal-excel">
-                Se exempel
-            </button>
-        </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{excel_text}</code>
+        <p>Rådata direkt från Excelfilen. Används främst tekniskt.</p>
+      </div>
+      <button class="tag-example-btn" data-modal="modal-excel">
+        Se exempel
+      </button>
+    </div>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{ratings_json}</code>
-                <p>Städad excel. Använd denna.</p>
-            </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{ratings_json}</code>
+        <p>Strukturerad betygsdata från Excel (JSON). Använd denna.</p>
+      </div>
+      <button class="tag-example-btn" data-modal="modal-ratings">
+        Se exempel
+      </button>
+    </div>
 
-            <button class="tag-example-btn" data-modal="modal-ratings">
-                Se exempel
-            </button>
-        </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{betygsskala_forklaring}</code>
+        <p>Text som förklarar nivåerna i betygsskalan.</p>
+      </div>
+      <button class="tag-example-btn" data-modal="modal-betygsskala">
+        Se exempel
+      </button>
+    </div>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{betygsskala_forklaring}</code>
-                <p>Definition av nivåerna</p>
-            </div>
+    <!-- Grupp: Textunderlag -->
+    <h5 class="tag-subtitle">Textunderlag</h5>
 
-            <button class="tag-example-btn" data-modal="modal-betygsskala">
-                Se exempel
-            </button>
-        </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{uploaded_files}</code>
+        <p>CV-texten som användaren klistrat in.</p>
+      </div>
+      <button class="tag-example-btn" data-modal="modal-cv">
+        Se exempel
+      </button>
+    </div>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{uploaded_files}</code>
-                <p>Uppladdade CV:t</p>
-            </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{intervju_text}</code>
+        <p>Intervjuanteckningar (råtext).</p>
+      </div>
+      <button class="tag-example-btn" data-modal="modal-intervju">
+        Se exempel
+      </button>
+    </div>
 
-            <button class="tag-example-btn" data-modal="modal-cv">
-                Se exempel
-            </button>
-        </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{job_ad_text}</code>
+        <p>Jobbannonsens text.</p>
+      </div>
+    </div>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{intervju_text}</code>
-                <p>Textbaserade anteckningar</p>
-            </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{motivation_notes}</code>
+        <p>Anteckningar om kandidatens motivation.</p>
+      </div>
+    </div>
 
-            <button class="tag-example-btn" data-modal="modal-intervju">
-                Se exempel
-            </button>
-        </div>
-<br>
-        <h3 class="assistant-title">Kandidatinfo</h3>
+    <!-- Grupp: Kandidatinfo -->
+    <h5 class="tag-subtitle">Kandidatinfo</h5>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{candidate_name}</code>
-                <p>Kandidatens fullständiga namn.</p>
-            </div>
-        </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{candidate_name}</code>
+        <p>Kandidatens fullständiga namn.</p>
+      </div>
+    </div>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{candidate_first_name}</code>
-                <p>Kandidatens förnamn.</p>
-            </div>
-        </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{candidate_first_name}</code>
+        <p>Kandidatens förnamn.</p>
+      </div>
+    </div>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{candidate_last_name}</code>
-                <p>Kandidatens efternamn.</p>
-            </div>
-        </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{candidate_last_name}</code>
+        <p>Kandidatens efternamn.</p>
+      </div>
+    </div>
 
-        <div class="tag-box">
-            <div class="tag-box-left">
-                <code>{candidate_role}</code>
-                <p>Roll / befattning som bedömningen avser.</p>
-            </div>
-        </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{candidate_role}</code>
+        <p>Roll / befattning som bedömningen avser.</p>
+      </div>
+    </div>
 
-        <br>
-        <div class="assistant-section">
-           <h3 class="assistant-title">Genererade taggar</h3>
-          <p class="assistant-help adminui-intro">
-            Dessa taggar får sitt innehåll under respektive steg i verktyget.
-            Det betyder att de bara fungerar i prompts som ligger efter det steg där taggen genereras.
-            <b>Denna tagg är bara text, ej tabell eller testresultat.</b>
-          </p>
+    <!-- Grupp: Färdigheter & motivation -->
+    <h5 class="tag-subtitle">Färdighet & motivation</h5>
 
-          <div class="tag-box">
-              <div class="tag-box-left">
-                  <code>{tq_fardighet_text}</code>
-                  <p>TQ Färdighet, genereras i steg 2.</p>
-              </div>
-          </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{logical_score}</code>
+        <p>Logisk färdighet (0–99).</p>
+      </div>
+    </div>
 
-          <div class="tag-box">
-              <div class="tag-box-left">
-                  <code>{tq_motivation_text}</code>
-                  <p>TQ Motivation, genereras i steg 2.</p>
-              </div>
-          </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{verbal_score}</code>
+        <p>Verbal färdighet (0–99).</p>
+      </div>
+    </div>
 
-          <div class="tag-box">
-              <div class="tag-box-left">
-                  <code>{leda_text}</code>
-                  <p>Leda, utveckla och engagera, genereras i steg 3.</p>
-              </div>
-          </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{selected_motivations}</code>
+        <p>JSON-lista med de tre valda motivationsfaktorerna inkl. definition.</p>
+      </div>
+      <button class="tag-example-btn" data-modal="modal-motivation">
+        Se exempel
+      </button>
+    </div>
+  </div>
 
-          <div class="tag-box">
-              <div class="tag-box-left">
-                  <code>{mod_text}</code>
-                  <p>Mod och handlingskraft, genereras i steg 4. </p>
-              </div>
-          </div>
+  <!-- =====================================================
+       SEKTION 2: AI-GENERERADE TAGGAR
+  ====================================================== -->
+  <div class="tag-section">
+    <h4 class="tag-section-title">AI-genererade taggar</h4>
+    <p class="assistant-help adminui-intro">
+      Dessa taggar fylls i automatiskt av verktyget, steg för steg.  
+      De kan bara användas i prompts som ligger efter att texten har genererats.
+    </p>
 
-          <div class="tag-box">
-              <div class="tag-box-left">
-                  <code>{sjalkannedom_text}</code>
-                  <p>Självkännedom, genereras i steg 5.</p>
-              </div>
-          </div>
+    <!-- Steg 2 -->
+    <h5 class="tag-subtitle">Steg 2 – TQ Färdighet & TQ Motivation</h5>
 
-          <div class="tag-box">
-              <div class="tag-box-left">
-                  <code>{strategi_text}</code>
-                  <p>Strategiskt tänkande, genereras i steg 6.</p>
-              </div>
-          </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{tq_fardighet_text}</code>
+        <p>Text för TQ Färdighet.</p>
+      </div>
+    </div>
 
-          <div class="tag-box">
-              <div class="tag-box-left">
-                  <code>{kommunikation_text}</code>
-                  <p>Kommunikation och samarbete, genereras i steg 7.</p>
-              </div>
-          </div>
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{tq_motivation_text}</code>
+        <p>Text för TQ Motivation.</p>
+      </div>
+    </div>
 
-          <div class="tag-box">
-              <div class="tag-box-left">
-                  <code>{sur_text}</code>
-                  <p>Styrkor, utvecklingsområden etc, genereras i steg 8.</p>
-              </div>
-          </div>
-        </div>
-    </aside>
+    <!-- Steg 3–7 -->
+    <h5 class="tag-subtitle">Steg 3–7 – Delbedömningar</h5>
+
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{leda_text}</code>
+        <p>Leda, utveckla och engagera (steg 3).</p>
+      </div>
+    </div>
+
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{mod_text}</code>
+        <p>Mod och handlingskraft (steg 4).</p>
+      </div>
+    </div>
+
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{sjalkannedom_text}</code>
+        <p>Självkännedom & emotionell stabilitet (steg 5).</p>
+      </div>
+    </div>
+
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{strategi_text}</code>
+        <p>Strategiskt tänkande & anpassningsförmåga (steg 6).</p>
+      </div>
+    </div>
+
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{kommunikation_text}</code>
+        <p>Kommunikation & samarbete (steg 7).</p>
+      </div>
+    </div>
+
+    <!-- Steg 8 -->
+    <h5 class="tag-subtitle">Steg 8 – Helhetsbedömning</h5>
+
+    <div class="tag-box">
+      <div class="tag-box-left">
+        <code>{sur_text}</code>
+        <p>Samlad text om styrkor, utvecklingsområden & riskbeteenden.</p>
+      </div>
+    </div>
+  </div>
+</aside>
+
 
   </div>
 
