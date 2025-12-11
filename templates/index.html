@@ -507,37 +507,115 @@
         <button class="right-tab" data-tab="chat">Chatt</button>
       </div>
 
-      <div id="tab-data" class="right-panel-pane is-active">
-        <h3 class="assistant-title">Din data</h3>
+<div id="tab-data" class="right-panel-pane is-active">
+  <h3 class="assistant-title">Din data</h3>
 
-        {% if ratings_sidebar %}
-          {% for section_title, items in ratings_sidebar.items %}
-          <div class="assistant-section">
-            <h4 class="assistant-section-title">{{ section_title }}</h4>
-            <ul class="assistant-list">
-              {% for item in items %}
-              <li class="assistant-list-item">
-                <span class="assistant-label">{{ item.label }}:</span>
-                <span class="assistant-value">{{ item.value }}</span>
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endfor %}
-        {% else %}
-        <p class="adminui-intro">När du laddat upp material kommer det hamna här.</p>
-        {% endif %}
+  {# 1) Kandidatinformation #}
+  <div class="assistant-section">
+    <h4 class="assistant-section-title">Kandidat</h4>
+    <ul class="assistant-list">
+      {% if candidate_name %}
+      <li class="assistant-list-item">
+        <span class="assistant-label">Namn:</span>
+        <span class="assistant-value">{{ candidate_name }}</span>
+      </li>
+      {% endif %}
 
-        {% for mot in selected_motivations %}
-          <p><strong>{{ mot.label }}</strong><br>{{ mot.definition }}</p>
+      {% if candidate_role %}
+      <li class="assistant-list-item">
+        <span class="assistant-label">Roll / tjänst:</span>
+        <span class="assistant-value">{{ candidate_role }}</span>
+      </li>
+      {% endif %}
+
+      {% if logical_score %}
+      <li class="assistant-list-item">
+        <span class="assistant-label">Logisk färdighet:</span>
+        <span class="assistant-value">{{ logical_score }}</span>
+      </li>
+      {% endif %}
+
+      {% if verbal_score %}
+      <li class="assistant-list-item">
+        <span class="assistant-label">Verbal färdighet:</span>
+        <span class="assistant-value">{{ verbal_score }}</span>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+
+  {# 2) Motivationsfaktorer (de tre valda) #}
+  {% if selected_motivations %}
+  <div class="assistant-section">
+    <h4 class="assistant-section-title">Motivationsfaktorer (valda)</h4>
+    <ul class="assistant-list">
+      {% for mot in selected_motivations %}
+      <li class="assistant-list-item">
+        <span class="assistant-label">{{ mot.label }}</span>
+        <span class="assistant-value">{{ mot.definition }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {# 3) Betygstabeller (din befintliga ratings_sidebar) #}
+  {% if ratings_sidebar %}
+    {% for section_title, items in ratings_sidebar.items %}
+    <div class="assistant-section">
+      <h4 class="assistant-section-title">{{ section_title }}</h4>
+      <ul class="assistant-list">
+        {% for item in items %}
+        <li class="assistant-list-item">
+          <span class="assistant-label">{{ item.label }}:</span>
+          <span class="assistant-value">{{ item.value }}</span>
+        </li>
         {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  {% else %}
+  <p class="adminui-intro">När du laddat upp material kommer det hamna här.</p>
+  {% endif %}
 
-        {% if uploaded_files_markdown %}
-        <button type="button" class="adminui-button adminui-button-secondary" id="showPdfTextBtn">
-          Visa CV
-        </button>
-        {% endif %}
-      </div>
+  {# 4) Knappar för längre texter #}
+  <div class="assistant-section">
+    <h4 class="assistant-section-title">Längre texter</h4>
+    <div class="assistant-button-group">
+      {% if uploaded_files_markdown %}
+      <button type="button"
+              class="adminui-button adminui-button-secondary"
+              id="showPdfTextBtn">
+        Visa CV
+      </button>
+      {% endif %}
+
+      {% if job_ad_text %}
+      <button type="button"
+              class="adminui-button adminui-button-secondary"
+              id="showJobAdBtn">
+        Visa jobbannons
+      </button>
+      {% endif %}
+
+      {% if motivation_notes %}
+      <button type="button"
+              class="adminui-button adminui-button-secondary"
+              id="showMotivationNotesBtn">
+        Visa motivationsanteckningar
+      </button>
+      {% endif %}
+
+      {% if intervju_text %}
+      <button type="button"
+              class="adminui-button adminui-button-secondary"
+              id="showInterviewNotesBtn">
+        Visa intervjuanteckningar
+      </button>
+      {% endif %}
+    </div>
+  </div>
+</div>
 
       <div id="tab-chat" class="right-panel-pane">
         <div id="sidebar-chat"
@@ -596,19 +674,31 @@
         });
       }
 
-      const btn = document.getElementById("showPdfTextBtn");
-      const modal = document.getElementById("pdfTextModal");
-      const closeBtn = document.getElementById("closePdfTextModal");
+      // -------- POPUPS / MODALER --------
+      const modalPairs = [
+        { buttonId: "showPdfTextBtn",          modalId: "pdfTextModal" },
+        { buttonId: "showJobAdBtn",           modalId: "jobAdModal" },
+        { buttonId: "showMotivationNotesBtn", modalId: "motivationNotesModal" },
+        { buttonId: "showInterviewNotesBtn",  modalId: "interviewNotesModal" },
+      ];
 
-      if (btn && modal && closeBtn) {
+      modalPairs.forEach(({ buttonId, modalId }) => {
+        const btn   = document.getElementById(buttonId);
+        const modal = document.getElementById(modalId);
+        if (!btn || !modal) return;
+
+        const close = modal.querySelector(".dn-modal-close");
+
         btn.addEventListener("click", () => modal.classList.add("is-open"));
-        closeBtn.addEventListener("click", () => modal.classList.remove("is-open"));
+        if (close) {
+          close.addEventListener("click", () => modal.classList.remove("is-open"));
+        }
         modal.addEventListener("click", (e) => {
           if (e.target === modal || e.target.classList.contains("dn-modal-backdrop")) {
             modal.classList.remove("is-open");
           }
         });
-      }
+      });
     });
   </script>
 
@@ -633,6 +723,45 @@
     </div>
   </div>
   {% endif %}
+
+  {% if job_ad_text %}
+<div id="jobAdModal" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close" data-close-modal>×</button>
+    <h3>Jobbannons / tjänstebeskrivning</h3>
+    <div class="dn-modal-body markdown-body">
+      {{ job_ad_text|linebreaksbr }}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if motivation_notes %}
+<div id="motivationNotesModal" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close" data-close-modal>×</button>
+    <h3>Anteckningar om motivation</h3>
+    <div class="dn-modal-body markdown-body">
+      {{ motivation_notes|linebreaksbr }}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if intervju_text %}
+<div id="interviewNotesModal" class="dn-modal">
+  <div class="dn-modal-backdrop"></div>
+  <div class="dn-modal-content">
+    <button type="button" class="dn-modal-close" data-close-modal>×</button>
+    <h3>Intervjuanteckningar</h3>
+    <div class="dn-modal-body markdown-body">
+      {{ intervju_text|linebreaksbr }}
+    </div>
+  </div>
+</div>
+{% endif %}
 
   <script src="{% static 'js/script.js' %}"></script>
 

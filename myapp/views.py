@@ -1513,6 +1513,22 @@ def index(request):
         ))
         context["ratings_sidebar"] = _build_sidebar_ratings(ratings)
 
+    # ---------- 3.5) Motivationsfaktorer till sidopanelen ----------
+    selected_keys = request.session.get("selected_motivation_keys", [])
+
+    selected_motivations = []
+    for key in selected_keys:
+        data = MOTIVATION_FACTORS.get(key)
+        if not data:
+            continue
+        selected_motivations.append({
+            "key": key,
+            "label": data["label"],
+            "definition": data["definition"],
+        })
+
+        context["selected_motivations"] = selected_motivations
+
     # ---------- 4) POST-actions (prev/next/build_doc) ----------
     if request.method == "POST":
 
@@ -1755,6 +1771,7 @@ def index(request):
                                 motivation_notes=context.get("motivation_notes", ""),
                                 logical_score=str(context.get("logical_score") or ""),
                                 verbal_score=str(context.get("verbal_score") or ""),
+                                motivation_factors=context.get("motivation_factors", []),
                             )
 
                             if not context["tq_motivation_text"]:
@@ -1777,6 +1794,7 @@ def index(request):
                                     motivation_notes=context.get("motivation_notes", ""),
                                     logical_score=str(context.get("logical_score") or ""),
                                     verbal_score=str(context.get("verbal_score") or ""),
+                                    motivation_factors=context.get("motivation_factors", []),
                                 )
 
                         step = 2
@@ -1798,6 +1816,10 @@ def index(request):
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
                         candidate_last_name=context["candidate_last_name"],
+                        motivation_notes=context.get("motivation_notes", ""),
+                        logical_score=context.get("logical_score", ""),
+                        verbal_score=context.get("verbal_score", ""),
+                        motivation_factors=context.get("motivation_factors", []),
                     )
                 step = 3
 
@@ -1818,6 +1840,10 @@ def index(request):
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
                         candidate_last_name=context["candidate_last_name"],
+                        motivation_notes=context.get("motivation_notes", ""),
+                        logical_score=context.get("logical_score", ""),
+                        verbal_score=context.get("verbal_score", ""),
+                        motivation_factors=context.get("motivation_factors", []),
                     )
                 step = 4
 
@@ -1838,6 +1864,10 @@ def index(request):
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
                         candidate_last_name=context["candidate_last_name"],
+                        motivation_notes=context.get("motivation_notes", ""),
+                        logical_score=context.get("logical_score", ""),
+                        verbal_score=context.get("verbal_score", ""),
+                        motivation_factors=context.get("motivation_factors", []),
                     )
                 step = 5
 
@@ -1858,6 +1888,10 @@ def index(request):
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
                         candidate_last_name=context["candidate_last_name"],
+                        motivation_notes=context.get("motivation_notes", ""),
+                        logical_score=context.get("logical_score", ""),
+                        verbal_score=context.get("verbal_score", ""),
+                        motivation_factors=context.get("motivation_factors", []),
                     )
                 step = 6
 
@@ -1878,6 +1912,10 @@ def index(request):
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
                         candidate_last_name=context["candidate_last_name"],
+                        motivation_notes=context.get("motivation_notes", ""),
+                        logical_score=context.get("logical_score", ""),
+                        verbal_score=context.get("verbal_score", ""),
+                        motivation_factors=context.get("motivation_factors", []),
                     )
                 step = 7
 
@@ -1901,6 +1939,10 @@ def index(request):
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
                         candidate_last_name=context["candidate_last_name"],
+                        motivation_notes=context.get("motivation_notes", ""),
+                        logical_score=context.get("logical_score", ""),
+                        verbal_score=context.get("verbal_score", ""),
+                        motivation_factors=context.get("motivation_factors", []),
                     )
                 step = 8
 
@@ -1925,6 +1967,10 @@ def index(request):
                         candidate_role=context["candidate_role"],
                         candidate_first_name=context["candidate_first_name"],
                         candidate_last_name=context["candidate_last_name"],
+                        motivation_notes=context.get("motivation_notes", ""),
+                        logical_score=context.get("logical_score", ""),
+                        verbal_score=context.get("verbal_score", ""),
+                        motivation_factors=context.get("motivation_factors", []),
                     )
                 step = 9
 
@@ -2002,7 +2048,24 @@ def index(request):
     context["slutsats_html"]       = _markdown_to_html(context.get("slutsats_text", ""))
 
     # ---------- 6) Render ----------
+    # Alla faktorer till formuläret (input-rutorna)
     context["motivation_factors"] = MOTIVATION_FACTORS
+
+    # Endast valda faktorer till sidopanelen
+    selected_motivation_keys = context.get("selected_motivation_keys") or \
+                            request.session.get("selected_motivation_keys", [])
+
+    context["selected_motivation_keys"] = selected_motivation_keys
+    context["selected_motivations"] = [
+        {
+            "key": k,
+            "label": MOTIVATION_FACTORS[k]["label"],
+            "definition": MOTIVATION_FACTORS[k]["definition"],
+        }
+        for k in selected_motivation_keys
+        if k in MOTIVATION_FACTORS
+    ]
+
     return render(request, "index.html", context)
 
 
