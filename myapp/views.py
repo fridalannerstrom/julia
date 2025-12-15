@@ -26,7 +26,9 @@ from django.views.decorators.http import require_POST
 from bs4 import BeautifulSoup
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
-
+import base64
+from docx.shared import Inches
+from io import BytesIO
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Miljö
@@ -930,6 +932,52 @@ def _ratings_from_worksheet(ws):
 
     return ratings, debug
 
+DATA_URL_RE = re.compile(r"^data:image\/[a-zA-Z]+;base64,")
+
+def replace_image_placeholder(doc, placeholder: str, data_url: str, width_in=5.8):
+    """
+    Ersätter en placeholder som {mod_image} i Word med en bild (base64 dataURL).
+    Viktigt: bilden läggs i samma paragraf som placeholdern -> behåller ordningen i tabellen.
+    """
+    if not data_url:
+        return
+
+    # plocka bort data-url prefix om det finns
+    b64 = DATA_URL_RE.sub("", data_url).strip()
+    if not b64:
+        return
+
+    try:
+        img_bytes = base64.b64decode(b64)
+    except Exception:
+        return
+
+    img_stream = BytesIO(img_bytes)
+
+    # Sök i alla paragrafer (även i tabeller)
+    for p in doc.paragraphs:
+        if placeholder in p.text:
+            # töm paragrafen HELT (annars kan placeholdern ligga kvar i runs)
+            for r in p.runs:
+                r.text = ""
+
+            # Lägg bilden i samma paragraf
+            run = p.add_run()
+            run.add_picture(img_stream, width=Inches(width_in))
+            return
+
+    # Sök i tabeller (viktigt, dina placeholders ligger nästan alltid där)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    if placeholder in p.text:
+                        for r in p.runs:
+                            r.text = ""
+                        run = p.add_run()
+                        run.add_picture(img_stream, width=Inches(width_in))
+                        return
+
 
 def docx_replace_text(doc, mapping: dict):
     """
@@ -1575,6 +1623,13 @@ def index(request):
             )
             doc = Document(template_path)
 
+            leda_image_data = request.POST.get("leda_image", "")
+            mod_image_data = request.POST.get("mod_image", "")
+            sjalkannedom_image_data = request.POST.get("sjalkannedom_image", "")
+            strategi_image_data = request.POST.get("strategi_image", "")
+            kommunikation_image_data = request.POST.get("kommunikation_image", "")
+
+
             # --- NYTT: bygg text för valda motivationsfaktorer ---
             selected_motivations = context.get("selected_motivations") or []
 
@@ -1589,7 +1644,7 @@ def index(request):
                     definition = getattr(mot, "definition", "")
 
                 if label or definition:
-                    motivation_lines.append(f"{label} {definition}".strip())
+                    motivation_lines.append(f"{label}\n{definition}".strip())
 
             selected_motivations_text = "\n\n".join(motivation_lines)
 
@@ -1644,6 +1699,12 @@ def index(request):
                     doc, "{kommunikation_table}", ratings_doc,
                     "kommunikation_och_samarbete"
                 )
+
+            replace_image_placeholder(doc, "{leda_image}", leda_image_data)
+            replace_image_placeholder(doc, "{mod_image}", mod_image_data)
+            replace_image_placeholder(doc, "{sjalkannedom_image}", sjalkannedom_image_data)
+            replace_image_placeholder(doc, "{strategi_image}", strategi_image_data)
+            replace_image_placeholder(doc, "{kommunikation_image}", kommunikation_image_data)
 
             response = HttpResponse(
                 content_type=(

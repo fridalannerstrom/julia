@@ -610,7 +610,8 @@
       </div>
       <div class="dn-report-col dn-report-col--right">
         {% if leda_table_html %}
-        <div class="dn-report-table rating-export">
+        <div class="dn-report-table rating-export"
+          data-image-field="leda_image">
           {{ leda_table_html|safe }}
         </div>
         {% endif %}
@@ -619,6 +620,8 @@
         </div>
       </div>
     </div>
+
+    <input type="hidden" name="leda_image" id="leda_image">
 
     {# RAD 6 – Mod och handlingskraft #}
     <div class="dn-report-row">
@@ -631,7 +634,8 @@
       </div>
       <div class="dn-report-col dn-report-col--right">
         {% if mod_table_html %}
-        <div class="dn-report-table rating-export">
+        <div class="dn-report-table rating-export"
+          data-image-field="mod_image">
           {{ mod_table_html|safe }}
         </div>
         {% endif %}
@@ -640,6 +644,8 @@
         </div>
       </div>
     </div>
+
+    <input type="hidden" name="mod_image" id="mod_image">
 
     {# RAD 7 – Självkännedom #}
     <div class="dn-report-row">
@@ -652,7 +658,8 @@
       </div>
       <div class="dn-report-col dn-report-col--right">
         {% if sjalkannedom_table_html %}
-        <div class="dn-report-table rating-export">
+        <div class="dn-report-table rating-export"
+          data-image-field="sjalkannedom_image">
           {{ sjalkannedom_table_html|safe }}
         </div>
         {% endif %}
@@ -661,6 +668,8 @@
         </div>
       </div>
     </div>
+
+    <input type="hidden" name="sjalkannedom_image" id="sjalkannedom_image">
 
     {# RAD 8 – Strategiskt tänkande #}
     <div class="dn-report-row">
@@ -673,7 +682,8 @@
       </div>
       <div class="dn-report-col dn-report-col--right">
         {% if strategi_table_html %}
-        <div class="dn-report-table rating-export">
+        <div class="dn-report-table rating-export"
+          data-image-field="strategi_image">
           {{ strategi_table_html|safe }}
         </div>
         {% endif %}
@@ -682,6 +692,8 @@
         </div>
       </div>
     </div>
+
+    <input type="hidden" name="strategi_image" id="strategi_image">
 
     {# RAD 9 – Kommunikation och samarbete #}
     <div class="dn-report-row">
@@ -694,7 +706,8 @@
       </div>
       <div class="dn-report-col dn-report-col--right">
         {% if kommunikation_table_html %}
-        <div class="dn-report-table rating-export">
+        <div class="dn-report-table rating-export"
+          data-image-field="kommunikation_image">
           {{ kommunikation_table_html|safe }}
         </div>
         {% endif %}
@@ -703,6 +716,8 @@
         </div>
       </div>
     </div>
+
+    <input type="hidden" name="kommunikation_image" id="kommunikation_image">
 
     {# RAD 10 – Sammanfattande slutsats #}
     <div class="dn-report-row">
@@ -1035,7 +1050,7 @@
   <script src="https://cdn.jsdelivr.net/npm/trumbowyg@2.27.3/dist/trumbowyg.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-  <script>
+<script>
   document.addEventListener('DOMContentLoaded', function () {
     const ratingBlocks = document.querySelectorAll('.rating-export');
     if (!ratingBlocks.length) return;
@@ -1048,18 +1063,29 @@
         backgroundColor: '#ffffff',
         useCORS: true
       }).then(function (canvas) {
+        const dataUrl = canvas.toDataURL('image/png');
+
+        // Ersätt HTML med bilden (som innan)
         const img = document.createElement('img');
-        img.src = canvas.toDataURL('image/png');
+        img.src = dataUrl;
         img.alt = 'Kompetenstabell';
         img.style.maxWidth = '100%';
         img.style.display = 'block';
-
         block.innerHTML = '';
         block.appendChild(img);
+
+        // NYTT: skriv dataURL till rätt hidden-field
+        const fieldName = block.dataset.imageField;
+        if (fieldName) {
+          const hidden = document.querySelector(`input[name="${fieldName}"]`);
+          if (hidden) {
+            hidden.value = dataUrl; // "data:image/png;base64,AAAA..."
+          }
+        }
       }).catch(err => console.error('Canvas error:', err));
     });
   });
-  </script>
+</script>
 
   <script>
   document.addEventListener('DOMContentLoaded', function () {
