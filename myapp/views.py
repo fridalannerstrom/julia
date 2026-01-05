@@ -246,6 +246,14 @@ MOTIVATION_FACTORS = {
 # ── NYTT: liten wrapper för OpenAI-anrop per rubrik ───────────────────────────
 def _run_openai(prompt_text: str, style: str, **vars_) -> str:
     try:
+        # ✅ DEBUG: se om motivation_notes finns och hur lång den är
+        mn = vars_.get("motivation_notes", None)
+        print("DEBUG motivation_notes type:", type(mn))
+        print("DEBUG motivation_notes len:", len(mn) if isinstance(mn, str) else "not str")
+        print("DEBUG motivation_notes preview:", repr((mn or "")[:200]))
+
+        # ✅ DEBUG: se om placeholdern ens finns i prompten
+        print("DEBUG prompt has {motivation_notes}:", "{motivation_notes}" in prompt_text)
         pt = prompt_text.replace("{excel_text}", vars_.get("excel_text", ""))
         pt = pt.replace("{intervju_text}", vars_.get("intervju_text", ""))
         # stöd för fler placeholders utan att krascha
@@ -253,6 +261,11 @@ def _run_openai(prompt_text: str, style: str, **vars_) -> str:
             placeholder = "{" + k + "}"
             pt = pt.replace(placeholder, v or "")
         filled = (style or "") + "\n\n" + pt
+
+        # ✅ DEBUG: kolla om motivation_notes faktiskt hamnade i filled
+        idx = filled.find(str(mn or "")[:50])
+        print("DEBUG motivation_notes appears in filled:", idx != -1)
+        print("DEBUG filled length:", len(filled))
 
         resp = client.chat.completions.create(
             model="gpt-4o",
@@ -934,15 +947,24 @@ def _ratings_from_worksheet(ws):
 
 DATA_URL_RE = re.compile(r"^data:image\/[a-zA-Z]+;base64,")
 
-def replace_image_placeholder(doc, placeholder: str, data_url: str, width_in=5.8):
+IMAGE_WIDTHS_IN = {
+    "{leda_image}": 4.6,
+    "{mod_image}": 4.6,
+    "{sjalkannedom_image}": 4.6,
+    "{strategi_image}": 4.6,
+    "{kommunikation_image}": 4.6,
+}
+
+
+
+def replace_image_placeholder(doc, placeholder: str, data_url: str, width_in: float | None = None):
     """
-    Ersätter en placeholder som {mod_image} i Word med en bild (base64 dataURL).
-    Viktigt: bilden läggs i samma paragraf som placeholdern -> behåller ordningen i tabellen.
+    Ersätter placeholder i Word med en bild (base64 dataURL).
+    width_in: om None -> hämtas från IMAGE_WIDTHS_IN, fallback 5.8
     """
     if not data_url:
         return
 
-    # plocka bort data-url prefix om det finns
     b64 = DATA_URL_RE.sub("", data_url).strip()
     if not b64:
         return
@@ -952,30 +974,34 @@ def replace_image_placeholder(doc, placeholder: str, data_url: str, width_in=5.8
     except Exception:
         return
 
-    img_stream = BytesIO(img_bytes)
+    target_width = width_in if width_in is not None else IMAGE_WIDTHS_IN.get(placeholder, 5.8)
 
-    # Sök i alla paragrafer (även i tabeller)
+    def _insert_into_paragraph(p):
+        if placeholder not in (p.text or ""):
+            return False
+
+        # töm runs
+        for r in p.runs:
+            r.text = ""
+
+        img_stream = BytesIO(img_bytes)
+        img_stream.seek(0)
+
+        run = p.add_run()
+        run.add_picture(img_stream, width=Inches(target_width))
+        return True
+
+    # 1) vanliga paragrafer
     for p in doc.paragraphs:
-        if placeholder in p.text:
-            # töm paragrafen HELT (annars kan placeholdern ligga kvar i runs)
-            for r in p.runs:
-                r.text = ""
-
-            # Lägg bilden i samma paragraf
-            run = p.add_run()
-            run.add_picture(img_stream, width=Inches(width_in))
+        if _insert_into_paragraph(p):
             return
 
-    # Sök i tabeller (viktigt, dina placeholders ligger nästan alltid där)
+    # 2) tabeller
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
                 for p in cell.paragraphs:
-                    if placeholder in p.text:
-                        for r in p.runs:
-                            r.text = ""
-                        run = p.add_run()
-                        run.add_picture(img_stream, width=Inches(width_in))
+                    if _insert_into_paragraph(p):
                         return
 
 
@@ -1495,6 +1521,11 @@ def index(request):
     # 🔹 RESET när man kommer in "från början" (GET på steg 1)
     if request.method == "GET" and step == 1:
         request.session.pop("selected_motivation_keys", None)
+        request.session.pop("selected_motivation_keys", None)
+        request.session.pop("motivation_notes", None)
+        request.session.pop("job_ad_text", None)
+        request.session.pop("logical_score", None)
+        request.session.pop("verbal_score", None)
         # om du i framtiden sparar fler saker i sessionen för rapporten
         # kan du tömma dem här också med fler .pop(...)
         # request.session.pop("some_other_key", None)
@@ -1527,10 +1558,10 @@ def index(request):
         "selected_motivation_keys": selected_motivation_keys,
 
         # 🔹 NYTT: extra inputs
-        "job_ad_text": request.POST.get("job_ad_text", ""),
-        "motivation_notes": request.POST.get("motivation_notes", ""),
-        "logical_score": request.POST.get("logical_score", ""),
-        "verbal_score": request.POST.get("verbal_score", ""),
+        "job_ad_text": request.POST.get("job_ad_text") or request.session.get("job_ad_text", ""),
+        "motivation_notes": request.POST.get("motivation_notes") or request.session.get("motivation_notes", ""),
+        "logical_score": request.POST.get("logical_score") or request.session.get("logical_score", ""),
+        "verbal_score": request.POST.get("verbal_score") or request.session.get("verbal_score", ""),
 
         # kandidatinfo
         "candidate_first_name": raw_first,
@@ -1760,6 +1791,11 @@ def index(request):
                 motivation_notes = (request.POST.get("motivation_notes") or "").strip()
                 context["job_ad_text"] = job_ad_text
                 context["motivation_notes"] = motivation_notes
+
+                request.session["job_ad_text"] = job_ad_text
+                request.session["motivation_notes"] = motivation_notes
+                request.session["logical_score"] = context.get("logical_score")
+                request.session["verbal_score"] = context.get("verbal_score")
 
                 # 🔹 NYTT: Hämta valda motivationsfaktorer (max 3)
                 motivation_choices = request.POST.getlist("motivation_choices")
