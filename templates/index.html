@@ -222,16 +222,30 @@
 </div>
 
 <div class="dn-row">
-  <div class="dn-field-group">
-    <label for="id_job_ad_text">Jobbannons / tjänstebeskrivning</label>
-    <textarea
-      id="id_job_ad_text"
-      name="job_ad_text"
-      rows="4"
-      class="adminui-textarea"
-    >{{ job_ad_text }}</textarea>
-  </div>
+{# ───────── Jobbannons (PDF) ───────── #}
+<h3 class="adminui-label">0. Jobbannons (PDF)</h3>
+<p class="adminui-intro">
+  Ladda upp en PDF med jobbannons/tjänstebeskrivning (valfritt).
+</p>
+
+<div class="adminui-upload-area">
+  <label for="job_ad_pdf" class="adminui-drop-zone">
+    <input
+      type="file"
+      name="job_ad_pdf"
+      id="job_ad_pdf"
+      accept="application/pdf"
+      style="display:none"
+      onchange="showJobAdFilename(this)">
+    <div class="adminui-drop-icon">📄</div>
+    <div class="adminui-drop-text">
+      <span>Släpp Jobbannons här eller klicka för att välja</span>
+      <small>PDF-format (.pdf)</small>
+    </div>
+  </label>
+  <p id="job-ad-filename" class="adminui-filename">Ingen fil vald</p>
 </div>
+  </div>
 
 {# ───────── Exceluppladdning ───────── #}
 <h3 class="adminui-label">1. Excelfil</h3>
@@ -1369,6 +1383,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 });
+</script>
+
+<script>
+  function showJobAdFilename(input) {
+    const target = document.getElementById("job-ad-filename");
+    if (!target) return;
+
+    if (input.files && input.files.length > 0) {
+      target.textContent = input.files[0].name;
+    } else {
+      target.textContent = "Ingen fil vald";
+    }
+  }
 </script>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

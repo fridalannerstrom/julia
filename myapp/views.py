@@ -1786,8 +1786,24 @@ def index(request):
                 if not first or not last:
                     context["error"] = "Fyll i både förnamn och efternamn."
 
+                # 🔹 NYTT: jobbannons från PDF (istället för fritext)
+                job_ad_text = ""
+                job_ad_file = request.FILES.get("job_ad_pdf")
+
+                if job_ad_file:
+                    job_ad_text = _trim(_read_file_text(job_ad_file), 6500).strip()
+                    if not job_ad_text:
+                        context["error"] = "Kunde inte läsa någon text från jobbannons-PDF:en."
+                else:
+                    # om du vill göra den obligatorisk:
+                    # context["error"] = "Ladda upp jobbannonsen som PDF."
+                    # eller om du vill tillåta tom:
+                    job_ad_text = ""
+
+                context["job_ad_text"] = job_ad_text
+                request.session["job_ad_text"] = job_ad_text
+
                 # 🔹 NYTT: jobbannons + motivationsanteckningar
-                job_ad_text = (request.POST.get("job_ad_text") or "").strip()
                 motivation_notes = (request.POST.get("motivation_notes") or "").strip()
                 context["job_ad_text"] = job_ad_text
                 context["motivation_notes"] = motivation_notes
