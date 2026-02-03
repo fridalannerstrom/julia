@@ -77,6 +77,13 @@ REPORT_CONTEXT_KEYS = [
 
     # Ratings
     "ratings_json",
+
+    # Sparade tabell-bilder (dataURL från html2canvas)
+    "leda_image",
+    "mod_image",
+    "sjalkannedom_image",
+    "strategi_image",
+    "kommunikation_image",
 ]
 
 
@@ -138,6 +145,15 @@ def _save_report_state(rep: Report, ctx: dict):
     rep.save(update_fields=["current_step", "title", "data", "updated_at"])
 
 
+def _safe_filename(s: str, fallback: str = "Rapport") -> str:
+    s = (s or "").strip()
+    if not s:
+        return fallback
+    # Tillåt bokstäver/siffror/underscore/bindestreck, byt annat till underscore
+    s = re.sub(r"[^\w\-]+", "_", s, flags=re.UNICODE)
+    # Städa upp dubbla underscores
+    s = re.sub(r"_+", "_", s).strip("_")
+    return s or fallback
 
 # ── NYTT: gemensamma rubriknycklar i rätt ordning ────────────────────────────
 SECTION_KEYS = [
@@ -1912,9 +1928,9 @@ def index(request):
             role = _safe_filename(context.get("candidate_role", ""))
 
             if candidate and role:
-                filename = f"Rapport_för_{candidate}_{role}.docx"
+                filename = f"{candidate}_{role}.docx"
             elif candidate:
-                filename = f"Rapport_för_{candidate}.docx"
+                filename = f"{candidate}.docx"
             else:
                 filename = "Rapport.docx"
             response["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
