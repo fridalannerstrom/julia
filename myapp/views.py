@@ -1607,6 +1607,10 @@ def index(request):
     loaded_report = None
     loaded_data = {}
 
+    report_id = (request.GET.get("report_id") or request.POST.get("report_id") or "").strip()
+    if report_id.lower() in ("none", "null", ""):
+        report_id = ""
+
     if report_id:
         loaded_report = _get_report_or_404(report_id)
         loaded_data = loaded_report.data or {}
@@ -2059,6 +2063,10 @@ def index(request):
 
                         step = 2
 
+                        if not report_id:
+                            rep = _ensure_report(request, context)
+                            report_id = str(rep.id)
+
             # 2 -> 3
             elif step == 2:
                 step = 3
@@ -2397,22 +2405,15 @@ def index(request):
 
     rep = None
 
-    # Skapa report automatiskt när man är på steg 1 i GET (ny rapport)
-    if request.method == "GET" and context.get("step") == 1 and not report_id:
-        rep = _ensure_report(request, context)
-        report_id = str(rep.id)
-
     # Om vi laddade en report via report_id
     if loaded_report:
         rep = loaded_report
 
     # På POST vill vi alltid spara
-    if request.method == "POST":
+    if request.method == "POST" and report_id:
         if not rep:
-            rep = _ensure_report(request, context)
-            report_id = str(rep.id)
+            rep = _get_report_or_404(report_id)
 
-        # uppdatera med aktuellt state
         _save_report_state(rep, context)
 
     # Skicka med report_id till templaten så den kan POST:as vidare

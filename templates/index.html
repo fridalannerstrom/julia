@@ -151,7 +151,7 @@
 
                 <!-- HIDDEN STATE -->
                 <input type="hidden" name="step" value="{{ step }}">
-                <input type="hidden" name="report_id" value="{{ report_id }}">
+                <input type="hidden" name="report_id" value="{{ report_id|default_if_none:'' }}">
                 <input type="hidden" name="test_text" value="{{ test_text|escape }}">
                 <input type="hidden" name="uploaded_files_markdown"
                        value="{{ uploaded_files_markdown|default_if_none:''|escape }}">
