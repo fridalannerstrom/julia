@@ -1908,7 +1908,15 @@ def index(request):
                     "officedocument.wordprocessingml.document"
                 )
             )
-            filename = f"bedomning_{context.get('candidate_name','rapport')}.docx"
+            candidate = _safe_filename(context.get("candidate_name", ""))
+            role = _safe_filename(context.get("candidate_role", ""))
+
+            if candidate and role:
+                filename = f"Rapport_för_{candidate}_{role}.docx"
+            elif candidate:
+                filename = f"Rapport_för_{candidate}.docx"
+            else:
+                filename = "Rapport.docx"
             response["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
             doc.save(response)
             return response
@@ -2978,7 +2986,7 @@ def report_download(request, report_id):
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
-    filename = f"bedomning_{context.get('candidate_name','rapport')}.docx"
+    filename = f"{context.get('candidate_first_name','rapport')}_{context.get('candidate_last_name','rapport')}_{context.get('candidate_role','rapport')}.docx"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     doc.save(response)
     return response

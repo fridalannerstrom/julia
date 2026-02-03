@@ -120,14 +120,13 @@ body {
   border: 1px solid rgba(17,24,39,0.10);
   border-radius: 16px;
   padding: 14px 14px 12px;
-  box-shadow: 0 8px 22px rgba(17,24,39,0.05);
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .report-card:hover{
-  transform: translateY(-2px);
   box-shadow: 0 14px 34px rgba(17,24,39,0.09);
   border-color: rgba(123,44,191,0.22);
+  background-color: #fafafa;
 }
 
 .report-card-top{
@@ -604,6 +603,7 @@ body {
   font-size: 0.78rem;
   border: 1px solid #e5e7eb;
   background: #f9fafb;
+  text-decoration: none;
 }
 
 .pill-soft {
@@ -998,14 +998,13 @@ body {
   gap: 4px;
   background: linear-gradient(120deg, #2563eb, #7c3aed);
   color: #ffffff;
-  box-shadow: 0 12px 20px rgba(37, 99, 235, 0.25);
   transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+  text-decoration: none;
 }
 
 .adminui-button:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.02);
-  box-shadow: 0 16px 28px rgba(79, 70, 229, 0.26);
+    color: #ffffff;
+      background: linear-gradient(120deg, #1548b6, #4e1ca5);
 }
 
 .adminui-button:active {
@@ -1017,11 +1016,11 @@ body {
   background: #ffffff;
   color: #111827;
   border: 1px solid #d1d5db;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
 }
 
 .adminui-button-secondary:hover {
-  background: #f9fafb;
+  background: #f1f1f1;
+  color: black;
 }
 
 /* "Word-dokument"-look på sammanställningen */
