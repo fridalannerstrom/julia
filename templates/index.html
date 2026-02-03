@@ -86,6 +86,10 @@
           <span class="sidebar-icon">⚙️</span>
           <span>Verktyget</span>
         </a>
+        <a href="{% url 'report_list' %}" class="sidebar-link">
+          <span class="sidebar-icon">💬</span>
+          <span>Rapporter</span>
+        </a>
         <a href="{% url 'prompt_editor' %}" class="sidebar-link">
           <span class="sidebar-icon">📝</span>
           <span>Ändra prompts</span>
@@ -147,6 +151,7 @@
 
                 <!-- HIDDEN STATE -->
                 <input type="hidden" name="step" value="{{ step }}">
+                <input type="hidden" name="report_id" value="{{ report_id }}">
                 <input type="hidden" name="test_text" value="{{ test_text|escape }}">
                 <input type="hidden" name="uploaded_files_markdown"
                        value="{{ uploaded_files_markdown|default_if_none:''|escape }}">

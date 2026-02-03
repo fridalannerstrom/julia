@@ -19,7 +19,6 @@ from openai import OpenAI
 from django.conf import settings
 from .models import Prompt, ChatSession, ChatMessage, ChatAttachment
 from django.http import StreamingHttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
@@ -29,10 +28,14 @@ from docx.shared import Pt
 import base64
 from docx.shared import Inches
 from io import BytesIO
+from .models import Report
+from django.utils import timezone
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Miljö
 # ──────────────────────────────────────────────────────────────────────────────
+
+
 load_dotenv()
 if os.path.exists("env.py"):
     import env  # noqa: F401
@@ -42,6 +45,88 @@ client = OpenAI(
     timeout=20,      # global timeout per request
     max_retries=2,   # här är den OK
 )
+
+REPORT_CONTEXT_KEYS = [
+    # styrning
+    "step",
+    "ratings_json",
+
+    # inputs / rådata
+    "test_text",
+    "intervju_text",
+    "cv_text",
+    "uploaded_files_markdown",
+    "job_ad_text",
+    "motivation_notes",
+    "logical_score",
+    "verbal_score",
+    "candidate_first_name",
+    "candidate_last_name",
+    "candidate_name",
+    "candidate_role",
+    "selected_motivation_keys",
+
+    # AI-texter
+    "tq_fardighet_text",
+    "tq_motivation_text",
+    "leda_text",
+    "mod_text",
+    "sjalkannedom_text",
+    "strategi_text",
+    "kommunikation_text",
+    "sur_text",
+    "slutsats_text",
+]
+
+
+def _report_title_from_context(ctx: dict) -> str:
+    name = (ctx.get("candidate_name") or "").strip()
+    role = (ctx.get("candidate_role") or "").strip()
+    if name and role:
+        return f"{name} – {role}"
+    return name or role or "Ny rapport"
+
+def _extract_report_data_from_context(ctx: dict) -> dict:
+    data = {}
+    for k in REPORT_CONTEXT_KEYS:
+        if k in ctx:
+            data[k] = ctx.get(k)
+    return data
+
+def _apply_report_data_to_context(ctx: dict, data: dict) -> dict:
+    for k, v in (data or {}).items():
+        # vi vill inte att random keys ska skräpa ner, men ok att tillåta våra
+        if k in REPORT_CONTEXT_KEYS:
+            ctx[k] = v
+    return ctx
+
+def _get_report_or_404(report_id):
+    return get_object_or_404(Report, id=report_id, deleted_at__isnull=True)
+
+def _ensure_report(request, ctx: dict):
+    """
+    Skapar eller hämtar report baserat på report_id (GET/POST).
+    """
+    report_id = request.POST.get("report_id") or request.GET.get("report_id")
+    if report_id:
+        rep = _get_report_or_404(report_id)
+        return rep
+
+    # Ingen report_id => skapa ny rapport vid start (GET step=1)
+    rep = Report.objects.create(
+        created_by=request.user,
+        current_step=int(ctx.get("step") or 1),
+        title=_report_title_from_context(ctx),
+        data=_extract_report_data_from_context(ctx),
+    )
+    return rep
+
+def _save_report_state(rep: Report, ctx: dict):
+    rep.current_step = int(ctx.get("step") or rep.current_step or 1)
+    rep.title = _report_title_from_context(ctx)
+    rep.data = _extract_report_data_from_context(ctx)
+    rep.save(update_fields=["current_step", "title", "data", "updated_at"])
+
 
 # ── NYTT: gemensamma rubriknycklar i rätt ordning ────────────────────────────
 SECTION_KEYS = [
@@ -1505,7 +1590,6 @@ def _build_sidebar_ratings(ratings: dict):
 # ──────────────────────────────────────────────────────────────────────────────
 # Huvudvy
 # ──────────────────────────────────────────────────────────────────────────────
-
 @login_required
 @csrf_exempt
 def index(request):
@@ -1518,10 +1602,18 @@ def index(request):
     except ValueError:
         step = 1
 
+    # --- NYTT (FIX): Ladda report_id / report-data tidigt så loaded_data kan användas i steglogiken ---
+    report_id = request.GET.get("report_id") or request.POST.get("report_id")
+    loaded_report = None
+    loaded_data = {}
+
+    if report_id:
+        loaded_report = _get_report_or_404(report_id)
+        loaded_data = loaded_report.data or {}
+
     # 🔹 RESET när man kommer in "från början" (GET på steg 1)
     if request.method == "GET" and step == 1:
-        request.session.pop("selected_motivation_keys", None)
-        request.session.pop("selected_motivation_keys", None)
+        request.session.pop("selected_motivation_keys", None)  # FIX: bara en gång
         request.session.pop("motivation_notes", None)
         request.session.pop("job_ad_text", None)
         request.session.pop("logical_score", None)
@@ -1530,9 +1622,9 @@ def index(request):
         # kan du tömma dem här också med fler .pop(...)
         # request.session.pop("some_other_key", None)
 
-     # 🔹 Ladda ev. sparade motivationsval från session
+    # 🔹 Ladda ev. sparade motivationsval från session
     selected_motivation_keys = request.session.get("selected_motivation_keys", [])
-    
+
     # 🔹 NYTT: plocka ut namnvarianter och normalisera
     raw_first = (request.POST.get("candidate_first_name") or "").strip()
     raw_last  = (request.POST.get("candidate_last_name") or "").strip()
@@ -1557,7 +1649,7 @@ def index(request):
         "cv_text": request.POST.get("cv_text", ""),
         "selected_motivation_keys": selected_motivation_keys,
 
-        # 🔹 NYTT: extra inputs
+        # 🔹 extra inputs
         "job_ad_text": request.POST.get("job_ad_text") or request.session.get("job_ad_text", ""),
         "motivation_notes": request.POST.get("motivation_notes") or request.session.get("motivation_notes", ""),
         "logical_score": request.POST.get("logical_score") or request.session.get("logical_score", ""),
@@ -1633,7 +1725,19 @@ def index(request):
             "definition": data["definition"],
         })
 
-        context["selected_motivations"] = selected_motivations
+    # FIX: sätt i context efter loopen (istället för inne i loopen)
+    context["selected_motivations"] = selected_motivations
+
+    # --- NYTT (FIX): bygg lista med valda motivationsfaktorer att skicka till AI ---
+    selected_motivations_for_ai = [
+        {
+            "key": k,
+            "label": MOTIVATION_FACTORS[k]["label"],
+            "definition": MOTIVATION_FACTORS[k]["definition"],
+        }
+        for k in selected_keys
+        if k in MOTIVATION_FACTORS
+    ]
 
     # ---------- 4) POST-actions (prev/next/build_doc) ----------
     if request.method == "POST":
@@ -1660,13 +1764,11 @@ def index(request):
             strategi_image_data = request.POST.get("strategi_image", "")
             kommunikation_image_data = request.POST.get("kommunikation_image", "")
 
-
-            # --- NYTT: bygg text för valda motivationsfaktorer ---
-            selected_motivations = context.get("selected_motivations") or []
+            # --- bygg text för valda motivationsfaktorer ---
+            selected_motivations_doc = context.get("selected_motivations") or []
 
             motivation_lines = []
-            for mot in selected_motivations:
-                # mot kan vara dict eller objekt, vi hanterar båda
+            for mot in selected_motivations_doc:
                 if isinstance(mot, dict):
                     label = mot.get("label", "")
                     definition = mot.get("definition", "")
@@ -1770,7 +1872,7 @@ def index(request):
                 excel_text = ""
                 ws = None
 
-                # 🔹 Läs för- och efternamn från formuläret
+                # Läs för- och efternamn från formuläret
                 first = (request.POST.get("candidate_first_name") or "").strip()
                 last  = (request.POST.get("candidate_last_name") or "").strip()
                 role  = (request.POST.get("candidate_role") or "").strip()
@@ -1786,7 +1888,7 @@ def index(request):
                 if not first or not last:
                     context["error"] = "Fyll i både förnamn och efternamn."
 
-                # 🔹 NYTT: jobbannons från PDF (istället för fritext)
+                # jobbannons från PDF
                 job_ad_text = ""
                 job_ad_file = request.FILES.get("job_ad_pdf")
 
@@ -1795,39 +1897,43 @@ def index(request):
                     if not job_ad_text:
                         context["error"] = "Kunde inte läsa någon text från jobbannons-PDF:en."
                 else:
-                    # om du vill göra den obligatorisk:
-                    # context["error"] = "Ladda upp jobbannonsen som PDF."
-                    # eller om du vill tillåta tom:
                     job_ad_text = ""
 
                 context["job_ad_text"] = job_ad_text
                 request.session["job_ad_text"] = job_ad_text
 
-                # 🔹 NYTT: jobbannons + motivationsanteckningar
+                # jobbannons + motivationsanteckningar
                 motivation_notes = (request.POST.get("motivation_notes") or "").strip()
                 context["job_ad_text"] = job_ad_text
                 context["motivation_notes"] = motivation_notes
 
                 request.session["job_ad_text"] = job_ad_text
                 request.session["motivation_notes"] = motivation_notes
-                request.session["logical_score"] = context.get("logical_score")
-                request.session["verbal_score"] = context.get("verbal_score")
 
-                # 🔹 NYTT: Hämta valda motivationsfaktorer (max 3)
+                # Hämta valda motivationsfaktorer (max 3)
                 motivation_choices = request.POST.getlist("motivation_choices")
-                motivation_choices = motivation_choices[:3]  # klipp efter 3 för säkerhets skull
+                motivation_choices = motivation_choices[:3]
 
-                # spara både i context och session (så de överlever stegbyten)
                 context["selected_motivation_keys"] = motivation_choices
                 request.session["selected_motivation_keys"] = motivation_choices
 
-                # 🔹 NYTT: färdighetsvärden 0–99
+                # FIX: uppdatera även AI-listan efter att valen kommit in
+                selected_motivations_for_ai = [
+                    {
+                        "key": k,
+                        "label": MOTIVATION_FACTORS[k]["label"],
+                        "definition": MOTIVATION_FACTORS[k]["definition"],
+                    }
+                    for k in motivation_choices
+                    if k in MOTIVATION_FACTORS
+                ]
+
+                # färdighetsvärden 0–99
                 logical_raw = (request.POST.get("logical_score") or "").strip()
                 verbal_raw = (request.POST.get("verbal_score") or "").strip()
                 context["logical_score"] = logical_raw
                 context["verbal_score"] = verbal_raw
 
-                # Backend-validering av 0–99
                 def _validate_0_99(label, raw):
                     if not raw:
                         return None, f"Ange en siffra 0–99 för {label}."
@@ -1847,9 +1953,12 @@ def index(request):
                 elif err_verb:
                     context["error"] = err_verb
 
-                # Om du vill ha dem som int i resten av koden:
                 context["logical_score"] = logical_val if logical_val is not None else ""
                 context["verbal_score"] = verbal_val if verbal_val is not None else ""
+
+                # FIX: spara score i session EFTER validering
+                request.session["logical_score"] = context["logical_score"]
+                request.session["verbal_score"] = context["verbal_score"]
 
                 # Excel
                 if "excel" in request.FILES:
@@ -1915,12 +2024,13 @@ def index(request):
                                 candidate_first_name=context["candidate_first_name"],
                                 candidate_last_name=context["candidate_last_name"],
 
-                                # 🔹 NYA TAGGAR
                                 job_ad_text=context.get("job_ad_text", ""),
                                 motivation_notes=context.get("motivation_notes", ""),
                                 logical_score=str(context.get("logical_score") or ""),
                                 verbal_score=str(context.get("verbal_score") or ""),
-                                motivation_factors=context.get("motivation_factors", []),
+
+                                # FIX: skicka valda motivationsfaktorer
+                                motivation_factors=selected_motivations_for_ai,
                             )
 
                             if not context["tq_motivation_text"]:
@@ -1938,22 +2048,22 @@ def index(request):
                                     candidate_first_name=context["candidate_first_name"],
                                     candidate_last_name=context["candidate_last_name"],
 
-                                    # 🔹 NYA TAGGAR
                                     job_ad_text=context.get("job_ad_text", ""),
                                     motivation_notes=context.get("motivation_notes", ""),
                                     logical_score=str(context.get("logical_score") or ""),
                                     verbal_score=str(context.get("verbal_score") or ""),
-                                    motivation_factors=context.get("motivation_factors", []),
+
+                                    # FIX: skicka valda motivationsfaktorer
+                                    motivation_factors=selected_motivations_for_ai,
                                 )
 
                         step = 2
 
-             # 2 -> 3  (TQ Färdighet -> TQ Motivation, ingen ny AI-körning)
+            # 2 -> 3
             elif step == 2:
-                # här gör vi bara nästa steg, texterna är redan genererade i steg 1
                 step = 3
 
-            # 3 -> 4  (TQ Motivation -> Leda, utveckla och engagera)
+            # 3 -> 4
             elif step == 3:
                 if not context["leda_text"]:
                     P = Prompt.objects.get(user=owner, name="leda").text
@@ -1975,11 +2085,13 @@ def index(request):
                         motivation_notes=context.get("motivation_notes", ""),
                         logical_score=context.get("logical_score", ""),
                         verbal_score=context.get("verbal_score", ""),
-                        motivation_factors=context.get("motivation_factors", []),
+
+                        # FIX: skicka valda motivationsfaktorer
+                        motivation_factors=selected_motivations_for_ai,
                     )
                 step = 4
 
-            # 4 -> 5  (Mod och handlingskraft)
+            # 4 -> 5
             elif step == 4:
                 if not context["mod_text"]:
                     P = Prompt.objects.get(user=owner, name="mod").text
@@ -2001,11 +2113,13 @@ def index(request):
                         motivation_notes=context.get("motivation_notes", ""),
                         logical_score=context.get("logical_score", ""),
                         verbal_score=context.get("verbal_score", ""),
-                        motivation_factors=context.get("motivation_factors", []),
+
+                        # FIX
+                        motivation_factors=selected_motivations_for_ai,
                     )
                 step = 5
 
-            # 5 -> 6  (Självkännedom och emotionell stabilitet)
+            # 5 -> 6
             elif step == 5:
                 if not context["sjalkannedom_text"]:
                     P = Prompt.objects.get(user=owner, name="sjalkannedom").text
@@ -2027,11 +2141,13 @@ def index(request):
                         motivation_notes=context.get("motivation_notes", ""),
                         logical_score=context.get("logical_score", ""),
                         verbal_score=context.get("verbal_score", ""),
-                        motivation_factors=context.get("motivation_factors", []),
+
+                        # FIX
+                        motivation_factors=selected_motivations_for_ai,
                     )
                 step = 6
 
-            # 6 -> 7  (Strategiskt tänkande och anpassningsförmåga)
+            # 6 -> 7
             elif step == 6:
                 if not context["strategi_text"]:
                     P = Prompt.objects.get(user=owner, name="strategi").text
@@ -2053,11 +2169,13 @@ def index(request):
                         motivation_notes=context.get("motivation_notes", ""),
                         logical_score=context.get("logical_score", ""),
                         verbal_score=context.get("verbal_score", ""),
-                        motivation_factors=context.get("motivation_factors", []),
+
+                        # FIX
+                        motivation_factors=selected_motivations_for_ai,
                     )
                 step = 7
 
-            # 7 -> 8  (Kommunikation och samarbete)
+            # 7 -> 8
             elif step == 7:
                 if not context["kommunikation_text"]:
                     P = Prompt.objects.get(user=owner, name="kommunikation").text
@@ -2079,11 +2197,13 @@ def index(request):
                         motivation_notes=context.get("motivation_notes", ""),
                         logical_score=context.get("logical_score", ""),
                         verbal_score=context.get("verbal_score", ""),
-                        motivation_factors=context.get("motivation_factors", []),
+
+                        # FIX
+                        motivation_factors=selected_motivations_for_ai,
                     )
                 step = 8
 
-            # 8 -> 9  (Styrkor / Utvecklingsområden / Riskbeteenden)
+            # 8 -> 9
             elif step == 8:
                 if not context["sur_text"]:
                     P = Prompt.objects.get(user=owner, name="styrkor_utveckling_risk").text
@@ -2108,12 +2228,21 @@ def index(request):
                         motivation_notes=context.get("motivation_notes", ""),
                         logical_score=context.get("logical_score", ""),
                         verbal_score=context.get("verbal_score", ""),
-                        motivation_factors=context.get("motivation_factors", []),
+
+                        # FIX
+                        motivation_factors=selected_motivations_for_ai,
                     )
                 step = 9
 
-            # 9 -> 10  (Sammanfattande slutsats)
+            # 9 -> 10
             elif step == 9:
+                # FIX: loaded_data finns nu alltid definierad (laddades tidigt)
+                if loaded_data:
+                    context = _apply_report_data_to_context(context, loaded_data)
+
+                if request.method == "POST":
+                    pass
+
                 if not context["slutsats_text"]:
                     P = Prompt.objects.get(user=owner, name="sammanfattande_slutsats").text
                     context["slutsats_text"] = _run_openai(
@@ -2138,54 +2267,71 @@ def index(request):
                         motivation_notes=context.get("motivation_notes", ""),
                         logical_score=context.get("logical_score", ""),
                         verbal_score=context.get("verbal_score", ""),
-                        motivation_factors=context.get("motivation_factors", []),
+
+                        # FIX
+                        motivation_factors=selected_motivations_for_ai,
                     )
                 step = 10
 
-            # 10 -> 11  (Sista "nästa" till Word-export-steget)
+            # 10 -> 11
             elif step == 10:
                 step = 11
 
     # uppdatera step i context efter POST-logik
     context["step"] = step
 
-        # 🔹 Bygg lista med fulla objekt för de valda motivationsfaktorerna
+    # 🔹 Bygg lista med fulla objekt för de valda motivationsfaktorerna
     selected_motivation_keys = context.get("selected_motivation_keys") or \
-                               request.session.get("selected_motivation_keys", [])
+                              request.session.get("selected_motivation_keys", [])
 
     context["selected_motivation_keys"] = selected_motivation_keys
     context["selected_motivations"] = [
-        MOTIVATION_FACTORS[k]
+        {
+            "key": k,
+            "label": MOTIVATION_FACTORS[k]["label"],
+            "definition": MOTIVATION_FACTORS[k]["definition"],
+        }
         for k in selected_motivation_keys
         if k in MOTIVATION_FACTORS
     ]
 
     # ---------- 4.5) Skapa sidopanelens chattsession (per steg) ----------
-    if context["step"] == 1:
-        # 🔥 NY RAPPORT = NY SIDOPANEL-CHATT
-        sidebar_session = ChatSession.objects.create(
-            user=request.user,
-            flow="domarnamnden",
-            step=1,
-            title="Domarnämnden – ny rapport",
-            system_prompt="""
+    # FIX: undvik att skapa ny session vid varje refresh på steg 1.
+    sidebar_key = f"sidebar_session_domarnamnden_{report_id or 'new'}_{context['step']}"
+    sidebar_session_id = request.session.get(sidebar_key)
+
+    sidebar_session = None
+    if sidebar_session_id:
+        sidebar_session = ChatSession.objects.filter(id=sidebar_session_id, user=request.user).first()
+
+    if not sidebar_session:
+        # Behåll din logik: steg 1 får en "ny rapport"-titel annars steg X.
+        if context["step"] == 1:
+            sidebar_session = ChatSession.objects.create(
+                user=request.user,
+                flow="domarnamnden",
+                step=1,
+                title="Domarnämnden – ny rapport",
+                system_prompt="""
     Du är en skrivassistent som hjälper användaren att förbättra korta textavsnitt
     i ett rapportverktyg.
     """,
-        )
-    else:
-        sidebar_session, _ = ChatSession.objects.get_or_create(
-            user=request.user,
-            flow="domarnamnden",
-            step=context["step"],
-            defaults={
-                "title": f"Domarnämnden – steg {context['step']}",
-                "system_prompt": """
+            )
+        else:
+            sidebar_session, _ = ChatSession.objects.get_or_create(
+                user=request.user,
+                flow="domarnamnden",
+                step=context["step"],
+                defaults={
+                    "title": f"Domarnämnden – steg {context['step']}",
+                    "system_prompt": """
     Du är en skrivassistent som hjälper användaren att förbättra korta textavsnitt
     i ett rapportverktyg.
     """,
-            },
-        )
+                },
+            )
+
+        request.session[sidebar_key] = sidebar_session.id
 
     sidebar_messages = ChatMessage.objects.filter(
         session=sidebar_session
@@ -2221,7 +2367,7 @@ def index(request):
 
     # Endast valda faktorer till sidopanelen
     selected_motivation_keys = context.get("selected_motivation_keys") or \
-                            request.session.get("selected_motivation_keys", [])
+                              request.session.get("selected_motivation_keys", [])
 
     context["selected_motivation_keys"] = selected_motivation_keys
     context["selected_motivations"] = [
@@ -2234,7 +2380,7 @@ def index(request):
         if k in MOTIVATION_FACTORS
     ]
 
-        # ── Har vi någon data till sidopanelen? ─────────────────────────────
+    # ── Har vi någon data till sidopanelen? ─────────────────────────────
     has_sidebar_data = any([
         context.get("candidate_name"),
         context.get("candidate_role"),
@@ -2249,7 +2395,28 @@ def index(request):
     ])
     context["has_sidebar_data"] = has_sidebar_data
 
-    return render(request, "index.html", context)
+    rep = None
+
+    # Skapa report automatiskt när man är på steg 1 i GET (ny rapport)
+    if request.method == "GET" and context.get("step") == 1 and not report_id:
+        rep = _ensure_report(request, context)
+        report_id = str(rep.id)
+
+    # Om vi laddade en report via report_id
+    if loaded_report:
+        rep = loaded_report
+
+    # På POST vill vi alltid spara
+    if request.method == "POST":
+        if not rep:
+            rep = _ensure_report(request, context)
+            report_id = str(rep.id)
+
+        # uppdatera med aktuellt state
+        _save_report_state(rep, context)
+
+    # Skicka med report_id till templaten så den kan POST:as vidare
+    context["report_id"] = report_id
 
     return render(request, "index.html", context)
 
@@ -2611,3 +2778,132 @@ def chat_delete(request, session_id):
     s = get_object_or_404(ChatSession, id=session_id, user=request.user)
     s.delete()  # Messages/attachments följer med om du har on_delete=CASCADE
     return redirect("chat_home")
+
+
+@login_required
+def report_list(request):
+    reports = Report.objects.filter(deleted_at__isnull=True).order_by("-updated_at")
+    return render(request, "report_list.html", {"reports": reports})
+
+
+@login_required
+def report_open(request, report_id):
+    rep = _get_report_or_404(report_id)
+    data = rep.data or {}
+    # visa "slutresultat" (du kan göra en proper template senare)
+    # här skickar vi samma keys som du redan renderar i index.html sammanställning
+    context = {
+        "report": rep,
+        "data": data,
+        "tq_fardighet_html": _markdown_to_html(data.get("tq_fardighet_text", "")),
+        "tq_motivation_html": _markdown_to_html(data.get("tq_motivation_text", "")),
+        "leda_html": _markdown_to_html(data.get("leda_text", "")),
+        "mod_html": _markdown_to_html(data.get("mod_text", "")),
+        "sjalkannedom_html": _markdown_to_html(data.get("sjalkannedom_text", "")),
+        "strategi_html": _markdown_to_html(data.get("strategi_text", "")),
+        "kommunikation_html": _markdown_to_html(data.get("kommunikation_text", "")),
+        "sur_html": _markdown_to_html(data.get("sur_text", "")),
+        "slutsats_html": _markdown_to_html(data.get("slutsats_text", "")),
+    }
+    return render(request, "report_open.html", context)
+
+
+@login_required
+def report_edit(request, report_id):
+    # Redirecta in i wizard med report_id (index sköter prefill)
+    return redirect(f"{reverse('index')}?report_id={report_id}")
+
+
+@login_required
+@require_POST
+def report_delete(request, report_id):
+    rep = _get_report_or_404(report_id)
+    rep.deleted_at = timezone.now()
+    rep.save(update_fields=["deleted_at"])
+    return redirect("report_list")
+
+
+@login_required
+def report_download(request, report_id):
+    """
+    Återanvänd din Word-export, fast från sparad data.
+    Vi simulerar POST-build_doc med rep.data.
+    """
+    rep = _get_report_or_404(report_id)
+    data = rep.data or {}
+
+    # Bygg ett 'fake context' som matchar din build_doc-del
+    context = data.copy()
+    context["candidate_name"] = context.get("candidate_name", "")  # safety
+
+    # samma kod som i build_doc men med data istället för request.POST:
+    from django.http import HttpResponse
+    from docx import Document
+
+    template_path = os.path.join(settings.BASE_DIR, "reports", "domarnamnden_template.docx")
+    doc = Document(template_path)
+
+    # om du vill spara bilder senare kan du lägga dem i rep.data också
+    leda_image_data = data.get("leda_image", "")
+    mod_image_data = data.get("mod_image", "")
+    sjalkannedom_image_data = data.get("sjalkannedom_image", "")
+    strategi_image_data = data.get("strategi_image", "")
+    kommunikation_image_data = data.get("kommunikation_image", "")
+
+    # motivations-text (som du redan bygger)
+    selected_motivation_keys = data.get("selected_motivation_keys", []) or []
+    motivation_lines = []
+    for k in selected_motivation_keys:
+        m = MOTIVATION_FACTORS.get(k)
+        if not m:
+            continue
+        motivation_lines.append(f"{m['label']}\n{m['definition']}".strip())
+    selected_motivations_text = "\n\n".join(motivation_lines)
+
+    mapping = {
+        "{candidate_name}": context.get("candidate_name", ""),
+        "{candidate_first_name}": context.get("candidate_first_name", ""),
+        "{candidate_last_name}": context.get("candidate_last_name", ""),
+        "{candidate_role}": context.get("candidate_role", ""),
+        "{tq_fardighet_text}": html_to_text(context.get("tq_fardighet_text", "")),
+        "{sur_text}": html_to_text(context.get("sur_text", "")),
+        "{tq_motivation_text}": html_to_text(context.get("tq_motivation_text", "")),
+        "{leda_text}": html_to_text(context.get("leda_text", "")),
+        "{mod_text}": html_to_text(context.get("mod_text", "")),
+        "{sjalkannedom_text}": html_to_text(context.get("sjalkannedom_text", "")),
+        "{strategi_text}": html_to_text(context.get("strategi_text", "")),
+        "{kommunikation_text}": html_to_text(context.get("kommunikation_text", "")),
+        "{selected_motivations}": selected_motivations_text,
+    }
+    docx_replace_text(doc, mapping)
+
+    ratings_json_raw = data.get("ratings_json") or ""
+    ratings_doc = {}
+    if isinstance(ratings_json_raw, dict):
+        ratings_doc = ratings_json_raw
+    elif isinstance(ratings_json_raw, str) and ratings_json_raw.strip():
+        try:
+            ratings_doc = json.loads(ratings_json_raw)
+        except Exception:
+            ratings_doc = {}
+
+    if ratings_doc:
+        replace_table_placeholder(doc, "{leda_table}", ratings_doc, "leda_utveckla_och_engagera")
+        replace_table_placeholder(doc, "{mod_table}", ratings_doc, "mod_och_handlingskraft")
+        replace_table_placeholder(doc, "{sjalkannedom_table}", ratings_doc, "sjalkannedom_och_emotionell_stabilitet")
+        replace_table_placeholder(doc, "{strategi_table}", ratings_doc, "strategiskt_tankande_och_anpassningsformaga")
+        replace_table_placeholder(doc, "{kommunikation_table}", ratings_doc, "kommunikation_och_samarbete")
+
+    replace_image_placeholder(doc, "{leda_image}", leda_image_data)
+    replace_image_placeholder(doc, "{mod_image}", mod_image_data)
+    replace_image_placeholder(doc, "{sjalkannedom_image}", sjalkannedom_image_data)
+    replace_image_placeholder(doc, "{strategi_image}", strategi_image_data)
+    replace_image_placeholder(doc, "{kommunikation_image}", kommunikation_image_data)
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    filename = f"bedomning_{context.get('candidate_name','rapport')}.docx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    doc.save(response)
+    return response

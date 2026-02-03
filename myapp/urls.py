@@ -14,4 +14,9 @@ urlpatterns = [
     path("chat/<int:session_id>/send/", views.chat_send, name="chat_send"),
     path("chat/<int:session_id>/delete/", views.chat_delete, name="chat_delete"),
     path("sidebar-chat/", views.sidebar_chat, name="sidebar_chat"),
+    path("reports/<uuid:report_id>/download/", views.report_download, name="report_download"),
+    path("reports/", views.report_list, name="report_list"),
+    path("reports/<uuid:report_id>/", views.report_open, name="report_open"),
+    path("reports/<uuid:report_id>/edit/", views.report_edit, name="report_edit"),
+    path("reports/<uuid:report_id>/delete/", views.report_delete, name="report_delete"),
 ]

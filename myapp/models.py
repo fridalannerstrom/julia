@@ -1,5 +1,10 @@
 from django.db import models
+import uuid
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
 
 class Prompt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -59,3 +64,24 @@ class ChatAttachment(models.Model):
 
     def __str__(self):
         return self.original_name
+    
+
+class Report(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    title = models.CharField(max_length=255, blank=True, default="")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    current_step = models.PositiveIntegerField(default=1)
+    data = models.JSONField(default=dict, blank=True)  # hela wizard-state
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return self.title or f"Report {self.id}"
