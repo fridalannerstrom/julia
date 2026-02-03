@@ -326,10 +326,32 @@ MOTIVATION_FACTORS = {
     },
 }
 
+def _to_str(v):
+    if v is None:
+        return ""
+    if isinstance(v, (list, dict)):
+        return json.dumps(v, ensure_ascii=False, indent=2)
+    return str(v)
 
 
 # ── NYTT: liten wrapper för OpenAI-anrop per rubrik ───────────────────────────
 def _run_openai(prompt_text: str, style: str, **vars_) -> str:
+    def _to_str(v):
+        """
+        Säker konvertering till str så .replace() aldrig får list/dict.
+        - list/dict -> JSON (lätt för AI att läsa)
+        - None -> ""
+        - annat -> str(...)
+        """
+        if v is None:
+            return ""
+        if isinstance(v, (list, dict)):
+            try:
+                return json.dumps(v, ensure_ascii=False, indent=2)
+            except Exception:
+                return str(v)
+        return str(v)
+
     try:
         # ✅ DEBUG: se om motivation_notes finns och hur lång den är
         mn = vars_.get("motivation_notes", None)
@@ -339,16 +361,24 @@ def _run_openai(prompt_text: str, style: str, **vars_) -> str:
 
         # ✅ DEBUG: se om placeholdern ens finns i prompten
         print("DEBUG prompt has {motivation_notes}:", "{motivation_notes}" in prompt_text)
-        pt = prompt_text.replace("{excel_text}", vars_.get("excel_text", ""))
-        pt = pt.replace("{intervju_text}", vars_.get("intervju_text", ""))
-        # stöd för fler placeholders utan att krascha
+
+        # Gör en kopia av prompt_text så vi inte muterar original
+        pt = str(prompt_text or "")
+
+        # Behåll dina två "snabba" replacements (men säkra)
+        pt = pt.replace("{excel_text}", _to_str(vars_.get("excel_text", "")))
+        pt = pt.replace("{intervju_text}", _to_str(vars_.get("intervju_text", "")))
+
+        # ✅ stöd för fler placeholders utan att krascha (fixen!)
         for k, v in vars_.items():
             placeholder = "{" + k + "}"
-            pt = pt.replace(placeholder, v or "")
+            pt = pt.replace(placeholder, _to_str(v))
+
         filled = (style or "") + "\n\n" + pt
 
         # ✅ DEBUG: kolla om motivation_notes faktiskt hamnade i filled
-        idx = filled.find(str(mn or "")[:50])
+        mn_preview = (mn or "")
+        idx = filled.find(str(mn_preview)[:50]) if isinstance(mn_preview, str) else -1
         print("DEBUG motivation_notes appears in filled:", idx != -1)
         print("DEBUG filled length:", len(filled))
 
@@ -370,7 +400,7 @@ def _run_openai(prompt_text: str, style: str, **vars_) -> str:
             "Tyvärr tog AI-svaret för lång tid eller gick inte att hämta just nu. "
             "Försök igen om en liten stund."
         )
-    
+
 
 def _round_to_1_5(x) -> int:
     """
@@ -1594,7 +1624,7 @@ def _build_sidebar_ratings(ratings: dict):
 @csrf_exempt
 def index(request):
     owner = get_prompt_owner(request.user)
-    ensure_default_prompts_exist(request.user)
+    ensure_default_prompts_exist(owner)
 
     # ---------- 1) Läs nuvarande steg (GET eller POST) ----------
     try:
