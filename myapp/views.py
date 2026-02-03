@@ -30,6 +30,7 @@ from docx.shared import Inches
 from io import BytesIO
 from .models import Report
 from django.utils import timezone
+from django.urls import reverse
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Miljö
@@ -1644,9 +1645,11 @@ def index(request):
     if report_id:
         loaded_report = _get_report_or_404(report_id)
         loaded_data = loaded_report.data or {}
+    
+    edit_mode = bool(report_id and loaded_data)
 
     # 🔹 RESET när man kommer in "från början" (GET på steg 1)
-    if request.method == "GET" and step == 1:
+    if request.method == "GET" and step == 1 and not edit_mode:
         request.session.pop("selected_motivation_keys", None)  # FIX: bara en gång
         request.session.pop("motivation_notes", None)
         request.session.pop("job_ad_text", None)
@@ -1706,8 +1709,24 @@ def index(request):
     if context["uploaded_files_markdown"]:
         context["uploaded_files_html"] = markdown(context["uploaded_files_markdown"])
 
+    # ✅ När report_id finns: fyll context från sparad report.data (GET + POST)
+    if report_id and loaded_data:
+        context = _apply_report_data_to_context(context, loaded_data)
+
+        # synka sessionen (valfritt men bra för sidopanelen)
+        request.session["selected_motivation_keys"] = context.get("selected_motivation_keys", []) or []
+        request.session["job_ad_text"] = context.get("job_ad_text", "") or ""
+        request.session["motivation_notes"] = context.get("motivation_notes", "") or ""
+        request.session["logical_score"] = context.get("logical_score", "") or ""
+        request.session["verbal_score"] = context.get("verbal_score", "") or ""
+        request.session.modified = True
+
     # ---------- 3) Ratings (JSON + tabeller) ----------
-    ratings_json_str = request.POST.get("ratings_json", "")
+    ratings_json_str = (
+        request.POST.get("ratings_json")
+        or context.get("ratings_json")   # från loaded_data via apply_report_data
+        or ""
+    )
     ratings = None
     if ratings_json_str:
         try:
@@ -1899,7 +1918,11 @@ def index(request):
             except Prompt.DoesNotExist:
                 betygsskala_prompt = ""
 
-            ratings_json_str = context.get("ratings_json", ratings_json_str or "")
+            ratings_json_str = (
+                request.POST.get("ratings_json")
+                or context.get("ratings_json")   # från loaded_data via apply_report_data
+                or ""
+            )
 
             # ---------- STEG 1 ----------
             if step == 1:
@@ -2841,8 +2864,22 @@ def report_open(request, report_id):
 
 @login_required
 def report_edit(request, report_id):
-    # Redirecta in i wizard med report_id (index sköter prefill)
-    return redirect(f"{reverse('index')}?report_id={report_id}")
+    report = get_object_or_404(Report, id=report_id, created_by=request.user)
+
+    # Anta att report.data är en dict (JSONField) med ALLT du behöver
+    # Ex: kandidat, intervju_text, excel_text, motivation_factors, etc.
+    report_data = report.data or {}
+
+    # Lägg wizard-state i sessionen
+    request.session["wizard_mode"] = "edit"
+    request.session["wizard_report_id"] = str(report.id)
+    request.session["wizard_step"] = 2
+    request.session["wizard_data"] = report_data
+
+    # Viktigt: markera att sessionen ändrats
+    request.session.modified = True
+
+    return redirect(f"{reverse('index')}?report_id={report.id}&step=2")
 
 
 @login_required
