@@ -108,7 +108,9 @@
                        data-updated="{{ r.updated_at|date:'U' }}">
 
                 <div class="report-card-top">
-                  <div class="report-badge">Domarnämnden</div>
+<span class="report-badge">
+  Skapad av: {{ r.created_by.get_full_name|default:r.created_by.username }}
+</span>
 
                   <div class="report-meta">
                     <span class="report-meta-dot"></span>
@@ -121,14 +123,6 @@
                 <h3 class="report-title">
                   {{ r.candidate_name|default:r.title|default:"Rapport" }}
                 </h3>
-
-                <p class="report-subtitle">
-                  {% if r.candidate_role %}
-                    {{ r.candidate_role }}
-                  {% else %}
-                    Ingen roll angiven
-                  {% endif %}
-                </p>
 
                 <div class="report-actions">
                   <a class="adminui-button adminui-button-secondary report-action"

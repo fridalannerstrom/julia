@@ -2851,7 +2851,12 @@ def chat_delete(request, session_id):
 
 @login_required
 def report_list(request):
-    reports = Report.objects.filter(deleted_at__isnull=True).order_by("-updated_at")
+    reports = (
+        Report.objects
+        .filter(deleted_at__isnull=True)
+        .select_related("created_by")
+        .order_by("-updated_at")
+    )
     return render(request, "report_list.html", {"reports": reports})
 
 
