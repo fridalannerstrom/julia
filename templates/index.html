@@ -179,6 +179,12 @@
                 <input type="hidden" name="sur_text" value="{{ sur_text|escape }}">
                 <input type="hidden" name="slutsats_text" value="{{ slutsats_text|escape }}">
 
+                <input type="hidden" name="leda_image" id="leda_image">
+                <input type="hidden" name="mod_image" id="mod_image">
+                <input type="hidden" name="sjalkannedom_image" id="sjalkannedom_image">
+                <input type="hidden" name="strategi_image" id="strategi_image">
+                <input type="hidden" name="kommunikation_image" id="kommunikation_image">
+
                 {% if ratings_json %}
                 <input type="hidden" name="ratings_json" value="{{ ratings_json|escape }}">
                 {% endif %}
@@ -640,8 +646,6 @@
       </div>
     </div>
 
-    <input type="hidden" name="leda_image" id="leda_image">
-
     {# RAD 6 – Mod och handlingskraft #}
     <div class="dn-report-row">
       <div class="dn-report-col dn-report-col--left">
@@ -663,8 +667,6 @@
         </div>
       </div>
     </div>
-
-    <input type="hidden" name="mod_image" id="mod_image">
 
     {# RAD 7 – Självkännedom #}
     <div class="dn-report-row">
@@ -688,8 +690,6 @@
       </div>
     </div>
 
-    <input type="hidden" name="sjalkannedom_image" id="sjalkannedom_image">
-
     {# RAD 8 – Strategiskt tänkande #}
     <div class="dn-report-row">
       <div class="dn-report-col dn-report-col--left">
@@ -711,8 +711,6 @@
         </div>
       </div>
     </div>
-
-    <input type="hidden" name="strategi_image" id="strategi_image">
 
     {# RAD 9 – Kommunikation och samarbete #}
     <div class="dn-report-row">
@@ -736,13 +734,13 @@
       </div>
     </div>
 
-    <input type="hidden" name="kommunikation_image" id="kommunikation_image">
-
     {# RAD 10 – Sammanfattande slutsats #}
     <div class="dn-report-row">
       <div class="dn-report-col dn-report-col--left">
         <h4 class="dn-label">Sammanfattande slutsats</h4>
       </div>
+      <div id="image-save-config"
+     data-save-url="{% url 'save_report_images' %}">
       <div class="dn-report-col dn-report-col--right">
         <div class="dn-report-text">
           {{ slutsats_html|default:slutsats_text|safe }}
@@ -770,9 +768,9 @@
                     Nästa ➜
                   </button>
                   {% elif step == 10 %}
-                  <button class="adminui-button" type="submit" name="next" value="1">
-                    Sammanställ ➜
-                  </button>
+<button id="btnAssemble" class="adminui-button" type="submit" name="next" value="1">
+  Sammanställ ➜
+</button>
                   {% elif step == 11 %}
                   <button class="adminui-button" type="submit" name="build_doc" value="1">
                     📄 Ladda ner som Word
@@ -1104,6 +1102,77 @@
       }).catch(err => console.error('Canvas error:', err));
     });
   });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const stepEl = document.querySelector('input[name="step"]');
+  const step = stepEl ? parseInt(stepEl.value, 10) : null;
+
+  // Kör bara på sammanställningssteget (11)
+  if (step !== 11) return;
+
+  const cfg = document.getElementById('image-save-config');
+  const saveUrl = cfg ? cfg.dataset.saveUrl : null;
+  if (!saveUrl) return;
+
+  const form = document.querySelector('form.adminui-form');
+  if (!form) return;
+
+  const reportId = (form.querySelector('input[name="report_id"]') || {}).value;
+  if (!reportId) return;
+
+  // Om du redan sparat en gång, hoppa (förhindrar att det sker vid refresh)
+  const alreadySaved = form.dataset.imagesSaved === "1";
+  if (alreadySaved) return;
+
+  async function captureOne(block) {
+    const fieldName = block.dataset.imageField;
+    if (!fieldName) return null;
+
+    const canvas = await html2canvas(block, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true
+    });
+
+    return { fieldName, dataUrl: canvas.toDataURL('image/png') };
+  }
+
+  const blocks = Array.from(document.querySelectorAll('.rating-export'));
+  if (!blocks.length) return;
+
+  // capture sekventiellt
+  const payload = {};
+  for (const block of blocks) {
+    block.style.backgroundColor = '#ffffff';
+    const res = await captureOne(block);
+    if (res) payload[res.fieldName] = res.dataUrl;
+  }
+
+  // CSRF
+  const csrf = (form.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value;
+
+  // Skicka till Django för att spara i media
+  const fd = new FormData();
+  fd.append('report_id', reportId);
+  for (const [k, v] of Object.entries(payload)) {
+    fd.append(k, v);
+  }
+
+  const resp = await fetch(saveUrl, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+    body: fd
+  });
+
+  if (resp.ok) {
+    form.dataset.imagesSaved = "1";
+    console.log("Images saved ✅");
+  } else {
+    console.warn("Image save failed", await resp.text());
+  }
+});
 </script>
 
   <script>

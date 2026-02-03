@@ -268,11 +268,9 @@
                     </p>
                   </div>
                   <div class="dn-report-col dn-report-col--right">
-                    {% if data.leda_table_html %}
-                      <div class="dn-report-table">
-                        {{ data.leda_table_html|safe }}
-                      </div>
-                    {% endif %}
+{% if report.data.leda_image_path %}
+  <img src="{{ MEDIA_URL }}{{ report.data.leda_image_path }}" alt="Leda-tabell">
+{% endif %}
                     <div class="dn-report-text">
                       {{ data.leda_text|safe }}
                     </div>

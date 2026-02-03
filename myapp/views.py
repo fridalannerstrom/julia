@@ -31,6 +31,12 @@ from io import BytesIO
 from .models import Report
 from django.utils import timezone
 from django.urls import reverse
+import uuid
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.utils.text import slugify
+from .utils.media import save_report_png
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Miljö
@@ -128,19 +134,117 @@ def _ensure_report(request, ctx: dict):
     )
     return rep
 
+
+@require_POST
+@login_required
+def save_report_images(request):
+    report_id = request.POST.get("report_id")
+    rep = get_object_or_404(Report, id=report_id, user=request.user)
+
+    # vilka fält du skickar från frontend
+    fields = [
+        "leda_image",
+        "mod_image",
+        "sjalkannedom_image",
+        "strategi_image",
+        "kommunikation_image",
+    ]
+
+    saved = {}
+    rep.data = rep.data or {}
+
+    for field in fields:
+        data_url = request.POST.get(field)
+        if not data_url or not data_url.startswith("data:image"):
+            continue
+
+        # data:image/png;base64,XXXX
+        header, b64 = data_url.split(",", 1)
+        ext = "png"
+        if "image/jpeg" in header:
+            ext = "jpg"
+
+        raw = base64.b64decode(b64)
+
+        # bygg path i media
+        filename = f"reports/{rep.id}/{field}_{uuid.uuid4().hex}.{ext}"
+        path = default_storage.save(filename, ContentFile(raw))
+
+        # spara filväg så du kan visa senare i report_list
+        rep.data[f"{field}_path"] = path
+        saved[field] = path
+
+    rep.save(update_fields=["data", "updated_at"])
+
+    return JsonResponse({"ok": True, "saved": saved})
+
+
+def _extract_png_bytes(data_url: str) -> bytes | None:
+    if not data_url:
+        return None
+
+    s = data_url.strip()
+
+    # Om någon skickar "ren" base64 (utan prefix)
+    if s.startswith("iVBOR"):
+        try:
+            return base64.b64decode(s)
+        except Exception:
+            return None
+
+    m = re.match(r"^data:image\/png;base64,(.+)$", s)
+    if not m:
+        return None
+
+    try:
+        return base64.b64decode(m.group(1))
+    except Exception:
+        return None
+
+
 def _save_report_state(rep: Report, ctx: dict):
     rep.current_step = int(ctx.get("step") or rep.current_step or 1)
     rep.title = _report_title_from_context(ctx)
-
-    # 1) Starta från befintlig data (det som redan är sparat)
     data = dict(rep.data or {})
     incoming = _extract_report_data_from_context(ctx)
-
+    
+    # 1) Spara tabellbilder till MEDIA om de kommer in som base64
+    image_fields = ["leda_image", "mod_image", "sjalkannedom_image", 
+                    "strategi_image", "kommunikation_image"]
+    
+    for field in image_fields:
+        val = (ctx.get(field) or "").strip()
+        
+        if val.startswith("data:image"):
+            # ✅ Extrahera PNG-bytes från data URL
+            png_bytes = _extract_png_bytes(val)
+            
+            if png_bytes:
+                # ✅ Spara med din befintliga funktion
+                image_url = save_report_png(png_bytes, rep.id, field)
+                
+                # ✅ Spara URL:en i data (inte base64)
+                data[field + "_url"] = image_url
+                
+                print(f"✅ Saved {field} to {image_url}")
+            else:
+                print(f"⚠️ Could not extract PNG bytes from {field}")
+        
+        elif val and val.startswith(settings.MEDIA_URL):
+            # Om det redan är en URL, behåll den
+            data[field + "_url"] = val
+    
+    # 2) Spara övrig data som vanligt
     for k, v in incoming.items():
-        if v is None: continue
-        if isinstance(v, str) and v.strip() == "": continue
+        if v is None:
+            continue
+        if isinstance(v, str) and v.strip() == "":
+            continue
+        # viktigt: skriv inte över field med base64 om vi nyss gjort fil
+        if k in image_fields and isinstance(v, str) and v.startswith("data:image"):
+            continue
         data[k] = v
-
+    
     rep.data = data
     rep.save(update_fields=["current_step", "title", "data", "updated_at"])
 
@@ -1728,6 +1832,12 @@ def index(request):
         "uploaded_files_markdown": request.POST.get("uploaded_files_markdown", ""),
         "uploaded_files_html": "",
 
+        "leda_image": request.POST.get("leda_image", ""),
+        "mod_image": request.POST.get("mod_image", ""),
+        "sjalkannedom_image": request.POST.get("sjalkannedom_image", ""),
+        "strategi_image": request.POST.get("strategi_image", ""),
+        "kommunikation_image": request.POST.get("kommunikation_image", ""),
+
         "error": "",
     }
 
@@ -1827,6 +1937,26 @@ def index(request):
 
         # Skapa Word endast på sista steget
         elif "build_doc" in request.POST and step == 11:
+            # ✅ SPARA RAPPORTEN FÖRST (så att bilderna hamnar i media)
+            if report_id:
+                rep = _get_report_or_404(report_id)  # ✅ Hämta rapporten först
+                _save_report_state(rep, context)
+                print("✅ Rapport sparad innan Word-export")
+            
+            from django.http import HttpResponse
+            from docx import Document
+            
+            template_path = os.path.join(
+                settings.BASE_DIR, "reports", "domarnamnden_template.docx"
+            )
+            doc = Document(template_path)
+            
+            leda_image_data = request.POST.get("leda_image", "")
+            mod_image_data = request.POST.get("mod_image", "")
+            sjalkannedom_image_data = request.POST.get("sjalkannedom_image", "")
+            strategi_image_data = request.POST.get("strategi_image", "")
+            kommunikation_image_data = request.POST.get("kommunikation_image", "")
+        
             from django.http import HttpResponse
             from docx import Document
 
@@ -2498,6 +2628,9 @@ def index(request):
         if not rep:
             rep = _get_report_or_404(report_id)
 
+        print("leda_image length:", len(request.POST.get("leda_image", "")))
+        print("mod_image length:", len(request.POST.get("mod_image", "")))
+
         _save_report_state(rep, context)
 
     # Skicka med report_id till templaten så den kan POST:as vidare
@@ -2880,8 +3013,11 @@ def report_list(request):
 def report_open(request, report_id):
     rep = _get_report_or_404(report_id)
     data = rep.data or {}
-    # visa "slutresultat" (du kan göra en proper template senare)
-    # här skickar vi samma keys som du redan renderar i index.html sammanställning
+    
+    # ✅ Hämta bild-URLs från data
+    image_fields = ["leda_image", "mod_image", "sjalkannedom_image", 
+                    "strategi_image", "kommunikation_image"]
+    
     context = {
         "report": rep,
         "data": data,
@@ -2895,6 +3031,46 @@ def report_open(request, report_id):
         "sur_html": _markdown_to_html(data.get("sur_text", "")),
         "slutsats_html": _markdown_to_html(data.get("slutsats_text", "")),
     }
+    
+    # ✅ Lägg till bild-URLs
+    for field in image_fields:
+        url_key = field + "_url"
+        if url_key in data:
+            context[url_key] = data[url_key]
+    
+    # Ratings tabeller
+    ratings_json_str = data.get("ratings_json", "")
+    if ratings_json_str:
+        try:
+            ratings = json.loads(ratings_json_str) if isinstance(ratings_json_str, str) else ratings_json_str
+            context["leda_table_html"] = mark_safe(_ratings_table_html(
+                ratings,
+                section_filter=[("leda_utveckla_och_engagera", "Leda, utveckla och engagera")],
+                include_css=True,
+            ))
+            context["mod_table_html"] = mark_safe(_ratings_table_html(
+                ratings,
+                section_filter=[("mod_och_handlingskraft", "Mod och handlingskraft")],
+                include_css=True,
+            ))
+            context["sjalkannedom_table_html"] = mark_safe(_ratings_table_html(
+                ratings,
+                section_filter=[("sjalkannedom_och_emotionell_stabilitet", "Självkännedom och emotionell stabilitet")],
+                include_css=True,
+            ))
+            context["strategi_table_html"] = mark_safe(_ratings_table_html(
+                ratings,
+                section_filter=[("strategiskt_tankande_och_anpassningsformaga", "Strategiskt tänkande och anpassningsförmåga")],
+                include_css=True,
+            ))
+            context["kommunikation_table_html"] = mark_safe(_ratings_table_html(
+                ratings,
+                section_filter=[("kommunikation_och_samarbete", "Kommunikation och samarbete")],
+                include_css=True,
+            ))
+        except Exception:
+            pass
+    
     return render(request, "report_open.html", context)
 
 
