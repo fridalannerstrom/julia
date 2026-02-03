@@ -48,26 +48,23 @@ client = OpenAI(
 )
 
 REPORT_CONTEXT_KEYS = [
-    # styrning
-    "step",
-    "ratings_json",
+    # Kandidat
+    "candidate_first_name",
+    "candidate_last_name",
+    "candidate_name",
+    "candidate_role",
 
-    # inputs / rådata
+    # Inputs
     "test_text",
     "intervju_text",
-    "cv_text",
     "uploaded_files_markdown",
     "job_ad_text",
     "motivation_notes",
     "logical_score",
     "verbal_score",
-    "candidate_first_name",
-    "candidate_last_name",
-    "candidate_name",
-    "candidate_role",
     "selected_motivation_keys",
 
-    # AI-texter
+    # AI-texter per steg
     "tq_fardighet_text",
     "tq_motivation_text",
     "leda_text",
@@ -77,6 +74,9 @@ REPORT_CONTEXT_KEYS = [
     "kommunikation_text",
     "sur_text",
     "slutsats_text",
+
+    # Ratings
+    "ratings_json",
 ]
 
 
@@ -94,12 +94,11 @@ def _extract_report_data_from_context(ctx: dict) -> dict:
             data[k] = ctx.get(k)
     return data
 
-def _apply_report_data_to_context(ctx: dict, data: dict) -> dict:
-    for k, v in (data or {}).items():
-        # vi vill inte att random keys ska skräpa ner, men ok att tillåta våra
-        if k in REPORT_CONTEXT_KEYS:
-            ctx[k] = v
-    return ctx
+def _apply_report_data_to_context(context, data):
+    for k in REPORT_CONTEXT_KEYS:
+        if k in data:
+            context[k] = data[k]
+    return context
 
 def _get_report_or_404(report_id):
     return get_object_or_404(Report, id=report_id, deleted_at__isnull=True)
@@ -125,8 +124,19 @@ def _ensure_report(request, ctx: dict):
 def _save_report_state(rep: Report, ctx: dict):
     rep.current_step = int(ctx.get("step") or rep.current_step or 1)
     rep.title = _report_title_from_context(ctx)
-    rep.data = _extract_report_data_from_context(ctx)
+
+    # 1) Starta från befintlig data (det som redan är sparat)
+    data = dict(rep.data or {})
+    incoming = _extract_report_data_from_context(ctx)
+
+    for k, v in incoming.items():
+        if v is None: continue
+        if isinstance(v, str) and v.strip() == "": continue
+        data[k] = v
+
+    rep.data = data
     rep.save(update_fields=["current_step", "title", "data", "updated_at"])
+
 
 
 # ── NYTT: gemensamma rubriknycklar i rätt ordning ────────────────────────────
@@ -1681,7 +1691,7 @@ def index(request):
         "sjalkannedom_text": request.POST.get("sjalkannedom_text", ""),
         "strategi_text": request.POST.get("strategi_text", ""),
         "kommunikation_text": request.POST.get("kommunikation_text", ""),
-        "sur_text": request.POST.get("sur_text", ""),
+        "sur_text": request.POST.get("sur_text") or request.session.get("sur_text", ""),
         "slutsats_text": request.POST.get("slutsats_text", ""),
         "cv_text": request.POST.get("cv_text", ""),
         "selected_motivation_keys": selected_motivation_keys,
@@ -1709,8 +1719,8 @@ def index(request):
     if context["uploaded_files_markdown"]:
         context["uploaded_files_html"] = markdown(context["uploaded_files_markdown"])
 
-    # ✅ När report_id finns: fyll context från sparad report.data (GET + POST)
-    if report_id and loaded_data:
+    # ✅ När report_id finns: fyll context från sparad report.data (ENDAST GET)
+    if request.method == "GET" and report_id and loaded_data:
         context = _apply_report_data_to_context(context, loaded_data)
 
         # synka sessionen (valfritt men bra för sidopanelen)
@@ -2266,7 +2276,7 @@ def index(request):
 
             # 8 -> 9
             elif step == 8:
-                if not context["sur_text"]:
+                if not (context.get("sur_text") or "").strip():
                     P = Prompt.objects.get(user=owner, name="styrkor_utveckling_risk").text
                     context["sur_text"] = _run_openai(
                         P,
@@ -2297,9 +2307,6 @@ def index(request):
 
             # 9 -> 10
             elif step == 9:
-                # FIX: loaded_data finns nu alltid definierad (laddades tidigt)
-                if loaded_data:
-                    context = _apply_report_data_to_context(context, loaded_data)
 
                 if request.method == "POST":
                     pass
