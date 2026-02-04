@@ -31,12 +31,7 @@ from io import BytesIO
 from .models import Report
 from django.utils import timezone
 from django.urls import reverse
-import uuid
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.utils.text import slugify
-from .utils.media import save_report_png
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Miljö
@@ -83,13 +78,6 @@ REPORT_CONTEXT_KEYS = [
 
     # Ratings
     "ratings_json",
-
-    # Sparade tabell-bilder (dataURL från html2canvas)
-    "leda_image",
-    "mod_image",
-    "sjalkannedom_image",
-    "strategi_image",
-    "kommunikation_image",
 ]
 
 
@@ -135,50 +123,6 @@ def _ensure_report(request, ctx: dict):
     return rep
 
 
-@require_POST
-@login_required
-def save_report_images(request):
-    report_id = request.POST.get("report_id")
-    rep = get_object_or_404(Report, id=report_id, user=request.user)
-
-    # vilka fält du skickar från frontend
-    fields = [
-        "leda_image",
-        "mod_image",
-        "sjalkannedom_image",
-        "strategi_image",
-        "kommunikation_image",
-    ]
-
-    saved = {}
-    rep.data = rep.data or {}
-
-    for field in fields:
-        data_url = request.POST.get(field)
-        if not data_url or not data_url.startswith("data:image"):
-            continue
-
-        # data:image/png;base64,XXXX
-        header, b64 = data_url.split(",", 1)
-        ext = "png"
-        if "image/jpeg" in header:
-            ext = "jpg"
-
-        raw = base64.b64decode(b64)
-
-        # bygg path i media
-        filename = f"reports/{rep.id}/{field}_{uuid.uuid4().hex}.{ext}"
-        path = default_storage.save(filename, ContentFile(raw))
-
-        # spara filväg så du kan visa senare i report_list
-        rep.data[f"{field}_path"] = path
-        saved[field] = path
-
-    rep.save(update_fields=["data", "updated_at"])
-
-    return JsonResponse({"ok": True, "saved": saved})
-
-
 def _extract_png_bytes(data_url: str) -> bytes | None:
     if not data_url:
         return None
@@ -205,48 +149,12 @@ def _extract_png_bytes(data_url: str) -> bytes | None:
 def _save_report_state(rep: Report, ctx: dict):
     rep.current_step = int(ctx.get("step") or rep.current_step or 1)
     rep.title = _report_title_from_context(ctx)
-    data = dict(rep.data or {})
-    incoming = _extract_report_data_from_context(ctx)
-    
-    # 1) Spara tabellbilder till MEDIA om de kommer in som base64
-    image_fields = ["leda_image", "mod_image", "sjalkannedom_image", 
-                    "strategi_image", "kommunikation_image"]
-    
-    for field in image_fields:
-        val = (ctx.get(field) or "").strip()
-        
-        if val.startswith("data:image"):
-            # ✅ Extrahera PNG-bytes från data URL
-            png_bytes = _extract_png_bytes(val)
-            
-            if png_bytes:
-                # ✅ Spara med din befintliga funktion
-                image_url = save_report_png(png_bytes, rep.id, field)
-                
-                # ✅ Spara URL:en i data (inte base64)
-                data[field + "_url"] = image_url
-                
-                print(f"✅ Saved {field} to {image_url}")
-            else:
-                print(f"⚠️ Could not extract PNG bytes from {field}")
-        
-        elif val and val.startswith(settings.MEDIA_URL):
-            # Om det redan är en URL, behåll den
-            data[field + "_url"] = val
-    
-    # 2) Spara övrig data som vanligt
-    for k, v in incoming.items():
-        if v is None:
-            continue
-        if isinstance(v, str) and v.strip() == "":
-            continue
-        # viktigt: skriv inte över field med base64 om vi nyss gjort fil
-        if k in image_fields and isinstance(v, str) and v.startswith("data:image"):
-            continue
-        data[k] = v
-    
-    rep.data = data
+
+    # Spara ENDAST "riktig" rapportdata (text, ratings, inputs osv)
+    rep.data = _extract_report_data_from_context(ctx)
+
     rep.save(update_fields=["current_step", "title", "data", "updated_at"])
+
 
 
 def _safe_filename(s: str, fallback: str = "Rapport") -> str:
@@ -1939,9 +1847,13 @@ def index(request):
         elif "build_doc" in request.POST and step == 11:
             # ✅ SPARA RAPPORTEN FÖRST (så att bilderna hamnar i media)
             if report_id:
-                rep = _get_report_or_404(report_id)  # ✅ Hämta rapporten först
-                _save_report_state(rep, context)
-                print("✅ Rapport sparad innan Word-export")
+                rep = _get_report_or_404(report_id)
+
+                context_for_save = dict(context)
+                for k in ["leda_image", "mod_image", "sjalkannedom_image", "strategi_image", "kommunikation_image"]:
+                    context_for_save.pop(k, None)
+
+                _save_report_state(rep, context_for_save)
             
             from django.http import HttpResponse
             from docx import Document
@@ -2041,6 +1953,9 @@ def index(request):
                     doc, "{kommunikation_table}", ratings_doc,
                     "kommunikation_och_samarbete"
                 )
+
+            print("DEBUG leda_image startswith data:", (leda_image_data or "")[:30])
+            print("DEBUG leda_image length:", len(leda_image_data or ""))
 
             replace_image_placeholder(doc, "{leda_image}", leda_image_data)
             replace_image_placeholder(doc, "{mod_image}", mod_image_data)
@@ -3014,10 +2929,6 @@ def report_open(request, report_id):
     rep = _get_report_or_404(report_id)
     data = rep.data or {}
     
-    # ✅ Hämta bild-URLs från data
-    image_fields = ["leda_image", "mod_image", "sjalkannedom_image", 
-                    "strategi_image", "kommunikation_image"]
-    
     context = {
         "report": rep,
         "data": data,
@@ -3031,12 +2942,6 @@ def report_open(request, report_id):
         "sur_html": _markdown_to_html(data.get("sur_text", "")),
         "slutsats_html": _markdown_to_html(data.get("slutsats_text", "")),
     }
-    
-    # ✅ Lägg till bild-URLs
-    for field in image_fields:
-        url_key = field + "_url"
-        if url_key in data:
-            context[url_key] = data[url_key]
     
     # Ratings tabeller
     ratings_json_str = data.get("ratings_json", "")

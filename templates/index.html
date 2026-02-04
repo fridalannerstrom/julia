@@ -154,7 +154,7 @@
                 <input type="hidden" name="report_id" value="{{ report_id|default_if_none:'' }}">
                 <input type="hidden" name="test_text" value="{{ test_text|escape }}">
                 <input type="hidden" name="uploaded_files_markdown"
-                       value="{{ uploaded_files_markdown|default_if_none:''|escape }}">
+                  value="{{ uploaded_files_markdown|default_if_none:''|escape }}">
 
                 <!-- NYTT: se till att cv_text finns kvar mellan steg -->
                 <input type="hidden" name="cv_text" value="{{ cv_text|default_if_none:''|escape }}">
@@ -164,8 +164,7 @@
                 <input type="hidden" name="candidate_last_name" value="{{ candidate_last_name }}">
 
                 <!-- Fullständigt namn för bakåtkompatibilitet / JS -->
-                <input type="hidden" name="candidate_name"
-                       value="{{ candidate_first_name }} {{ candidate_last_name }}">
+                <input type="hidden" name="candidate_name" value="{{ candidate_first_name }} {{ candidate_last_name }}">
 
                 <input type="hidden" name="candidate_role" value="{{ candidate_role }}">
                 <input type="hidden" name="intervju_text" value="{{ intervju_text|escape }}">
@@ -188,182 +187,135 @@
                 {% if ratings_json %}
                 <input type="hidden" name="ratings_json" value="{{ ratings_json|escape }}">
                 {% endif %}
-{% if step == 1 %}
-<h2 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h2>
-<p class="adminui-intro">
-  Ladda upp Excelfilen, CV och och klistra in intervjuanteckningar.
-  Klicka på <strong>Nästa</strong> för att skapa din rapport.
-</p>
+                {% if step == 1 %}
+                <h2 class="adminui-subtitle">Steg 1 – Ladda upp underlag</h2>
+                <p class="adminui-intro">
+                  Ladda upp Excelfilen, CV och och klistra in intervjuanteckningar.
+                  Klicka på <strong>Nästa</strong> för att skapa din rapport.
+                </p>
 
-{# ───────── Kandidatinfo ───────── #}
-<div class="dn-row dn-row--two">
-  <div class="dn-field-group">
-    <label for="candidate_first_name">Förnamn *</label>
-    <input type="text"
-           id="candidate_first_name"
-           name="candidate_first_name"
-           value="{{ candidate_first_name }}"
-           class="dn-input"
-           placeholder="Ange förnamn"
-           required>
-  </div>
+                {# ───────── Kandidatinfo ───────── #}
+                <div class="dn-row dn-row--two">
+                  <div class="dn-field-group">
+                    <label for="candidate_first_name">Förnamn *</label>
+                    <input type="text" id="candidate_first_name" name="candidate_first_name"
+                      value="{{ candidate_first_name }}" class="dn-input" placeholder="Ange förnamn" required>
+                  </div>
 
-  <div class="dn-field-group">
-    <label for="candidate_last_name">Efternamn *</label>
-    <input type="text"
-           id="candidate_last_name"
-           name="candidate_last_name"
-           value="{{ candidate_last_name }}"
-           class="dn-input"
-           placeholder="Ange efternamn"
-           required>
-  </div>
-</div>
+                  <div class="dn-field-group">
+                    <label for="candidate_last_name">Efternamn *</label>
+                    <input type="text" id="candidate_last_name" name="candidate_last_name"
+                      value="{{ candidate_last_name }}" class="dn-input" placeholder="Ange efternamn" required>
+                  </div>
+                </div>
 
-<div class="dn-row">
-  <div class="dn-field-group">
-    <label for="candidate_role">Roll / tjänst (valfritt)</label>
-    <input type="text"
-           id="candidate_role"
-           name="candidate_role"
-           value="{{ candidate_role }}"
-           class="dn-input"
-           placeholder="Ange ev. roll">
-  </div>
-</div>
+                <div class="dn-row">
+                  <div class="dn-field-group">
+                    <label for="candidate_role">Roll / tjänst (valfritt)</label>
+                    <input type="text" id="candidate_role" name="candidate_role" value="{{ candidate_role }}"
+                      class="dn-input" placeholder="Ange ev. roll">
+                  </div>
+                </div>
 
-<div class="dn-row">
-{# ───────── Jobbannons (PDF) ───────── #}
-<h3 class="adminui-label">0. Jobbannons (PDF)</h3>
-<p class="adminui-intro">
-  Ladda upp en PDF med jobbannons/tjänstebeskrivning (valfritt).
-</p>
+                <div class="dn-row">
+                  {# ───────── Jobbannons (PDF) ───────── #}
+                  <h3 class="adminui-label">0. Jobbannons (PDF)</h3>
+                  <p class="adminui-intro">
+                    Ladda upp en PDF med jobbannons/tjänstebeskrivning (valfritt).
+                  </p>
 
-<div class="adminui-upload-area">
-  <label for="job_ad_pdf" class="adminui-drop-zone">
-    <input
-      type="file"
-      name="job_ad_pdf"
-      id="job_ad_pdf"
-      accept="application/pdf"
-      style="display:none"
-      onchange="showJobAdFilename(this)">
-    <div class="adminui-drop-icon">📄</div>
-    <div class="adminui-drop-text">
-      <span>Släpp Jobbannons här eller klicka för att välja</span>
-      <small>PDF-format (.pdf)</small>
-    </div>
-  </label>
-  <p id="job-ad-filename" class="adminui-filename">Ingen fil vald</p>
-</div>
-  </div>
+                  <div class="adminui-upload-area">
+                    <label for="job_ad_pdf" class="adminui-drop-zone">
+                      <input type="file" name="job_ad_pdf" id="job_ad_pdf" accept="application/pdf" style="display:none"
+                        onchange="showJobAdFilename(this)">
+                      <div class="adminui-drop-icon">📄</div>
+                      <div class="adminui-drop-text">
+                        <span>Släpp Jobbannons här eller klicka för att välja</span>
+                        <small>PDF-format (.pdf)</small>
+                      </div>
+                    </label>
+                    <p id="job-ad-filename" class="adminui-filename">Ingen fil vald</p>
+                  </div>
+                </div>
 
-{# ───────── Exceluppladdning ───────── #}
-<h3 class="adminui-label">1. Excelfil</h3>
-<p class="adminui-intro">
-  Ladda upp din excelfil med testresultatet.
-</p>
+                {# ───────── Exceluppladdning ───────── #}
+                <h3 class="adminui-label">1. Excelfil</h3>
+                <p class="adminui-intro">
+                  Ladda upp din excelfil med testresultatet.
+                </p>
 
-<div class="adminui-upload-area">
-  <label for="excel" class="adminui-drop-zone">
-    <input type="file" name="excel" id="excel" accept=".xlsx" style="display:none"
-           onchange="showFilename(this)">
-    <div class="adminui-drop-icon">📁</div>
-    <div class="adminui-drop-text">
-      <span>Släpp Excelfil här eller klicka för att välja</span>
-      <small>Excel-format (.xlsx)</small>
-    </div>
-  </label>
-  <p id="filename" class="adminui-filename">Ingen fil vald</p>
-</div>
+                <div class="adminui-upload-area">
+                  <label for="excel" class="adminui-drop-zone">
+                    <input type="file" name="excel" id="excel" accept=".xlsx" style="display:none"
+                      onchange="showFilename(this)">
+                    <div class="adminui-drop-icon">📁</div>
+                    <div class="adminui-drop-text">
+                      <span>Släpp Excelfil här eller klicka för att välja</span>
+                      <small>Excel-format (.xlsx)</small>
+                    </div>
+                  </label>
+                  <p id="filename" class="adminui-filename">Ingen fil vald</p>
+                </div>
 
-<!-- Hidden field för att bära med sammanfogad text mellan stegen -->
-<input type="hidden" name="uploaded_files_text"
-       value="{{ uploaded_files_text|default_if_none:'' }}">
+                <!-- Hidden field för att bära med sammanfogad text mellan stegen -->
+                <input type="hidden" name="uploaded_files_text" value="{{ uploaded_files_text|default_if_none:'' }}">
 
-{# ───────── CV-text ───────── #}
-<h3 class="adminui-label">2. CV (klistra in text)</h3>
-<p class="adminui-intro">
-  Klistra in texten från kandidatens CV. Det gör inget om den är rörig – AI hjälper dig att städa upp den.
-</p>
+                {# ───────── CV-text ───────── #}
+                <h3 class="adminui-label">2. CV (klistra in text)</h3>
+                <p class="adminui-intro">
+                  Klistra in texten från kandidatens CV. Det gör inget om den är rörig – AI hjälper dig att städa upp
+                  den.
+                </p>
 
-<div class="dn-row">
-  <div class="dn-field-group">
-    <textarea
-      name="cv_text"
-      id="cv_text"
-      rows="8"
-      class="adminui-textarea"
-    >{{ uploaded_files_markdown }}</textarea>
-  </div>
-</div>
+                <div class="dn-row">
+                  <div class="dn-field-group">
+                    <textarea name="cv_text" id="cv_text" rows="8"
+                      class="adminui-textarea">{{ uploaded_files_markdown }}</textarea>
+                  </div>
+                </div>
 
-{# ───────── Motivationsfaktorer ───────── #}
-<h3 class="adminui-label">3. Motivationsfaktorer</h3>
-<p class="adminui-intro">
-  Välj upp till <strong>tre</strong> motivationsfaktorer som bäst beskriver vad som driver kandidaten.
-</p>
+                {# ───────── Motivationsfaktorer ───────── #}
+                <h3 class="adminui-label">3. Motivationsfaktorer</h3>
+                <p class="adminui-intro">
+                  Välj upp till <strong>tre</strong> motivationsfaktorer som bäst beskriver vad som driver kandidaten.
+                </p>
 
-<div class="motivation-grid">
-  {% for key, mot in motivation_factors.items %}
-    <label class="motivation-card">
-      <input
-        type="checkbox"
-        name="motivation_choices"
-        value="{{ key }}"
-        class="motivation-checkbox"
-        {% if key in selected_motivation_keys %}checked{% endif %}
-      >
-      <span class="motivation-title">{{ mot.label }}</span>
-    </label>
-  {% endfor %}
-</div>
+                <div class="motivation-grid">
+                  {% for key, mot in motivation_factors.items %}
+                  <label class="motivation-card">
+                    <input type="checkbox" name="motivation_choices" value="{{ key }}" class="motivation-checkbox" {% if key in selected_motivation_keys %}checked{% endif %}>
+                    <span class="motivation-title">{{ mot.label }}</span>
+                  </label>
+                  {% endfor %}
+                </div>
 
-{# ───────── Motivation ───────── #}
-<div class="dn-row">
-  <div class="dn-field-group">
-    <label for="id_motivation_notes">Anteckningar om motivation</label>
-    <textarea
-      id="id_motivation_notes"
-      name="motivation_notes"
-      rows="4"
-      class="adminui-textarea"
-    >{{ motivation_notes }}</textarea>
-  </div>
-</div>
+                {# ───────── Motivation ───────── #}
+                <div class="dn-row">
+                  <div class="dn-field-group">
+                    <label for="id_motivation_notes">Anteckningar om motivation</label>
+                    <textarea id="id_motivation_notes" name="motivation_notes" rows="4"
+                      class="adminui-textarea">{{ motivation_notes }}</textarea>
+                  </div>
+                </div>
 
-{# ───────── Färdighetspoäng på samma rad ───────── #}
-<div class="dn-row dn-row--two">
-  <div class="dn-field-group">
-    <label for="id_logical_score">Logisk färdighet (0–99)</label>
-    <input
-      type="number"
-      id="id_logical_score"
-      name="logical_score"
-      min="0"
-      max="99"
-      class="dn-input"
-      value="{{ logical_score }}"
-    >
-  </div>
-  <div class="dn-field-group">
-    <label for="id_verbal_score">Verbal färdighet (0–99)</label>
-    <input
-      type="number"
-      id="id_verbal_score"
-      name="verbal_score"
-      min="0"
-      max="99"
-      class="dn-input"
-      value="{{ verbal_score }}"
-    >
-  </div>
-</div>
+                {# ───────── Färdighetspoäng på samma rad ───────── #}
+                <div class="dn-row dn-row--two">
+                  <div class="dn-field-group">
+                    <label for="id_logical_score">Logisk färdighet (0–99)</label>
+                    <input type="number" id="id_logical_score" name="logical_score" min="0" max="99" class="dn-input"
+                      value="{{ logical_score }}">
+                  </div>
+                  <div class="dn-field-group">
+                    <label for="id_verbal_score">Verbal färdighet (0–99)</label>
+                    <input type="number" id="id_verbal_score" name="verbal_score" min="0" max="99" class="dn-input"
+                      value="{{ verbal_score }}">
+                  </div>
+                </div>
 
 
                 <h3 class="adminui-label">3. Intervjuanteckningar</h3>
                 <p class="adminui-intro">
-                  Klistra in anteckningar från intervjun. Anteckningarna kan vara slarviga, AI renskriver den. 
+                  Klistra in anteckningar från intervjun. Anteckningarna kan vara slarviga, AI renskriver den.
                 </p>
 
                 <textarea name="intervju" class="adminui-textarea" rows="6">{{ intervju_text }}</textarea>
@@ -374,7 +326,7 @@
 
                 <label class="adminui-label">TQ Färdighet</label>
                 <textarea class="adminui-textarea rich-text" rows="5"
-                          name="tq_fardighet_text">{{ tq_fardighet_html|default:tq_fardighet_text|safe }}</textarea>
+                  name="tq_fardighet_text">{{ tq_fardighet_html|default:tq_fardighet_text|safe }}</textarea>
                 {% endif %}
 
                 {# Steg 3 – TQ Motivation #}
@@ -382,7 +334,7 @@
                 <h3 class="adminui-subtitle">Steg 3 – TQ Motivation</h3>
                 <label class="adminui-label">TQ Motivation – tre främsta drivkrafter</label>
                 <textarea class="adminui-textarea rich-text" rows="5"
-                          name="tq_motivation_text">{{ tq_motivation_html|default:tq_motivation_text|safe }}</textarea>
+                  name="tq_motivation_text">{{ tq_motivation_html|default:tq_motivation_text|safe }}</textarea>
                 {% endif %}
 
                 {% if step == 4 %}
@@ -392,7 +344,7 @@
                 {% endif %}
                 <label class="adminui-label">Text</label>
                 <textarea class="adminui-textarea rich-text" rows="6"
-                          name="leda_text">{{ leda_html|default:leda_text|safe }}</textarea>
+                  name="leda_text">{{ leda_html|default:leda_text|safe }}</textarea>
                 {% endif %}
 
                 {% if step == 5 %}
@@ -402,7 +354,7 @@
                 {% endif %}
                 <label class="adminui-label">Text</label>
                 <textarea class="adminui-textarea rich-text" rows="6"
-                          name="mod_text">{{ mod_html|default:mod_text|safe }}</textarea>
+                  name="mod_text">{{ mod_html|default:mod_text|safe }}</textarea>
                 {% endif %}
 
                 {% if step == 6 %}
@@ -412,7 +364,7 @@
                 {% endif %}
                 <label class="adminui-label">Text</label>
                 <textarea class="adminui-textarea rich-text" rows="6"
-                          name="sjalkannedom_text">{{ sjalkannedom_html|default:sjalkannedom_text|safe }}</textarea>
+                  name="sjalkannedom_text">{{ sjalkannedom_html|default:sjalkannedom_text|safe }}</textarea>
                 {% endif %}
 
                 {% if step == 7 %}
@@ -422,7 +374,7 @@
                 {% endif %}
                 <label class="adminui-label">Text</label>
                 <textarea class="adminui-textarea rich-text" rows="6"
-                          name="strategi_text">{{ strategi_html|default:strategi_text|safe }}</textarea>
+                  name="strategi_text">{{ strategi_html|default:strategi_text|safe }}</textarea>
                 {% endif %}
 
                 {% if step == 8 %}
@@ -432,350 +384,347 @@
                 {% endif %}
                 <label class="adminui-label">Text</label>
                 <textarea class="adminui-textarea rich-text" rows="6"
-                          name="kommunikation_text">{{ kommunikation_html|default:kommunikation_text|safe }}</textarea>
+                  name="kommunikation_text">{{ kommunikation_html|default:kommunikation_text|safe }}</textarea>
                 {% endif %}
 
                 {% if step == 9 %}
                 <h3 class="adminui-subtitle">Steg 8 – Styrkor / Utvecklingsområden / Riskbeteenden</h3>
                 <p class="adminui-intro">Här sammanfattas allt ovan till tre tydliga listor. Justera fritt.</p>
                 <textarea class="adminui-textarea rich-text" rows="8"
-                          name="sur_text">{{ sur_html|default:sur_text|safe }}</textarea>
+                  name="sur_text">{{ sur_html|default:sur_text|safe }}</textarea>
                 {% endif %}
 
                 {% if step == 10 %}
                 <h3 class="adminui-subtitle">Steg 9 – Sammanfattande slutsats</h3>
                 <p class="adminui-intro">Skriv eller justera slutbedömningen baserat på hela bilden.</p>
                 <textarea class="adminui-textarea rich-text" rows="8"
-                          name="slutsats_text">{{ slutsats_html|default:slutsats_text|safe }}</textarea>
+                  name="slutsats_text">{{ slutsats_html|default:slutsats_text|safe }}</textarea>
                 {% endif %}
 
-{% if step == 11 %}
-<h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
+                {% if step == 11 %}
+                <h3 class="adminui-subtitle">Steg 10 – Sammanställning</h3>
 
-<div class="dn-report">
+                <div class="dn-report">
 
-  <!-- HEADER-BANNER (logga / gradient) -->
-  <div class="dn-report-header">
-    <img src="{% static 'jurek_logo.png' %}" alt="Logotyp" class="dn-report-logo">
-  </div>
+                  <!-- HEADER-BANNER (logga / gradient) -->
+                  <div class="dn-report-header">
+                    <img src="{% static 'jurek_logo.png' %}" alt="Logotyp" class="dn-report-logo">
+                  </div>
 
-  <div class="dn-report-body">
+                  <div class="dn-report-body">
 
-    {# RAD 0 – Namn #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h5 class="dn-subheading">{{ candidate_name }}</h5>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        {% if candidate_role %}
-        <h5 class="dn-body-text">{{ candidate_role }}</h5>
-        {% endif %}
-      </div>
-    </div>
+                    {# RAD 0 – Namn #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h5 class="dn-subheading">{{ candidate_name }}</h5>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if candidate_role %}
+                        <h5 class="dn-body-text">{{ candidate_role }}</h5>
+                        {% endif %}
+                      </div>
+                    </div>
 
-    {# RAD 1 – Intro + Poängskala #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <p class="dn-body-text">
-          Alla har beteendepreferenser på arbetet som påverkar vårt agerande.
-          En individs preferenser påverkar, men dikterar inte individens beteende.
-          Det är möjligt att arbeta utanför våra naturliga preferenser, men det
-          kräver självkännedom, en medveten insats och energi. Om en individs
-          föredragna eller typiska beteende inte sammanfaller med kraven för en
-          särskild roll, kan det innebära att individen upplever det som
-          utmanande och dränerande att upprätthålla prestation över tid.
-          <br><br>
-          Skalan visar hur sannolikt en kompetens är stark eller ej hos en individ.
-        </p>
-      </div>
+                    {# RAD 1 – Intro + Poängskala #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <p class="dn-body-text">
+                          Alla har beteendepreferenser på arbetet som påverkar vårt agerande.
+                          En individs preferenser påverkar, men dikterar inte individens beteende.
+                          Det är möjligt att arbeta utanför våra naturliga preferenser, men det
+                          kräver självkännedom, en medveten insats och energi. Om en individs
+                          föredragna eller typiska beteende inte sammanfaller med kraven för en
+                          särskild roll, kan det innebära att individen upplever det som
+                          utmanande och dränerande att upprätthålla prestation över tid.
+                          <br><br>
+                          Skalan visar hur sannolikt en kompetens är stark eller ej hos en individ.
+                        </p>
+                      </div>
 
-      <div class="dn-report-col dn-report-col--right">
-        <h5 class="dn-subheading">Poängskala</h5>
-        <div class="dn-report-table dn-report-table--scale">
-          <table class="dn-table dn-table-scale">
-            <thead>
-              <tr>
-                <th class="dn-scale-head dn-scale-head--empty"></th>
-                <th class="dn-scale-head">Utrymme för<br>utveckling</th>
-                <th class="dn-scale-head">Tillräcklig</th>
-                <th class="dn-scale-head">God</th>
-                <th class="dn-scale-head">Mycket god</th>
-                <th class="dn-scale-head">Utmärkt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="dn-scale-desc">
-                  Kandidaten är sannolikt <strong>mycket mindre effektiv</strong> än de flesta
-                  när det gäller att visa denna kompetens på arbetet.
-                </td>
-                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-              </tr>
-              <tr>
-                <td class="dn-scale-desc">
-                  Kandidaten är sannolikt <strong>mindre effektiv</strong> än många när det
-                  gäller att visa denna kompetens på arbetet.
-                </td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-              </tr>
-              <tr>
-                <td class="dn-scale-desc">
-                  Kandidaten är sannolikt <strong>lika effektiv</strong> som de flesta
-                  när det gäller att visa denna kompetens på arbetet.
-                </td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-              </tr>
-              <tr>
-                <td class="dn-scale-desc">
-                  Kandidaten är sannolikt <strong>mer effektiv</strong> än många när det
-                  gäller att visa denna kompetens på arbetet.
-                </td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-              </tr>
-              <tr>
-                <td class="dn-scale-desc">
-                  Kandidaten är sannolikt <strong>mycket mer effektiv</strong> än de
-                  flesta när det gäller att visa denna kompetens på arbetet.
-                </td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
-                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
-              </tr>
-            </tbody>
-          </table>
-          <br>
-          <div class="dn-report-text">Denna rapport bygger på TQ-testresultat och intervju. Fokus ligger på kandidatens typiska arbetssätt, styrkor, utvecklingsområden och möjliga riskbeteenden vid hög press.
-<br><br>Resultaten beskriver beteendepreferenser, inte fastlagda sanningar om kandidaten som person. Kandidaten kan agera utanför sina naturliga mönster, men det kräver mer medveten ansträngning och energi. Om arbetsrollen under lång tid kräver beteenden långt ifrån kandidatens preferenser finns en risk att det blir mer ansträngande att bibehålla samma nivå av prestation.
-        </div>
-</div>
-      </div>
-    </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <h5 class="dn-subheading">Poängskala</h5>
+                        <div class="dn-report-table dn-report-table--scale">
+                          <table class="dn-table dn-table-scale">
+                            <thead>
+                              <tr>
+                                <th class="dn-scale-head dn-scale-head--empty"></th>
+                                <th class="dn-scale-head">Utrymme för<br>utveckling</th>
+                                <th class="dn-scale-head">Tillräcklig</th>
+                                <th class="dn-scale-head">God</th>
+                                <th class="dn-scale-head">Mycket god</th>
+                                <th class="dn-scale-head">Utmärkt</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>mycket mindre effektiv</strong> än de flesta
+                                  när det gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                              </tr>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>mindre effektiv</strong> än många när det
+                                  gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                              </tr>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>lika effektiv</strong> som de flesta
+                                  när det gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                              </tr>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>mer effektiv</strong> än många när det
+                                  gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                              </tr>
+                              <tr>
+                                <td class="dn-scale-desc">
+                                  Kandidaten är sannolikt <strong>mycket mer effektiv</strong> än de
+                                  flesta när det gäller att visa denna kompetens på arbetet.
+                                </td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot"></span></td>
+                                <td class="dn-cell"><span class="dn-scale-dot dn-scale-dot--active"></span></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          <br>
+                          <div class="dn-report-text">Denna rapport bygger på TQ-testresultat och intervju. Fokus ligger
+                            på kandidatens typiska arbetssätt, styrkor, utvecklingsområden och möjliga riskbeteenden vid
+                            hög press.
+                            <br><br>Resultaten beskriver beteendepreferenser, inte fastlagda sanningar om kandidaten som
+                            person. Kandidaten kan agera utanför sina naturliga mönster, men det kräver mer medveten
+                            ansträngning och energi. Om arbetsrollen under lång tid kräver beteenden långt ifrån
+                            kandidatens preferenser finns en risk att det blir mer ansträngande att bibehålla samma nivå
+                            av prestation.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-    {# RAD 2 – TQ Färdighet #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">TQ Färdighet</h4>
-        <p class="dn-body-text">
-          Resultatet i dessa tester avgörs av hur snabb och noggrann kandidaten i fråga är.
-          Frågorna är adaptiva vilket innebär att svårighetsgraden ändras beroende på om man
-          svarar rätt eller fel.
-        </p>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        <div class="dn-report-text">
-          {{ tq_fardighet_html|default:tq_fardighet_text|safe }}
-        </div>
-      </div>
-    </div>
+                    {# RAD 2 – TQ Färdighet #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">TQ Färdighet</h4>
+                        <p class="dn-body-text">
+                          Resultatet i dessa tester avgörs av hur snabb och noggrann kandidaten i fråga är.
+                          Frågorna är adaptiva vilket innebär att svårighetsgraden ändras beroende på om man
+                          svarar rätt eller fel.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <div class="dn-report-text">
+                          {{ tq_fardighet_html|default:tq_fardighet_text|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-    {# RAD 3 – Styrkor / Utvecklingsområden / Risk #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">1. Styrkor<br>2. Utvecklingsområden<br>3. Riskbeteenden</h4>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        <div class="dn-report-text">
-          {{ sur_html|default:sur_text|safe }}
-        </div>
-      </div>
-    </div>
+                    {# RAD 3 – Styrkor / Utvecklingsområden / Risk #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">1. Styrkor<br>2. Utvecklingsområden<br>3. Riskbeteenden</h4>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <div class="dn-report-text">
+                          {{ sur_html|default:sur_text|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-{# RAD 4 – Motivation #}
-<div class="dn-report-row">
-  <div class="dn-report-col dn-report-col--left">
-    <h4 class="dn-label">Definition av kandidatens<br>3 främsta motivationsfaktorer</h4>
+                    {# RAD 4 – Motivation #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Definition av kandidatens<br>3 främsta motivationsfaktorer</h4>
 
-    {% if selected_motivations %}
-      {% for mot in selected_motivations %}
-        <p class="dn-body-text">
-          <strong>{{ mot.label }}</strong> {{ mot.definition }}
-        </p>
-      {% endfor %}
-    {% else %}
-      <p class="dn-body-text">
-        Inga motivationsfaktorer har valts i verktyget.
-      </p>
-    {% endif %}
-  </div>
+                        {% if selected_motivations %}
+                        {% for mot in selected_motivations %}
+                        <p class="dn-body-text">
+                          <strong>{{ mot.label }}</strong> {{ mot.definition }}
+                        </p>
+                        {% endfor %}
+                        {% else %}
+                        <p class="dn-body-text">
+                          Inga motivationsfaktorer har valts i verktyget.
+                        </p>
+                        {% endif %}
+                      </div>
 
-  <div class="dn-report-col dn-report-col--right">
-    <div class="dn-report-text">
-      {{ tq_motivation_html|default:tq_motivation_text|safe }}
-    </div>
-  </div>
-</div>
+                      <div class="dn-report-col dn-report-col--right">
+                        <div class="dn-report-text">
+                          {{ tq_motivation_html|default:tq_motivation_text|safe }}
+                        </div>
+                      </div>
+                    </div>
 
 
-    {# RAD 5 – Leda, utveckla och engagera #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">Leda, utveckla och engagera</h4>
-        <p class="dn-body-text">
-          En chef ska kunna sätta upp och arbeta uthålligt mot tydliga mål som bidrar till
-          verksamhetens resultat och utveckling, samt motivera och engagera medarbetarna.
-        </p>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        {% if leda_table_html %}
-        <div class="dn-report-table rating-export"
-          data-image-field="leda_image">
-          {{ leda_table_html|safe }}
-        </div>
-        {% endif %}
-        <div class="dn-report-text">
-          {{ leda_html|default:leda_text|safe }}
-        </div>
-      </div>
-    </div>
+                    {# RAD 5 – Leda, utveckla och engagera #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Leda, utveckla och engagera</h4>
+                        <p class="dn-body-text">
+                          En chef ska kunna sätta upp och arbeta uthålligt mot tydliga mål som bidrar till
+                          verksamhetens resultat och utveckling, samt motivera och engagera medarbetarna.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if leda_table_html %}
+                        <div class="dn-report-table rating-export" data-image-field="leda_image">
+                          {{ leda_table_html|safe }}
+                        </div>
+                        {% endif %}
+                        <div class="dn-report-text">
+                          {{ leda_html|default:leda_text|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-    {# RAD 6 – Mod och handlingskraft #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">Mod och handlingskraft</h4>
-        <p class="dn-body-text">
-          Att visa mod och handlingskraft innebär att kunna ta ansvar och hantera svåra
-          situationer samt fatta beslut även under press.
-        </p>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        {% if mod_table_html %}
-        <div class="dn-report-table rating-export"
-          data-image-field="mod_image">
-          {{ mod_table_html|safe }}
-        </div>
-        {% endif %}
-        <div class="dn-report-text">
-          {{ mod_html|default:mod_text|safe }}
-        </div>
-      </div>
-    </div>
+                    {# RAD 6 – Mod och handlingskraft #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Mod och handlingskraft</h4>
+                        <p class="dn-body-text">
+                          Att visa mod och handlingskraft innebär att kunna ta ansvar och hantera svåra
+                          situationer samt fatta beslut även under press.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if mod_table_html %}
+                        <div class="dn-report-table rating-export" data-image-field="mod_image">
+                          {{ mod_table_html|safe }}
+                        </div>
+                        {% endif %}
+                        <div class="dn-report-text">
+                          {{ mod_html|default:mod_text|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-    {# RAD 7 – Självkännedom #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">Självkännedom och emotionell stabilitet</h4>
-        <p class="dn-body-text">
-          En chef behöver vara trygg, empatisk och medveten om sina egna styrkor och
-          svagheter, samt kunna hantera stress i krävande situationer.
-        </p>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        {% if sjalkannedom_table_html %}
-        <div class="dn-report-table rating-export"
-          data-image-field="sjalkannedom_image">
-          {{ sjalkannedom_table_html|safe }}
-        </div>
-        {% endif %}
-        <div class="dn-report-text">
-          {{ sjalkannedom_html|default:sjalkannedom_text|safe }}
-        </div>
-      </div>
-    </div>
+                    {# RAD 7 – Självkännedom #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Självkännedom och emotionell stabilitet</h4>
+                        <p class="dn-body-text">
+                          En chef behöver vara trygg, empatisk och medveten om sina egna styrkor och
+                          svagheter, samt kunna hantera stress i krävande situationer.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if sjalkannedom_table_html %}
+                        <div class="dn-report-table rating-export" data-image-field="sjalkannedom_image">
+                          {{ sjalkannedom_table_html|safe }}
+                        </div>
+                        {% endif %}
+                        <div class="dn-report-text">
+                          {{ sjalkannedom_html|default:sjalkannedom_text|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-    {# RAD 8 – Strategiskt tänkande #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">Strategiskt tänkande och anpassningsförmåga</h4>
-        <p class="dn-body-text">
-          En chef ska kunna tänka strategiskt, väga långsiktiga och kortsiktiga konsekvenser
-          och anpassa sig efter förändrade omständigheter.
-        </p>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        {% if strategi_table_html %}
-        <div class="dn-report-table rating-export"
-          data-image-field="strategi_image">
-          {{ strategi_table_html|safe }}
-        </div>
-        {% endif %}
-        <div class="dn-report-text">
-          {{ strategi_html|default:strategi_text|safe }}
-        </div>
-      </div>
-    </div>
+                    {# RAD 8 – Strategiskt tänkande #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Strategiskt tänkande och anpassningsförmåga</h4>
+                        <p class="dn-body-text">
+                          En chef ska kunna tänka strategiskt, väga långsiktiga och kortsiktiga konsekvenser
+                          och anpassa sig efter förändrade omständigheter.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if strategi_table_html %}
+                        <div class="dn-report-table rating-export" data-image-field="strategi_image">
+                          {{ strategi_table_html|safe }}
+                        </div>
+                        {% endif %}
+                        <div class="dn-report-text">
+                          {{ strategi_html|default:strategi_text|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-    {# RAD 9 – Kommunikation och samarbete #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">Kommunikation och samarbete</h4>
-        <p class="dn-body-text">
-          Som chef är det viktigt att kommunicera tydligt, vara lyhörd och aktivt skapa
-          samarbeten och relationer, både internt och externt.
-        </p>
-      </div>
-      <div class="dn-report-col dn-report-col--right">
-        {% if kommunikation_table_html %}
-        <div class="dn-report-table rating-export"
-          data-image-field="kommunikation_image">
-          {{ kommunikation_table_html|safe }}
-        </div>
-        {% endif %}
-        <div class="dn-report-text">
-          {{ kommunikation_html|default:kommunikation_text|safe }}
-        </div>
-      </div>
-    </div>
+                    {# RAD 9 – Kommunikation och samarbete #}
+                    <div class="dn-report-row">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Kommunikation och samarbete</h4>
+                        <p class="dn-body-text">
+                          Som chef är det viktigt att kommunicera tydligt, vara lyhörd och aktivt skapa
+                          samarbeten och relationer, både internt och externt.
+                        </p>
+                      </div>
+                      <div class="dn-report-col dn-report-col--right">
+                        {% if kommunikation_table_html %}
+                        <div class="dn-report-table rating-export" data-image-field="kommunikation_image">
+                          {{ kommunikation_table_html|safe }}
+                        </div>
+                        {% endif %}
+                        <div class="dn-report-text">
+                          {{ kommunikation_html|default:kommunikation_text|safe }}
+                        </div>
+                      </div>
+                    </div>
 
-    {# RAD 10 – Sammanfattande slutsats #}
-    <div class="dn-report-row">
-      <div class="dn-report-col dn-report-col--left">
-        <h4 class="dn-label">Sammanfattande slutsats</h4>
-      </div>
-      <div id="image-save-config"
-     data-save-url="{% url 'save_report_images' %}">
-      <div class="dn-report-col dn-report-col--right">
-        <div class="dn-report-text">
-          {{ slutsats_html|default:slutsats_text|safe }}
-        </div>
-      </div>
-    </div>
+                    {# RAD 10 – Sammanfattande slutsats #}
+                    <div class="dn-report-row" id="image-save-config">
+                      <div class="dn-report-col dn-report-col--left">
+                        <h4 class="dn-label">Sammanfattande slutsats</h4>
+                      </div>
 
-  </div>
-</div>
-{% endif %}
+                      <div class="dn-report-col dn-report-col--right">
+                        <div class="dn-report-text">
+                          {{ slutsats_html|default:slutsats_text|safe }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
 
 
 
                 <!-- NAVIGATION -->
                 <div class="adminui-button-row">
                   {% if step > 1 %}
-                  <button class="adminui-button adminui-button-secondary"
-                          type="submit" name="prev" value="1">
+                  <button class="adminui-button adminui-button-secondary" type="submit" name="prev" value="1">
                     ⬅ Föregående
                   </button>
                   {% endif %}
 
-                  {% if step < 10 %}
-                  <button class="adminui-button" type="submit" name="next" value="1">
+                  {% if step < 10 %} <button class="adminui-button" type="submit" name="next" value="1">
                     Nästa ➜
-                  </button>
-                  {% elif step == 10 %}
-<button id="btnAssemble" class="adminui-button" type="submit" name="next" value="1">
-  Sammanställ ➜
-</button>
-                  {% elif step == 11 %}
-                  <button class="adminui-button" type="submit" name="build_doc" value="1">
-                    📄 Ladda ner som Word
-                  </button>
-                  {% endif %}
+                    </button>
+                    {% elif step == 10 %}
+                    <button id="btnAssemble" class="adminui-button" type="submit" name="next" value="1">
+                      Sammanställ ➜
+                    </button>
+                    {% elif step == 11 %}
+                    <button class="adminui-button" type="submit" name="build_doc" value="1">
+                      📄 Ladda ner som Word
+                    </button>
+                    {% endif %}
                 </div>
 
               </form>
@@ -793,130 +742,123 @@
         <button class="right-tab" data-tab="chat">Chatt</button>
       </div>
 
-<div id="tab-data" class="right-panel-pane is-active">
-  <h3 class="assistant-title">Din data</h3>
+      <div id="tab-data" class="right-panel-pane is-active">
+        <h3 class="assistant-title">Din data</h3>
 
-  {% if has_sidebar_data %}
+        {% if has_sidebar_data %}
 
-    {# ▸ KANDIDAT #}
-    <section class="dn-data-block">
-      <h4 class="dn-section-header">Kandidat</h4>
-      <dl class="dn-deflist">
-        {% if candidate_name %}
-        <div class="dn-row">
-          <dt>Namn</dt>
-          <dd>{{ candidate_name }}</dd>
-        </div>
+        {# ▸ KANDIDAT #}
+        <section class="dn-data-block">
+          <h4 class="dn-section-header">Kandidat</h4>
+          <dl class="dn-deflist">
+            {% if candidate_name %}
+            <div class="dn-row">
+              <dt>Namn</dt>
+              <dd>{{ candidate_name }}</dd>
+            </div>
+            {% endif %}
+
+            {% if candidate_role %}
+            <div class="dn-row">
+              <dt>Roll / tjänst</dt>
+              <dd>{{ candidate_role }}</dd>
+            </div>
+            {% endif %}
+
+            {% if logical_score %}
+            <div class="dn-row">
+              <dt>Logisk färdighet</dt>
+              <dd>{{ logical_score }}</dd>
+            </div>
+            {% endif %}
+
+            {% if verbal_score %}
+            <div class="dn-row">
+              <dt>Verbal färdighet</dt>
+              <dd>{{ verbal_score }}</dd>
+            </div>
+            {% endif %}
+          </dl>
+        </section>
+
+        {# ▸ MOTIVATIONSFAKTORER #}
+        {% if selected_motivations %}
+        <section class="dn-data-block">
+          <h4 class="dn-section-header">Motivationsfaktorer (valda)</h4>
+          <div class="dn-motivation-grid">
+            {% for mot in selected_motivations %}
+            <article class="dn-motivation-card">
+              <h5 class="dn-motivation-title">{{ mot.label }}</h5>
+              <p class="dn-motivation-text">{{ mot.definition }}</p>
+            </article>
+            {% endfor %}
+          </div>
+        </section>
         {% endif %}
 
-        {% if candidate_role %}
-        <div class="dn-row">
-          <dt>Roll / tjänst</dt>
-          <dd>{{ candidate_role }}</dd>
-        </div>
-        {% endif %}
-
-        {% if logical_score %}
-        <div class="dn-row">
-          <dt>Logisk färdighet</dt>
-          <dd>{{ logical_score }}</dd>
-        </div>
-        {% endif %}
-
-        {% if verbal_score %}
-        <div class="dn-row">
-          <dt>Verbal färdighet</dt>
-          <dd>{{ verbal_score }}</dd>
-        </div>
-        {% endif %}
-      </dl>
-    </section>
-
-    {# ▸ MOTIVATIONSFAKTORER #}
-    {% if selected_motivations %}
-    <section class="dn-data-block">
-      <h4 class="dn-section-header">Motivationsfaktorer (valda)</h4>
-      <div class="dn-motivation-grid">
-        {% for mot in selected_motivations %}
-        <article class="dn-motivation-card">
-          <h5 class="dn-motivation-title">{{ mot.label }}</h5>
-          <p class="dn-motivation-text">{{ mot.definition }}</p>
-        </article>
-        {% endfor %}
-      </div>
-    </section>
-    {% endif %}
-
-    {# ▸ BETYG / RATINGS #}
-    {% if ratings_sidebar %}
-    <section class="dn-data-block">
-      {% for section_title, items in ratings_sidebar.items %}
-      <div class="dn-ratings-section">
-        <h4 class="dn-section-header">{{ section_title }}</h4>
-        <dl class="dn-deflist dn-deflist--compact">
-          {% for item in items %}
-          <div class="dn-row">
-            <dt>{{ item.label }}</dt>
-            <dd>{{ item.value }}</dd>
+        {# ▸ BETYG / RATINGS #}
+        {% if ratings_sidebar %}
+        <section class="dn-data-block">
+          {% for section_title, items in ratings_sidebar.items %}
+          <div class="dn-ratings-section">
+            <h4 class="dn-section-header">{{ section_title }}</h4>
+            <dl class="dn-deflist dn-deflist--compact">
+              {% for item in items %}
+              <div class="dn-row">
+                <dt>{{ item.label }}</dt>
+                <dd>{{ item.value }}</dd>
+              </div>
+              {% endfor %}
+            </dl>
           </div>
           {% endfor %}
-        </dl>
+        </section>
+        {% endif %}
+
+        {# ▸ LÄNGRE TEXTER #}
+        {% if cv_text or job_ad_text or motivation_notes or intervju_text %}
+        <section class="dn-data-block">
+          <h4 class="dn-section-header">Längre texter</h4>
+          <div class="dn-chip-row">
+            {% if cv_text %}
+            <button type="button" class="adminui-button adminui-button-secondary dn-chip-button" id="showPdfTextBtn">
+              Visa CV
+            </button>
+            {% endif %}
+
+            {% if job_ad_text %}
+            <button type="button" class="adminui-button adminui-button-secondary dn-chip-button" id="showJobAdBtn">
+              Visa jobbannons
+            </button>
+            {% endif %}
+
+            {% if motivation_notes %}
+            <button type="button" class="adminui-button adminui-button-secondary dn-chip-button"
+              id="showMotivationNotesBtn">
+              Visa motivationsanteckningar
+            </button>
+            {% endif %}
+
+            {% if intervju_text %}
+            <button type="button" class="adminui-button adminui-button-secondary dn-chip-button"
+              id="showInterviewNotesBtn">
+              Visa intervjuanteckningar
+            </button>
+            {% endif %}
+          </div>
+        </section>
+        {% endif %}
+
+        {% else %}
+        <p class="adminui-intro">
+          När du laddat upp material kommer det att visas här.
+        </p>
+        {% endif %}
       </div>
-      {% endfor %}
-    </section>
-    {% endif %}
-
-    {# ▸ LÄNGRE TEXTER #}
-    {% if cv_text or job_ad_text or motivation_notes or intervju_text %}
-    <section class="dn-data-block">
-      <h4 class="dn-section-header">Längre texter</h4>
-      <div class="dn-chip-row">
-        {% if cv_text %}
-        <button type="button"
-                class="adminui-button adminui-button-secondary dn-chip-button"
-                id="showPdfTextBtn">
-          Visa CV
-        </button>
-        {% endif %}
-
-        {% if job_ad_text %}
-        <button type="button"
-                class="adminui-button adminui-button-secondary dn-chip-button"
-                id="showJobAdBtn">
-          Visa jobbannons
-        </button>
-        {% endif %}
-
-        {% if motivation_notes %}
-        <button type="button"
-                class="adminui-button adminui-button-secondary dn-chip-button"
-                id="showMotivationNotesBtn">
-          Visa motivationsanteckningar
-        </button>
-        {% endif %}
-
-        {% if intervju_text %}
-        <button type="button"
-                class="adminui-button adminui-button-secondary dn-chip-button"
-                id="showInterviewNotesBtn">
-          Visa intervjuanteckningar
-        </button>
-        {% endif %}
-      </div>
-    </section>
-    {% endif %}
-
-  {% else %}
-    <p class="adminui-intro">
-      När du laddat upp material kommer det att visas här.
-    </p>
-  {% endif %}
-</div>
 
       <div id="tab-chat" class="right-panel-pane">
-        <div id="sidebar-chat"
-             data-session-id="{{ sidebar_session_id }}"
-             data-sidebar-context='{{ sidebar_context_json|escapejs }}'>
+        <div id="sidebar-chat" data-session-id="{{ sidebar_session_id }}"
+          data-sidebar-context='{{ sidebar_context_json|escapejs }}'>
 
           {% if not sidebar_messages %}
           <p id="sidebar-chat-empty" class="sidebar-chat-empty">
@@ -937,7 +879,7 @@
           <form id="sidebar-chat-form">
             {% csrf_token %}
             <textarea id="sidebar-chat-input" class="adminui-textarea" rows="2"
-                      placeholder="Skriv t.ex. ‘gör texten kortare’"></textarea>
+              placeholder="Skriv t.ex. ‘gör texten kortare’"></textarea>
             <button type="submit" class="adminui-button adminui-button-small">Skicka</button>
           </form>
         </div>
@@ -972,14 +914,14 @@
 
       // -------- POPUPS / MODALER --------
       const modalPairs = [
-        { buttonId: "showPdfTextBtn",          modalId: "pdfTextModal" },
-        { buttonId: "showJobAdBtn",           modalId: "jobAdModal" },
+        { buttonId: "showPdfTextBtn", modalId: "pdfTextModal" },
+        { buttonId: "showJobAdBtn", modalId: "jobAdModal" },
         { buttonId: "showMotivationNotesBtn", modalId: "motivationNotesModal" },
-        { buttonId: "showInterviewNotesBtn",  modalId: "interviewNotesModal" },
+        { buttonId: "showInterviewNotesBtn", modalId: "interviewNotesModal" },
       ];
 
       modalPairs.forEach(({ buttonId, modalId }) => {
-        const btn   = document.getElementById(buttonId);
+        const btn = document.getElementById(buttonId);
         const modal = document.getElementById(modalId);
         if (!btn || !modal) return;
 
@@ -1021,43 +963,43 @@
   {% endif %}
 
   {% if job_ad_text %}
-<div id="jobAdModal" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" class="dn-modal-close" data-close-modal>×</button>
-    <h3>Jobbannons / tjänstebeskrivning</h3>
-    <div class="dn-modal-body markdown-body">
-      {{ job_ad_text|linebreaksbr }}
+  <div id="jobAdModal" class="dn-modal">
+    <div class="dn-modal-backdrop"></div>
+    <div class="dn-modal-content">
+      <button type="button" class="dn-modal-close" data-close-modal>×</button>
+      <h3>Jobbannons / tjänstebeskrivning</h3>
+      <div class="dn-modal-body markdown-body">
+        {{ job_ad_text|linebreaksbr }}
+      </div>
     </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
-{% if motivation_notes %}
-<div id="motivationNotesModal" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" class="dn-modal-close" data-close-modal>×</button>
-    <h3>Anteckningar om motivation</h3>
-    <div class="dn-modal-body markdown-body">
-      {{ motivation_notes|linebreaksbr }}
+  {% if motivation_notes %}
+  <div id="motivationNotesModal" class="dn-modal">
+    <div class="dn-modal-backdrop"></div>
+    <div class="dn-modal-content">
+      <button type="button" class="dn-modal-close" data-close-modal>×</button>
+      <h3>Anteckningar om motivation</h3>
+      <div class="dn-modal-body markdown-body">
+        {{ motivation_notes|linebreaksbr }}
+      </div>
     </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
-{% if intervju_text %}
-<div id="interviewNotesModal" class="dn-modal">
-  <div class="dn-modal-backdrop"></div>
-  <div class="dn-modal-content">
-    <button type="button" class="dn-modal-close" data-close-modal>×</button>
-    <h3>Intervjuanteckningar</h3>
-    <div class="dn-modal-body markdown-body">
-      {{ intervju_text|linebreaksbr }}
+  {% if intervju_text %}
+  <div id="interviewNotesModal" class="dn-modal">
+    <div class="dn-modal-backdrop"></div>
+    <div class="dn-modal-content">
+      <button type="button" class="dn-modal-close" data-close-modal>×</button>
+      <h3>Intervjuanteckningar</h3>
+      <div class="dn-modal-body markdown-body">
+        {{ intervju_text|linebreaksbr }}
+      </div>
     </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
   <script src="{% static 'js/script.js' %}"></script>
 
@@ -1067,412 +1009,437 @@
   <script src="https://cdn.jsdelivr.net/npm/trumbowyg@2.27.3/dist/trumbowyg.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const ratingBlocks = document.querySelectorAll('.rating-export');
-    if (!ratingBlocks.length) return;
 
-    ratingBlocks.forEach(function (block) {
-      block.style.backgroundColor = '#ffffff';
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const tabButtons = document.querySelectorAll('.right-tab');
+      const tabPanels = document.querySelectorAll('.right-panel-pane');
 
-      html2canvas(block, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true
-      }).then(function (canvas) {
-        const dataUrl = canvas.toDataURL('image/png');
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.tab;
 
-        // Ersätt HTML med bilden (som innan)
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        img.alt = 'Kompetenstabell';
-        img.style.maxWidth = '100%';
-        img.style.display = 'block';
-        block.innerHTML = '';
-        block.appendChild(img);
+          tabButtons.forEach(b =>
+            b.classList.toggle('right-tab--active', b === btn)
+          );
 
-        // NYTT: skriv dataURL till rätt hidden-field
-        const fieldName = block.dataset.imageField;
-        if (fieldName) {
-          const hidden = document.querySelector(`input[name="${fieldName}"]`);
-          if (hidden) {
-            hidden.value = dataUrl; // "data:image/png;base64,AAAA..."
-          }
+          tabPanels.forEach(p =>
+            p.classList.toggle('is-active', p.id === 'tab-' + target)
+          );
+        });
+      });
+
+      const chatRoot = document.getElementById('sidebar-chat');
+      if (!chatRoot) return;
+
+      const sessionId = chatRoot.dataset.sessionId;
+      const chatForm = document.getElementById('sidebar-chat-form');
+      const chatInput = document.getElementById('sidebar-chat-input');
+      const chatMsgs = document.getElementById('sidebar-chat-messages');
+      const stepInput = document.querySelector('input[name="step"]');
+
+      const csrfTokenEl = chatForm.querySelector('input[name="csrfmiddlewaretoken"]');
+      const csrftoken = csrfTokenEl ? csrfTokenEl.value : "";
+
+      function renderMarkdown(text) {
+        if (window.marked) {
+          return marked.parse(text);
         }
-      }).catch(err => console.error('Canvas error:', err));
+        return text.replace(/\n/g, '<br>');
+      }
+
+      function createMessageElement(role) {
+        const empty = document.getElementById('sidebar-chat-empty');
+        if (empty) empty.style.display = 'none';
+
+        const div = document.createElement('div');
+        div.className = 'sidebar-chat-msg sidebar-chat-msg--' + role;
+        chatMsgs.appendChild(div);
+        chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        return div;
+      }
+
+      function getFieldText(name) {
+        const el = document.querySelector('[name="' + name + '"]');
+        if (!el) return "";
+        if ('value' in el) return el.value || "";
+        return el.textContent || "";
+      }
+
+      function getCurrentStepText() {
+        const step = parseInt(stepInput ? stepInput.value : "1", 10);
+
+        switch (step) {
+          case 2:
+            return (
+              getFieldText("tq_fardighet_text") +
+              "\n\n" +
+              getFieldText("tq_motivation_text")
+            );
+          case 3:
+            return getFieldText("leda_text");
+          case 4:
+            return getFieldText("mod_text");
+          case 5:
+            return getFieldText("sjalkannedom_text");
+          case 6:
+            return getFieldText("strategi_text");
+          case 7:
+            return getFieldText("kommunikation_text");
+          case 8:
+            return getFieldText("sur_text");
+          case 9:
+            return getFieldText("slutsats_text");
+          default:
+            return "";
+        }
+      }
+
+      function buildSidebarContext() {
+        const step = parseInt(stepInput ? stepInput.value : "1", 10);
+        const ctx = {
+          step: step,
+          candidate_name: getFieldText("candidate_name"),
+          candidate_role: getFieldText("candidate_role"),
+          test_text: getFieldText("test_text"),
+          intervju_text: getFieldText("intervju_text"),
+          cv_text: getFieldText("cv_text"),
+          sections: []
+        };
+
+        const currentText = getCurrentStepText();
+
+        if (step === 2) {
+          ctx.sections.push({
+            field_label: "TQ Färdighet & TQ Motivation",
+            field_key: "step2",
+            prompt_name: "tq_fardighet_motivation",
+            prompt_text: "",
+            current_text: currentText
+          });
+        } else if (step === 3) {
+          ctx.sections.push({
+            field_label: "Leda, utveckla och engagera",
+            field_key: "leda_text",
+            prompt_name: "leda",
+            current_text: currentText
+          });
+        } else if (step === 4) {
+          ctx.sections.push({
+            field_label: "Mod och handlingskraft",
+            field_key: "mod_text",
+            prompt_name: "mod",
+            current_text: currentText
+          });
+        } else if (step === 5) {
+          ctx.sections.push({
+            field_label: "Självkännedom och emotionell stabilitet",
+            field_key: "sjalkannedom_text",
+            prompt_name: "sjalkannedom",
+            current_text: currentText
+          });
+        } else if (step === 6) {
+          ctx.sections.push({
+            field_label: "Strategiskt tänkande och anpassningsförmåga",
+            field_key: "strategi_text",
+            prompt_name: "strategi",
+            current_text: currentText
+          });
+        } else if (step === 7) {
+          ctx.sections.push({
+            field_label: "Kommunikation och samarbete",
+            field_key: "kommunikation_text",
+            prompt_name: "kommunikation",
+            current_text: currentText
+          });
+        } else if (step === 8) {
+          ctx.sections.push({
+            field_label: "Styrkor / Utvecklingsområden / Riskbeteenden",
+            field_key: "sur_text",
+            prompt_name: "styrkor_utveckling_risk",
+            current_text: currentText
+          });
+        } else if (step === 9) {
+          ctx.sections.push({
+            field_label: "Sammanfattande slutsats",
+            field_key: "slutsats_text",
+            prompt_name: "sammanfattande_slutsats",
+            current_text: currentText
+          });
+        }
+
+        return JSON.stringify(ctx);
+      }
+
+      async function sendSidebarMessage() {
+        const msg = (chatInput.value || "").trim();
+        if (!msg) return;
+
+        const userDiv = createMessageElement('user');
+        userDiv.innerHTML = renderMarkdown(msg);
+        chatInput.value = '';
+
+        const url = `/chat/${sessionId}/send/`;
+        const formData = new FormData();
+        formData.append('message', msg);
+        formData.append('sidebar_context', buildSidebarContext());
+
+        const assistantDiv = createMessageElement('assistant');
+        let assistantText = "";
+
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRFToken': csrftoken
+            }
+          });
+
+          if (!res.ok || !res.body) {
+            assistantDiv.innerHTML = '(Kunde inte hämta svar från chatten.)';
+            return;
+          }
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            assistantText += decoder.decode(value, { stream: true });
+
+            let cleaned = assistantText
+              .replace(/\r/g, '')
+              .replace(/\n{2,}/g, '\n')
+              .replace(/[ \t]+\n/g, '\n')
+              .trimStart();
+
+            const copyMatch = cleaned.match(/<copy>([\s\S]*?)<\/copy>/);
+
+            let htmlOutput = '';
+
+            if (copyMatch) {
+              const before = cleaned.split('<copy>')[0].trim();
+
+              const copyText = copyMatch[1]
+                .replace(/\r/g, '')
+                .replace(/\n{2,}/g, '\n')
+                .replace(/[ \t]+\n/g, '\n')
+                .trim();
+
+              htmlOutput =
+                (before ? renderMarkdown(before) : '') +
+                renderMarkdown('```text\n' + copyText + '\n```');
+            } else {
+              htmlOutput = renderMarkdown(cleaned);
+            }
+
+            assistantDiv.innerHTML = htmlOutput;
+            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+          }
+        } catch (err) {
+          assistantDiv.innerHTML = '(Fel i chatt-anropet: ' + err + ')';
+          console.error(err);
+        }
+      }
+
+      chatInput.addEventListener('keydown', function (e) {
+        if (e.key === "Enter" && e.shiftKey) {
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          chatForm.dispatchEvent(new Event('submit'));
+        }
+      });
+
+      chatForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        sendSidebarMessage();
+      });
     });
-  });
-</script>
+  </script>
+
+  <script>
+    $(document).ready(function () {
+      $('textarea.rich-text').trumbowyg({
+        btns: [
+          ['strong', 'em', 'underline'],
+          ['unorderedList', 'orderedList'],
+          ['link'],
+          ['removeformat']
+        ]
+      });
+    });
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const checkboxes = document.querySelectorAll('.motivation-checkbox');
+      const maxSelected = 3;
+
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+          const selected = Array.from(checkboxes).filter(x => x.checked);
+          if (selected.length > maxSelected) {
+            // Avmarkera senaste klicket
+            cb.checked = false;
+            alert('Du kan välja högst ' + maxSelected + ' motivationsfaktorer.');
+          }
+        });
+      });
+    });
+  </script>
+
+  <script>
+    function showJobAdFilename(input) {
+      const target = document.getElementById("job-ad-filename");
+      if (!target) return;
+
+      if (input.files && input.files.length > 0) {
+        target.textContent = input.files[0].name;
+      } else {
+        target.textContent = "Ingen fil vald";
+      }
+    }
+  </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
   const stepEl = document.querySelector('input[name="step"]');
   const step = stepEl ? parseInt(stepEl.value, 10) : null;
-
-  // Kör bara på sammanställningssteget (11)
   if (step !== 11) return;
 
-  const cfg = document.getElementById('image-save-config');
-  const saveUrl = cfg ? cfg.dataset.saveUrl : null;
-  if (!saveUrl) return;
-
-  const form = document.querySelector('form.adminui-form');
-  if (!form) return;
-
-  const reportId = (form.querySelector('input[name="report_id"]') || {}).value;
-  if (!reportId) return;
-
-  // Om du redan sparat en gång, hoppa (förhindrar att det sker vid refresh)
-  const alreadySaved = form.dataset.imagesSaved === "1";
-  if (alreadySaved) return;
-
-  async function captureOne(block) {
-    const fieldName = block.dataset.imageField;
-    if (!fieldName) return null;
-
-    const canvas = await html2canvas(block, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true
-    });
-
-    return { fieldName, dataUrl: canvas.toDataURL('image/png') };
-  }
-
-  const blocks = Array.from(document.querySelectorAll('.rating-export'));
+  const blocks = document.querySelectorAll('.rating-export');
   if (!blocks.length) return;
 
-  // capture sekventiellt
-  const payload = {};
   for (const block of blocks) {
     block.style.backgroundColor = '#ffffff';
-    const res = await captureOne(block);
-    if (res) payload[res.fieldName] = res.dataUrl;
+    const canvas = await html2canvas(block, { scale: 2, backgroundColor:'#ffffff', useCORS:true });
+    const dataUrl = canvas.toDataURL('image/png');
+
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    img.alt = 'Kompetenstabell';
+    img.style.maxWidth = '100%';
+    img.style.display = 'block';
+
+    block.innerHTML = '';
+    block.appendChild(img);
+
+    // Bonus: fyll hidden inputs direkt också (så Word får dem även om man klickar snabbt)
+    const fieldName = block.dataset.imageField;
+    if (fieldName) {
+      const hidden = document.querySelector(`input[name="${fieldName}"]`);
+      if (hidden) hidden.value = dataUrl;
+    }
   }
-
-  // CSRF
-  const csrf = (form.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value;
-
-  // Skicka till Django för att spara i media
-  const fd = new FormData();
-  fd.append('report_id', reportId);
-  for (const [k, v] of Object.entries(payload)) {
-    fd.append(k, v);
-  }
-
-  const resp = await fetch(saveUrl, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
-    body: fd
-  });
-
-  if (resp.ok) {
-    form.dataset.imagesSaved = "1";
-    console.log("Images saved ✅");
-  } else {
-    console.warn("Image save failed", await resp.text());
-  }
-});
-</script>
-
-  <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const tabButtons = document.querySelectorAll('.right-tab');
-    const tabPanels  = document.querySelectorAll('.right-panel-pane');
-
-    tabButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-
-        tabButtons.forEach(b =>
-          b.classList.toggle('right-tab--active', b === btn)
-        );
-
-        tabPanels.forEach(p =>
-          p.classList.toggle('is-active', p.id === 'tab-' + target)
-        );
-      });
-    });
-
-    const chatRoot = document.getElementById('sidebar-chat');
-    if (!chatRoot) return;
-
-    const sessionId = chatRoot.dataset.sessionId;
-    const chatForm  = document.getElementById('sidebar-chat-form');
-    const chatInput = document.getElementById('sidebar-chat-input');
-    const chatMsgs  = document.getElementById('sidebar-chat-messages');
-    const stepInput = document.querySelector('input[name="step"]');
-
-    const csrfTokenEl = chatForm.querySelector('input[name="csrfmiddlewaretoken"]');
-    const csrftoken = csrfTokenEl ? csrfTokenEl.value : "";
-
-    function renderMarkdown(text) {
-      if (window.marked) {
-        return marked.parse(text);
-      }
-      return text.replace(/\n/g, '<br>');
-    }
-
-    function createMessageElement(role) {
-      const empty = document.getElementById('sidebar-chat-empty');
-      if (empty) empty.style.display = 'none';
-
-      const div = document.createElement('div');
-      div.className = 'sidebar-chat-msg sidebar-chat-msg--' + role;
-      chatMsgs.appendChild(div);
-      chatMsgs.scrollTop = chatMsgs.scrollHeight;
-      return div;
-    }
-
-    function getFieldText(name) {
-      const el = document.querySelector('[name="' + name + '"]');
-      if (!el) return "";
-      if ('value' in el) return el.value || "";
-      return el.textContent || "";
-    }
-
-    function getCurrentStepText() {
-      const step = parseInt(stepInput ? stepInput.value : "1", 10);
-
-      switch (step) {
-        case 2:
-          return (
-            getFieldText("tq_fardighet_text") +
-            "\n\n" +
-            getFieldText("tq_motivation_text")
-          );
-        case 3:
-          return getFieldText("leda_text");
-        case 4:
-          return getFieldText("mod_text");
-        case 5:
-          return getFieldText("sjalkannedom_text");
-        case 6:
-          return getFieldText("strategi_text");
-        case 7:
-          return getFieldText("kommunikation_text");
-        case 8:
-          return getFieldText("sur_text");
-        case 9:
-          return getFieldText("slutsats_text");
-        default:
-          return "";
-      }
-    }
-
-    function buildSidebarContext() {
-      const step = parseInt(stepInput ? stepInput.value : "1", 10);
-      const ctx = {
-        step: step,
-        candidate_name: getFieldText("candidate_name"),
-        candidate_role: getFieldText("candidate_role"),
-        test_text: getFieldText("test_text"),
-        intervju_text: getFieldText("intervju_text"),
-        cv_text: getFieldText("cv_text"),
-        sections: []
-      };
-
-      const currentText = getCurrentStepText();
-
-      if (step === 2) {
-        ctx.sections.push({
-          field_label: "TQ Färdighet & TQ Motivation",
-          field_key: "step2",
-          prompt_name: "tq_fardighet_motivation",
-          prompt_text: "",
-          current_text: currentText
-        });
-      } else if (step === 3) {
-        ctx.sections.push({
-          field_label: "Leda, utveckla och engagera",
-          field_key: "leda_text",
-          prompt_name: "leda",
-          current_text: currentText
-        });
-      } else if (step === 4) {
-        ctx.sections.push({
-          field_label: "Mod och handlingskraft",
-          field_key: "mod_text",
-          prompt_name: "mod",
-          current_text: currentText
-        });
-      } else if (step === 5) {
-        ctx.sections.push({
-          field_label: "Självkännedom och emotionell stabilitet",
-          field_key: "sjalkannedom_text",
-          prompt_name: "sjalkannedom",
-          current_text: currentText
-        });
-      } else if (step === 6) {
-        ctx.sections.push({
-          field_label: "Strategiskt tänkande och anpassningsförmåga",
-          field_key: "strategi_text",
-          prompt_name: "strategi",
-          current_text: currentText
-        });
-      } else if (step === 7) {
-        ctx.sections.push({
-          field_label: "Kommunikation och samarbete",
-          field_key: "kommunikation_text",
-          prompt_name: "kommunikation",
-          current_text: currentText
-        });
-      } else if (step === 8) {
-        ctx.sections.push({
-          field_label: "Styrkor / Utvecklingsområden / Riskbeteenden",
-          field_key: "sur_text",
-          prompt_name: "styrkor_utveckling_risk",
-          current_text: currentText
-        });
-      } else if (step === 9) {
-        ctx.sections.push({
-          field_label: "Sammanfattande slutsats",
-          field_key: "slutsats_text",
-          prompt_name: "sammanfattande_slutsats",
-          current_text: currentText
-        });
-      }
-
-      return JSON.stringify(ctx);
-    }
-
-    async function sendSidebarMessage() {
-      const msg = (chatInput.value || "").trim();
-      if (!msg) return;
-
-      const userDiv = createMessageElement('user');
-      userDiv.innerHTML = renderMarkdown(msg);
-      chatInput.value = '';
-
-      const url = `/chat/${sessionId}/send/`;
-      const formData = new FormData();
-      formData.append('message', msg);
-      formData.append('sidebar_context', buildSidebarContext());
-
-      const assistantDiv = createMessageElement('assistant');
-      let assistantText = "";
-
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': csrftoken
-          }
-        });
-
-        if (!res.ok || !res.body) {
-          assistantDiv.innerHTML = '(Kunde inte hämta svar från chatten.)';
-          return;
-        }
-
-        const reader  = res.body.getReader();
-        const decoder = new TextDecoder();
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          assistantText += decoder.decode(value, { stream: true });
-
-          let cleaned = assistantText
-            .replace(/\r/g, '')
-            .replace(/\n{2,}/g, '\n')
-            .replace(/[ \t]+\n/g, '\n')
-            .trimStart();
-
-          const copyMatch = cleaned.match(/<copy>([\s\S]*?)<\/copy>/);
-
-          let htmlOutput = '';
-
-          if (copyMatch) {
-            const before = cleaned.split('<copy>')[0].trim();
-
-            const copyText = copyMatch[1]
-              .replace(/\r/g, '')
-              .replace(/\n{2,}/g, '\n')
-              .replace(/[ \t]+\n/g, '\n')
-              .trim();
-
-            htmlOutput =
-              (before ? renderMarkdown(before) : '') +
-              renderMarkdown('```text\n' + copyText + '\n```');
-          } else {
-            htmlOutput = renderMarkdown(cleaned);
-          }
-
-          assistantDiv.innerHTML = htmlOutput;
-          chatMsgs.scrollTop = chatMsgs.scrollHeight;
-        }
-      } catch (err) {
-        assistantDiv.innerHTML = '(Fel i chatt-anropet: ' + err + ')';
-        console.error(err);
-      }
-    }
-
-    chatInput.addEventListener('keydown', function (e) {
-      if (e.key === "Enter" && e.shiftKey) {
-        return;
-      }
-      if (e.key === "Enter") {
-        e.preventDefault();
-        chatForm.dispatchEvent(new Event('submit'));
-      }
-    });
-
-    chatForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-      sendSidebarMessage();
-    });
-  });
-  </script>
-
-  <script>
-  $(document).ready(function() {
-    $('textarea.rich-text').trumbowyg({
-      btns: [
-        ['strong', 'em', 'underline'],
-        ['unorderedList', 'orderedList'],
-        ['link'],
-        ['removeformat']
-      ]
-    });
-  });
-  </script>
-
-  <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const checkboxes = document.querySelectorAll('.motivation-checkbox');
-  const maxSelected = 3;
-
-  checkboxes.forEach(cb => {
-    cb.addEventListener('change', () => {
-      const selected = Array.from(checkboxes).filter(x => x.checked);
-      if (selected.length > maxSelected) {
-        // Avmarkera senaste klicket
-        cb.checked = false;
-        alert('Du kan välja högst ' + maxSelected + ' motivationsfaktorer.');
-      }
-    });
-  });
 });
 </script>
 
 <script>
-  function showJobAdFilename(input) {
-    const target = document.getElementById("job-ad-filename");
-    if (!target) return;
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.querySelector('form.adminui-form');
+  if (!form) return;
 
-    if (input.files && input.files.length > 0) {
-      target.textContent = input.files[0].name;
-    } else {
-      target.textContent = "Ingen fil vald";
+  const stepEl = form.querySelector('input[name="step"]');
+  const step = stepEl ? parseInt(stepEl.value, 10) : null;
+
+  const downloadBtn = form.querySelector('button[name="build_doc"]');
+  let imagesReady = false;
+  let isResubmitting = false;
+
+  async function buildImagesIntoHiddenInputs() {
+    const blocks = Array.from(document.querySelectorAll('.rating-export'));
+    if (!blocks.length) {
+      imagesReady = true;
+      return;
     }
+
+    for (const block of blocks) {
+      block.style.backgroundColor = '#ffffff';
+
+      const canvas = await html2canvas(block, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+
+      // Preview på sidan (steg 11)
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.alt = 'Kompetenstabell';
+      img.style.maxWidth = '100%';
+      img.style.display = 'block';
+      block.innerHTML = '';
+      block.appendChild(img);
+
+      // Hidden input till POST (för Word)
+      const fieldName = block.dataset.imageField;
+      if (fieldName) {
+        const hidden = form.querySelector(`input[name="${fieldName}"]`);
+        if (hidden) hidden.value = dataUrl;
+      }
+    }
+
+    imagesReady = true;
   }
+
+  // På steg 11: bygg bilder direkt när sidan laddas (så de syns)
+  if (step === 11) {
+    if (downloadBtn) downloadBtn.disabled = true;
+
+    buildImagesIntoHiddenInputs()
+      .catch(err => console.error('Image build failed:', err))
+      .finally(() => {
+        if (downloadBtn) downloadBtn.disabled = false;
+      });
+  }
+
+  // Fånga submit så vi kan garantera att build_doc skickas + att bilder hinner skapas
+  form.addEventListener('submit', async (e) => {
+    const submitter = e.submitter;
+
+    // Bara när man klickar på Word-knappen
+    if (!submitter || submitter.name !== 'build_doc') return;
+
+    // Förhindra loop
+    if (isResubmitting) return;
+
+    // Om bilder inte är klara: stoppa submit, bygg, skicka igen
+    if (!imagesReady) {
+      e.preventDefault();
+
+      try {
+        if (downloadBtn) downloadBtn.disabled = true;
+        await buildImagesIntoHiddenInputs();
+
+        // form.submit() skickar inte submitter, så vi lägger en hidden build_doc
+        const tmp = document.createElement('input');
+        tmp.type = 'hidden';
+        tmp.name = 'build_doc';
+        tmp.value = submitter.value || '1';
+        form.appendChild(tmp);
+
+        isResubmitting = true;
+        form.submit();
+      } catch (err) {
+        console.error('Could not prepare images:', err);
+        alert('Kunde inte skapa tabellbilder. Kolla console.');
+      } finally {
+        if (downloadBtn) downloadBtn.disabled = false;
+      }
+    }
+  });
+});
 </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 </body>
 
 </html>

@@ -19,5 +19,4 @@ urlpatterns = [
     path("reports/<uuid:report_id>/", views.report_open, name="report_open"),
     path("reports/<uuid:report_id>/edit/", views.report_edit, name="report_edit"),
     path("reports/<uuid:report_id>/delete/", views.report_delete, name="report_delete"),
-    path("reports/save-images/", views.save_report_images, name="save_report_images"),
 ]
