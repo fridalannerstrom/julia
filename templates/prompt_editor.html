@@ -94,8 +94,44 @@
                 {% endif %}
               </p>
 
-              <form method="post">
-                {% csrf_token %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link {% if tab == 'veronika' %}active{% endif %}" href="?tab=veronika">
+        Veronikas prompter
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if tab == 'frida' %}active{% endif %}" href="?tab=frida">
+        Fridas prompter
+      </a>
+    </li>
+  </ul>
+
+  <div class="text-end">
+    <div class="small text-muted">Aktiv variant (för alla):</div>
+    <div class="fw-semibold">
+      Aktiva promptar: {{ active_set.name }}
+      {% if active_set.id == current_set.id %}
+        <span class="badge bg-success ms-2">Du redigerar den aktiva</span>
+      {% else %}
+        <span class="badge bg-warning text-dark ms-2">Du redigerar INTE den aktiva</span>
+      {% endif %}
+    </div>
+
+    <form method="post" class="mt-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="set_active">
+      <input type="hidden" name="set_name" value="{{ current_set.name }}">
+      <button class="btn btn-sm btn-outline-primary" type="submit">
+        Sätt {{ current_set.name }} som aktiv
+      </button>
+    </form>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
 
                 {# ===== SEKTION 1: Excelfil – teknisk struktur ===== #}
                 {% for prompt in prompts %}
@@ -204,11 +240,11 @@
                     </p>
                   {% endif %}
                 </div>
-              </form>
+  </div>
+</form>
 
             </div>
           </div>
-        </div>
       </section>
     </main>
 
@@ -622,6 +658,19 @@ Spanish (Intermediate)
   </div>
 </div>
 
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const hidden = document.getElementById("active_tab");
+
+    document.getElementById("veronika-tab").addEventListener("click", () => {
+      hidden.value = "veronika";
+    });
+
+    document.getElementById("frida-tab").addEventListener("click", () => {
+      hidden.value = "frida";
+    });
+  });
+</script>
 
 </body>
 </html>

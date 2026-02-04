@@ -17,7 +17,7 @@ from django.utils.safestring import mark_safe
 from dotenv import load_dotenv
 from openai import OpenAI
 from django.conf import settings
-from .models import Prompt, ChatSession, ChatMessage, ChatAttachment
+from .models import Prompt, ChatSession, ChatMessage, ChatAttachment, PromptSet, ActivePromptConfig
 from django.http import StreamingHttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
@@ -32,6 +32,8 @@ from .models import Report
 from django.utils import timezone
 from django.urls import reverse
 from django.utils.text import slugify
+from django.contrib import messages
+from django.shortcuts import render, redirect
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Miljö
@@ -75,11 +77,54 @@ REPORT_CONTEXT_KEYS = [
     "kommunikation_text",
     "sur_text",
     "slutsats_text",
+    
 
     # Ratings
     "ratings_json",
 ]
 
+# Se till att du har en default-lista på prompt-namn någonstans
+DEFAULT_PROMPTS = {
+    "tolka_excel_resultat": "Skriv din default här...",
+    "betygsskala_forklaring": "Skriv din default här...",
+    "global_style": "Skriv din default här...",
+    # ...lägg till resten av dina prompts här...
+}
+
+
+def ensure_default_prompts_exist_for_set(prompt_set: PromptSet):
+    for name, text in DEFAULT_PROMPTS.items():
+        Prompt.objects.get_or_create(
+            prompt_set=prompt_set,
+            name=name,
+            defaults={"text": text},
+        )
+
+
+
+
+def get_active_prompt_set():
+    cfg, _ = ActivePromptConfig.objects.get_or_create(id=1)
+    active = cfg.active_set
+    if active:
+        return active
+
+    # fallback: välj Veronika om den finns, annars första set, annars skapa Veronika
+    active = PromptSet.objects.filter(name__iexact="Veronika").first()
+    if not active:
+        active = PromptSet.objects.first()
+    if not active:
+        active = PromptSet.objects.create(name="Veronika")
+
+    cfg.active_set = active
+    cfg.save(update_fields=["active_set"])
+    return active
+
+
+def get_prompt_text(name: str) -> str:
+    active_set = get_active_prompt_set()
+    p = Prompt.objects.filter(prompt_set=active_set, name=name).first()
+    return p.text if p else ""
 
 def _report_title_from_context(ctx: dict) -> str:
     name = (ctx.get("candidate_name") or "").strip()
@@ -145,6 +190,19 @@ def _extract_png_bytes(data_url: str) -> bytes | None:
     except Exception:
         return None
 
+
+def get_active_prompt_set():
+    cfg, _ = ActivePromptConfig.objects.get_or_create(id=1)
+    if cfg.active_set:
+        return cfg.active_set
+    return PromptSet.objects.order_by("id").first()
+
+def get_prompt_text(name: str, fallback: str = "") -> str:
+    ps = get_active_prompt_set()
+    if not ps:
+        return fallback
+    p = Prompt.objects.filter(prompt_set=ps, name=name).first()
+    return (p.text if p else fallback) or fallback
 
 def _save_report_state(rep: Report, ctx: dict):
     rep.current_step = int(ctx.get("step") or rep.current_step or 1)
@@ -461,7 +519,7 @@ def _round_to_1_5(x) -> int:
 
     return int(math.floor(v + 0.5))
 
-def _build_sidebar_context(owner, step, context, ratings_json_str):
+def _build_sidebar_context(prompt_set, step, context, ratings_json_str):
     """
     Bygger ett context-paket till sidobarschattens AI.
     Innehåller kandidatinfo, test/intervju/CV + aktuell sektion och dess prompt(er).
@@ -477,28 +535,30 @@ def _build_sidebar_context(owner, step, context, ratings_json_str):
         "sections": [],
     }
 
-    def add_section(field_label, field_key, prompt_name):
+    # Använd prompt_set som "active_set" i denna funktion
+    active_set = prompt_set
+
+    # Gör add_section enkel igen (ingen extra parameter-cirkus)
+    def add_section(title, key, prompt_name):
         try:
-            prompt_obj = Prompt.objects.get(user=owner, name=prompt_name)
+            prompt_obj = Prompt.objects.get(prompt_set=active_set, name=prompt_name)
             prompt_text = prompt_obj.text
         except Prompt.DoesNotExist:
             prompt_text = ""
 
         base["sections"].append({
-            "field_label": field_label,         # t.ex. "Leda, utveckla och engagera"
-            "field_key": field_key,             # t.ex. "leda_text"
-            "current_text": context.get(field_key, ""),
-            "prompt_name": prompt_name,         # t.ex. "leda"
+            "field_label": title,
+            "field_key": key,
+            "current_text": context.get(key, ""),
+            "prompt_name": prompt_name,
             "prompt_text": prompt_text,
         })
 
     # Vilka sektioner hör till vilket steg?
     if step == 2:
-        # Steg 2 – TQ Färdighet
         add_section("TQ Färdighet", "tq_fardighet_text", "tq_fardighet")
 
     elif step == 3:
-        # Steg 3 – TQ Motivation
         add_section("TQ Motivation", "tq_motivation_text", "tq_motivation")
 
     elif step == 4:
@@ -539,6 +599,7 @@ def _build_sidebar_context(owner, step, context, ratings_json_str):
         )
 
     return base
+
 
 def _ai_text_and_ratings_for_section(config, base_prompt_text, style, excel_text, intervju_text=""):
     """
@@ -612,6 +673,7 @@ def _ai_text_and_ratings_for_section(config, base_prompt_text, style, excel_text
 
 from django.contrib.auth import get_user_model
 from django.conf import settings
+
 
 def get_prompt_owner(fallback_user=None):
     """
@@ -1375,7 +1437,7 @@ def _scale_demo_html() -> str:
 # ──────────────────────────────────────────────────────────────────────────────
 # Defaults: skapas per användare om inget finns
 # ──────────────────────────────────────────────────────────────────────────────
-def ensure_default_prompts_exist(user):
+def ensure_default_prompts_exist(prompt_set: PromptSet):
     defaults = {
         "global_style": (
             "❌ Använd aldrig taggar i global_style.\n\n"
@@ -1466,7 +1528,11 @@ def ensure_default_prompts_exist(user):
     }
 
     for name, text in defaults.items():
-        Prompt.objects.get_or_create(user=user, name=name, defaults={"text": text})
+        Prompt.objects.get_or_create(
+            prompt_set=prompt_set,
+            name=name,
+            defaults={"text": text},
+        )
 
 
 
@@ -1560,47 +1626,63 @@ def _markdown_to_html(text: str) -> str:
 @login_required
 @csrf_exempt
 def prompt_editor(request):
-    owner = get_prompt_owner(request.user)
-    ensure_default_prompts_exist(owner)
+    # 1) Se till att båda seten finns
+    veronika_set, _ = PromptSet.objects.get_or_create(name="Veronika")
+    frida_set, _ = PromptSet.objects.get_or_create(name="Frida")
 
-    sidebar_session, _ = ChatSession.objects.get_or_create(
-        user=request.user,
-        title="Domarnämnden-verktygschatt",
-    )
+    # 2) Se till att båda seten har alla prompts
+    ensure_default_prompts_exist_for_set(veronika_set)
+    ensure_default_prompts_exist_for_set(frida_set)
 
-    prompts = Prompt.objects.filter(user=owner)
+    # 3) Aktiv konfig (singleton id=1)
+    cfg, _ = ActivePromptConfig.objects.get_or_create(id=1)
+    if cfg.active_set_id is None:
+        cfg.active_set = veronika_set
+        cfg.save(update_fields=["active_set", "updated_at"])
 
-    # ✅ Bara prompt-ägaren (t.ex. Veronika) får ändra
-    can_edit = (request.user == owner)
+    active_set = cfg.active_set
 
-    if request.method == "POST" and can_edit:
-        # reset-logik kan vara kvar om du vill
-        if "reset" in request.POST:
-            name = request.POST["reset"]
-            defaults = {
-                "testanalys": """Du är en psykolog specialiserad på testtolkning...""",
-                "intervjuanalys": """Du är en HR-expert. Nedan finns intervjuanteckningar...""",
-                "helhetsbedomning": """Du är en HR-expert. Nedan finns en testanalys..."""
-            }
-            if name in defaults:
-                prompt = Prompt.objects.get(user=owner, name=name)
-                prompt.text = defaults[name]
-                prompt.save()
+    # 4) Vilken tabb visar vi?
+    tab = request.GET.get("tab", "veronika").lower()
+    current_set = frida_set if tab == "frida" else veronika_set
+
+    # 5) POST actions
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+
+        # A) sätt aktivt set
+        if action == "set_active":
+            set_name = request.POST.get("set_name", "")
+            new_active = PromptSet.objects.filter(name__iexact=set_name).first()
+            if new_active:
+                cfg.active_set = new_active
+                cfg.save(update_fields=["active_set", "updated_at"])
+                messages.success(request, f"{new_active.name} är nu aktiv för alla.")
+            return redirect(f"{request.path}?tab={tab}")
+
+        # B) spara prompts i current_set
         else:
-            for prompt in prompts:
-                field_name = f"prompt_{prompt.name}"
-                new_text = request.POST.get(field_name)
-                if new_text is not None:
-                    prompt.text = new_text
-                    prompt.save()
+            prompts = Prompt.objects.filter(prompt_set=current_set).order_by("name")
+            for p in prompts:
+                field_name = f"prompt_{p.name}"
+                if field_name in request.POST:
+                    p.text = request.POST.get(field_name, "")
+                    p.save(update_fields=["text"])
+            messages.success(request, f"Sparade prompts för {current_set.name}.")
+            return redirect(f"{request.path}?tab={tab}")
+
+    # 6) GET – visa sidan
+    prompts = Prompt.objects.filter(prompt_set=current_set).order_by("name")
 
     return render(
         request,
         "prompt_editor.html",
         {
+            "tab": tab,
+            "current_set": current_set,
+            "active_set": active_set,
             "prompts": prompts,
-            "can_edit": can_edit,   # 👈 skickas till templaten
-            "owner": owner,
+            "can_edit": True,  # internt verktyg: båda kan ändra båda varianter
         },
     )
 
@@ -1662,8 +1744,23 @@ def _build_sidebar_ratings(ratings: dict):
 @login_required
 @csrf_exempt
 def index(request):
-    owner = get_prompt_owner(request.user)
-    ensure_default_prompts_exist(owner)
+
+    # 1) Hämta/skap "Veronika" & "Frida" sets (bara för att de alltid ska finnas)
+    veronika_set, _ = PromptSet.objects.get_or_create(name="Veronika")
+    frida_set, _ = PromptSet.objects.get_or_create(name="Frida")
+    active_set = get_active_prompt_set()
+
+    # 2) Hämta global config (singleton id=1) och bestäm aktivt set
+    cfg, _ = ActivePromptConfig.objects.get_or_create(id=1)
+    active_set = cfg.active_set or veronika_set  # default om ingen vald ännu
+
+    # 3) Spara default om det behövs
+    if cfg.active_set_id is None:
+        cfg.active_set = active_set
+        cfg.save(update_fields=["active_set", "updated_at"])
+
+    # 4) Se till att prompts finns i det aktiva setet
+    ensure_default_prompts_exist(active_set)
 
     # ---------- 1) Läs nuvarande steg (GET eller POST) ----------
     try:
@@ -1986,13 +2083,17 @@ def index(request):
         elif "next" in request.POST:
 
             try:
-                style = Prompt.objects.get(user=owner, name="global_style").text
+                style = Prompt.objects.get(
+                    prompt_set=active_set,
+                    name="global_style"
+                ).text
             except Prompt.DoesNotExist:
                 style = getattr(settings, "STYLE_INSTRUCTION", "")
 
             try:
                 betygsskala_prompt = Prompt.objects.get(
-                    user=owner, name="betygsskala_forklaring"
+                    prompt_set=active_set,
+                    name="betygsskala_forklaring"
                 ).text
             except Prompt.DoesNotExist:
                 betygsskala_prompt = ""
@@ -2146,7 +2247,7 @@ def index(request):
                         uploaded_trimmed = _trim(context["uploaded_files_markdown"])
 
                         if not context["tq_fardighet_text"]:
-                            P = Prompt.objects.get(user=owner, name="tq_fardighet").text
+                            P = Prompt.objects.get(prompt_set=active_set, name="tq_fardighet").text
                             context["tq_fardighet_text"] = _run_openai(
                                 P,
                                 style,
@@ -2170,7 +2271,7 @@ def index(request):
                             )
 
                             if not context["tq_motivation_text"]:
-                                P = Prompt.objects.get(user=owner, name="tq_motivation").text
+                                P = Prompt.objects.get(prompt_set=active_set, name="tq_motivation").text
                                 context["tq_motivation_text"] = _run_openai(
                                     P,
                                     style,
@@ -2206,7 +2307,7 @@ def index(request):
             # 3 -> 4
             elif step == 3:
                 if not context["leda_text"]:
-                    P = Prompt.objects.get(user=owner, name="leda").text
+                    P = get_prompt_text("leda", fallback="")
                     context["leda_text"] = _run_openai(
                         P,
                         style,
@@ -2234,7 +2335,7 @@ def index(request):
             # 4 -> 5
             elif step == 4:
                 if not context["mod_text"]:
-                    P = Prompt.objects.get(user=owner, name="mod").text
+                    P = get_prompt_text("mod", fallback="")
                     context["mod_text"] = _run_openai(
                         P,
                         style,
@@ -2262,7 +2363,7 @@ def index(request):
             # 5 -> 6
             elif step == 5:
                 if not context["sjalkannedom_text"]:
-                    P = Prompt.objects.get(user=owner, name="sjalkannedom").text
+                    P = get_prompt_text("sjalkannedom", fallback="")
                     context["sjalkannedom_text"] = _run_openai(
                         P,
                         style,
@@ -2290,7 +2391,7 @@ def index(request):
             # 6 -> 7
             elif step == 6:
                 if not context["strategi_text"]:
-                    P = Prompt.objects.get(user=owner, name="strategi").text
+                    P = get_prompt_text("strategi", fallback="")
                     context["strategi_text"] = _run_openai(
                         P,
                         style,
@@ -2318,7 +2419,7 @@ def index(request):
             # 7 -> 8
             elif step == 7:
                 if not context["kommunikation_text"]:
-                    P = Prompt.objects.get(user=owner, name="kommunikation").text
+                    P = get_prompt_text("kommunikation", fallback="")
                     context["kommunikation_text"] = _run_openai(
                         P,
                         style,
@@ -2346,7 +2447,7 @@ def index(request):
             # 8 -> 9
             elif step == 8:
                 if not (context.get("sur_text") or "").strip():
-                    P = Prompt.objects.get(user=owner, name="styrkor_utveckling_risk").text
+                    P = get_prompt_text("styrkor_utveckling_risk", fallback="")
                     context["sur_text"] = _run_openai(
                         P,
                         style,
@@ -2381,7 +2482,7 @@ def index(request):
                     pass
 
                 if not context["slutsats_text"]:
-                    P = Prompt.objects.get(user=owner, name="sammanfattande_slutsats").text
+                    P = get_prompt_text("sammanfattande_slutsats", fallback="")
                     context["slutsats_text"] = _run_openai(
                         P,
                         style,
@@ -2478,9 +2579,10 @@ def index(request):
     context["sidebar_messages"] = sidebar_messages
 
     # Bygg context som skickas till AI i sidopanelen
+    active_set = get_active_prompt_set()
     ratings_json_for_sidebar = context.get("ratings_json", ratings_json_str or "")
     sidebar_ctx = _build_sidebar_context(
-        owner=owner,
+        prompt_set=active_set,
         step=context["step"],
         context=context,
         ratings_json_str=ratings_json_for_sidebar,

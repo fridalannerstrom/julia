@@ -1,13 +1,22 @@
 from django.contrib import admin
-from .models import Prompt
+from .models import PromptSet, Prompt, ActivePromptConfig
 
+
+@admin.register(PromptSet)
+class PromptSetAdmin(admin.ModelAdmin):
+    list_display = ("name", "created_by", "created_at")
+    search_fields = ("name",)
+    list_filter = ("created_by",)
+
+
+@admin.register(Prompt)
 class PromptAdmin(admin.ModelAdmin):
-    list_display = ('user', 'name', 'short_text')
-    search_fields = ('user__username', 'name')
-    list_filter = ('user',)
+    list_display = ("name", "prompt_set")
+    list_filter = ("prompt_set",)
+    search_fields = ("name", "text", "prompt_set__name")
+    ordering = ("prompt_set__name", "name")
 
-    def short_text(self, obj):
-        return (obj.text[:75] + '...') if len(obj.text) > 75 else obj.text
-    short_text.short_description = 'Prompttext (förhandsvisning)'
 
-admin.site.register(Prompt, PromptAdmin)
+@admin.register(ActivePromptConfig)
+class ActivePromptConfigAdmin(admin.ModelAdmin):
+    list_display = ("id", "active_set", "updated_at")

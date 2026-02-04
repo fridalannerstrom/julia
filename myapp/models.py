@@ -1,21 +1,59 @@
 from django.db import models
 import uuid
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.db import models
 
 
 User = get_user_model()
 
+class PromptSet(models.Model):
+    name = models.CharField(max_length=120, unique=True)  # "Veronika", "Frida"
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="prompt_sets",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Prompt(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    prompt_set = models.ForeignKey(
+        PromptSet,
+        on_delete=models.CASCADE,
+        related_name="prompts",
+    )
     name = models.CharField(max_length=100)
     text = models.TextField()
 
     class Meta:
-        unique_together = ('user', 'name')  # Så varje användare har max 1 av varje prompt-typ
+        unique_together = ("prompt_set", "name")
 
     def __str__(self):
-        return f"{self.name} ({self.user.username})"
+        return f"{self.name} ({self.prompt_set})"
+
+class ActivePromptConfig(models.Model):
+    """
+    Singleton: vi använder alltid id=1.
+    Denna styr vilket set som är aktivt GLOBALT för alla användare.
+    """
+    active_set = models.ForeignKey(
+        PromptSet,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Active: {self.active_set or 'None'}"
+
     
     # --- CHAT MODELS -------------------------------------------------------------
 from django.conf import settings
