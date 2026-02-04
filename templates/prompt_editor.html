@@ -98,12 +98,12 @@
   <ul class="nav nav-tabs">
     <li class="nav-item">
       <a class="nav-link {% if tab == 'veronika' %}active{% endif %}" href="?tab=veronika">
-        Veronikas prompter
+        Veronikas prompt
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link {% if tab == 'frida' %}active{% endif %}" href="?tab=frida">
-        Fridas prompter
+        Fridas prompt
       </a>
     </li>
   </ul>
@@ -119,6 +119,7 @@
       {% endif %}
     </div>
 
+  {% if active_set.id != current_set.id %}
     <form method="post" class="mt-2">
       {% csrf_token %}
       <input type="hidden" name="action" value="set_active">
@@ -127,6 +128,7 @@
         Sätt {{ current_set.name }} som aktiv
       </button>
     </form>
+  {% endif %}
   </div>
 </div>
 
