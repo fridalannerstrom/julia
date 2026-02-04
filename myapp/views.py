@@ -2267,7 +2267,7 @@ def index(request):
                                 verbal_score=str(context.get("verbal_score") or ""),
 
                                 # FIX: skicka valda motivationsfaktorer
-                                motivation_factors=selected_motivations_for_ai,
+                                selected_motivations=selected_motivations_for_ai,
                             )
 
                             if not context["tq_motivation_text"]:
@@ -2291,7 +2291,7 @@ def index(request):
                                     verbal_score=str(context.get("verbal_score") or ""),
 
                                     # FIX: skicka valda motivationsfaktorer
-                                    motivation_factors=selected_motivations_for_ai,
+                                    selected_motivations=selected_motivations_for_ai,
                                 )
 
                         step = 2
@@ -2328,7 +2328,7 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
 
                         # FIX: skicka valda motivationsfaktorer
-                        motivation_factors=selected_motivations_for_ai,
+                        selected_motivations=selected_motivations_for_ai,
                     )
                 step = 4
 
@@ -2356,7 +2356,7 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
 
                         # FIX
-                        motivation_factors=selected_motivations_for_ai,
+                        selected_motivations=selected_motivations_for_ai,
                     )
                 step = 5
 
@@ -2384,7 +2384,7 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
 
                         # FIX
-                        motivation_factors=selected_motivations_for_ai,
+                        selected_motivations=selected_motivations_for_ai,
                     )
                 step = 6
 
@@ -2412,7 +2412,7 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
 
                         # FIX
-                        motivation_factors=selected_motivations_for_ai,
+                        selected_motivations=selected_motivations_for_ai,
                     )
                 step = 7
 
@@ -2440,7 +2440,7 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
 
                         # FIX
-                        motivation_factors=selected_motivations_for_ai,
+                        selected_motivations=selected_motivations_for_ai,
                     )
                 step = 8
 
@@ -2471,7 +2471,7 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
 
                         # FIX
-                        motivation_factors=selected_motivations_for_ai,
+                        selected_motivations=selected_motivations_for_ai,
                     )
                 step = 9
 
@@ -2507,7 +2507,7 @@ def index(request):
                         verbal_score=context.get("verbal_score", ""),
 
                         # FIX
-                        motivation_factors=selected_motivations_for_ai,
+                        selected_motivations=selected_motivations_for_ai,
                     )
                 step = 10
 
