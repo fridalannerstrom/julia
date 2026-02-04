@@ -59,11 +59,14 @@
       </div>
 
       <nav class="sidebar-nav">
-        <a href="{% url 'index' %}" class="sidebar-link">
+        <a href="{% url 'index' %}" class="sidebar-link sidebar-link-active">
           <span class="sidebar-icon">⚙️</span>
-          <span>Verktyget</span>
+          <span>Skapa rapport</span>
         </a>
-
+        <a href="{% url 'report_list' %}" class="sidebar-link">
+          <span class="sidebar-icon">💬</span>
+          <span>Sparade rapporter</span>
+        </a>
         <a href="{% url 'report_list' %}" class="sidebar-link sidebar-link-active">
           <span class="sidebar-icon">📄</span>
           <span>Rapporter</span>
