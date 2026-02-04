@@ -3010,32 +3010,26 @@ def report_delete(request, report_id):
 
 @login_required
 def report_download(request, report_id):
-    """
-    Återanvänd din Word-export, fast från sparad data.
-    Vi simulerar POST-build_doc med rep.data.
-    """
     rep = _get_report_or_404(report_id)
     data = rep.data or {}
 
-    # Bygg ett 'fake context' som matchar din build_doc-del
     context = data.copy()
-    context["candidate_name"] = context.get("candidate_name", "")  # safety
+    context["candidate_name"] = context.get("candidate_name", "")
 
-    # samma kod som i build_doc men med data istället för request.POST:
+    # ✅ Prioritera POST (bilder skickade från report_open), annars fallback
+    leda_image_data = request.POST.get("leda_image") or data.get("leda_image", "")
+    mod_image_data = request.POST.get("mod_image") or data.get("mod_image", "")
+    sjalkannedom_image_data = request.POST.get("sjalkannedom_image") or data.get("sjalkannedom_image", "")
+    strategi_image_data = request.POST.get("strategi_image") or data.get("strategi_image", "")
+    kommunikation_image_data = request.POST.get("kommunikation_image") or data.get("kommunikation_image", "")
+
     from django.http import HttpResponse
     from docx import Document
 
     template_path = os.path.join(settings.BASE_DIR, "reports", "domarnamnden_template.docx")
     doc = Document(template_path)
 
-    # om du vill spara bilder senare kan du lägga dem i rep.data också
-    leda_image_data = data.get("leda_image", "")
-    mod_image_data = data.get("mod_image", "")
-    sjalkannedom_image_data = data.get("sjalkannedom_image", "")
-    strategi_image_data = data.get("strategi_image", "")
-    kommunikation_image_data = data.get("kommunikation_image", "")
-
-    # motivations-text (som du redan bygger)
+    # motivations-text
     selected_motivation_keys = data.get("selected_motivation_keys", []) or []
     motivation_lines = []
     for k in selected_motivation_keys:
@@ -3079,6 +3073,7 @@ def report_download(request, report_id):
         replace_table_placeholder(doc, "{strategi_table}", ratings_doc, "strategiskt_tankande_och_anpassningsformaga")
         replace_table_placeholder(doc, "{kommunikation_table}", ratings_doc, "kommunikation_och_samarbete")
 
+    # ✅ Lägg in bilder om de finns
     replace_image_placeholder(doc, "{leda_image}", leda_image_data)
     replace_image_placeholder(doc, "{mod_image}", mod_image_data)
     replace_image_placeholder(doc, "{sjalkannedom_image}", sjalkannedom_image_data)

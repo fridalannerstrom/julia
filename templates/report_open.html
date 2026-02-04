@@ -14,6 +14,38 @@
 
   <!-- Behövs om du vill visa rating-tabellerna snyggt (och om de ligger som HTML i datan) -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+.export-preview {
+  width: 100%;
+  max-width: 520px;   /* 🔥 justera detta */
+  height: auto;
+}
+
+/* Bara när vi exporterar till bild */
+.export-scale {
+  font-size: 14px !important; /* testa 13px/12px om du vill mindre */
+  line-height: 1.35 !important;
+}
+
+/* Om din tabell har rubriker som sticker iväg */
+.export-scale h1,
+.export-scale h2,
+.export-scale h3,
+.export-scale .dn-title,
+.export-scale .dn-table-title {
+  font-size: 18px !important; /* testa 16px */
+  line-height: 1.2 !important;
+}
+
+/* Om du har “label”-texter */
+.export-scale .dn-label {
+  font-size: 14px !important;
+}
+
+</style>
+
+
 </head>
 
 <body id="page-top">
@@ -77,7 +109,23 @@
 
         <div class="page-header-meta">
           <a class="pill pill-soft" href="{% url 'report_edit' report.id %}">✏️ Redigera</a>
-          <a class="pill" href="{% url 'report_download' report.id %}">📄 Ladda ner Word</a>
+<!-- ✅ DOWNLOAD WORD (POST) -->
+<form id="downloadWordForm" method="POST" action="{% url 'report_download' report.id %}">
+  {% csrf_token %}
+
+  <!-- Hidden inputs som JS fyller med PNG-dataURL -->
+  <input type="hidden" name="leda_image" id="leda_image_input">
+  <input type="hidden" name="mod_image" id="mod_image_input">
+  <input type="hidden" name="sjalkannedom_image" id="sjalkannedom_image_input">
+  <input type="hidden" name="strategi_image" id="strategi_image_input">
+  <input type="hidden" name="kommunikation_image" id="kommunikation_image_input">
+
+  <button type="submit" class="pill" id="downloadWordBtn" disabled>
+    📄 Ladda ner Word
+  </button>
+</form>
+
+</form>
         </div>
       </header>
 
@@ -258,108 +306,147 @@
                   </div>
                 </div>
 
-                {# RAD 5 – Leda #}
-                <div class="dn-report-row">
-                  <div class="dn-report-col dn-report-col--left">
-                    <h4 class="dn-label">Leda, utveckla och engagera</h4>
-                    <p class="dn-body-text">
-                      En chef ska kunna sätta upp och arbeta uthålligt mot tydliga mål som bidrar till
-                      verksamhetens resultat och utveckling, samt motivera och engagera medarbetarna.
-                    </p>
-                  </div>
-                  <div class="dn-report-col dn-report-col--right">
-{% if report.data.leda_image_path %}
-  <img src="{{ MEDIA_URL }}{{ report.data.leda_image_path }}" alt="Leda-tabell">
-{% endif %}
-                    <div class="dn-report-text">
-                      {{ data.leda_text|safe }}
-                    </div>
-                  </div>
-                </div>
+{# RAD 5 – Leda #}
+<div class="dn-report-row">
+  <div class="dn-report-col dn-report-col--left">
+    <h4 class="dn-label">Leda, utveckla och engagera</h4>
+    <p class="dn-body-text">
+      En chef ska kunna sätta upp och arbeta uthålligt mot tydliga mål som bidrar till
+      verksamhetens resultat och utveckling, samt motivera och engagera medarbetarna.
+    </p>
+  </div>
+
+  <div class="dn-report-col dn-report-col--right">
+    <!-- 1) HTML-tabellen (renderas av Django) -->
+    <div id="leda-export" class="rating-export">
+      {{ leda_table_html|safe }}
+    </div>
+
+    <!-- 2) Preview-bild (fylls av JS) -->
+    <img id="leda-preview" class="dn-report-table export-table" alt="Leda-tabell" />
+
+    <!-- 3) Texten -->
+    <div class="dn-report-text">
+      {{ data.leda_text|safe }}
+    </div>
+  </div>
+</div>
+
 
                 {# RAD 6 – Mod #}
-                <div class="dn-report-row">
-                  <div class="dn-report-col dn-report-col--left">
-                    <h4 class="dn-label">Mod och handlingskraft</h4>
-                    <p class="dn-body-text">
-                      Att visa mod och handlingskraft innebär att kunna ta ansvar och hantera svåra
-                      situationer samt fatta beslut även under press.
-                    </p>
-                  </div>
-                  <div class="dn-report-col dn-report-col--right">
-                    {% if data.mod_table_html %}
-                      <div class="dn-report-table">
-                        {{ data.mod_table_html|safe }}
-                      </div>
-                    {% endif %}
-                    <div class="dn-report-text">
-                      {{ data.mod_text|safe }}
-                    </div>
-                  </div>
-                </div>
+ <div class="dn-report-row">
+  <div class="dn-report-col dn-report-col--left">
+    <h4 class="dn-label">Mod och handlingskraft</h4>
+    <p class="dn-body-text">
+      Att visa mod och handlingskraft innebär att kunna ta ansvar och hantera svåra
+      situationer samt fatta beslut även under press.
+    </p>
+  </div>
+
+  <div class="dn-report-col dn-report-col--right">
+    <div id="mod-export" class="rating-export">
+      {{ mod_table_html|safe }}
+    </div>
+
+    <img
+      id="mod-preview"
+      class="dn-report-table export-preview"
+      alt="Mod-tabell"
+      style="display:none;"
+    />
+
+    <div class="dn-report-text">
+      {{ data.mod_text|safe }}
+    </div>
+  </div>
+</div>
+
 
                 {# RAD 7 – Självkännedom #}
                 <div class="dn-report-row">
-                  <div class="dn-report-col dn-report-col--left">
-                    <h4 class="dn-label">Självkännedom och emotionell stabilitet</h4>
-                    <p class="dn-body-text">
-                      En chef behöver vara trygg, empatisk och medveten om sina egna styrkor och
-                      svagheter, samt kunna hantera stress i krävande situationer.
-                    </p>
-                  </div>
-                  <div class="dn-report-col dn-report-col--right">
-                    {% if data.sjalkannedom_table_html %}
-                      <div class="dn-report-table">
-                        {{ data.sjalkannedom_table_html|safe }}
-                      </div>
-                    {% endif %}
-                    <div class="dn-report-text">
-                      {{ data.sjalkannedom_text|safe }}
-                    </div>
-                  </div>
-                </div>
+  <div class="dn-report-col dn-report-col--left">
+    <h4 class="dn-label">Självkännedom och emotionell stabilitet</h4>
+    <p class="dn-body-text">
+      En chef behöver vara trygg, empatisk och medveten om sina egna styrkor och
+      svagheter, samt kunna hantera stress i krävande situationer.
+    </p>
+  </div>
+
+  <div class="dn-report-col dn-report-col--right">
+    <div id="sjalkannedom-export" class="rating-export">
+      {{ sjalkannedom_table_html|safe }}
+    </div>
+
+    <img
+      id="sjalkannedom-preview"
+      class="dn-report-table export-preview"
+      alt="Självkännedom-tabell"
+      style="display:none;"
+    />
+
+    <div class="dn-report-text">
+      {{ data.sjalkannedom_text|safe }}
+    </div>
+  </div>
+</div>
+
 
                 {# RAD 8 – Strategi #}
-                <div class="dn-report-row">
-                  <div class="dn-report-col dn-report-col--left">
-                    <h4 class="dn-label">Strategiskt tänkande och anpassningsförmåga</h4>
-                    <p class="dn-body-text">
-                      En chef ska kunna tänka strategiskt, väga långsiktiga och kortsiktiga konsekvenser
-                      och anpassa sig efter förändrade omständigheter.
-                    </p>
-                  </div>
-                  <div class="dn-report-col dn-report-col--right">
-                    {% if data.strategi_table_html %}
-                      <div class="dn-report-table">
-                        {{ data.strategi_table_html|safe }}
-                      </div>
-                    {% endif %}
-                    <div class="dn-report-text">
-                      {{ data.strategi_text|safe }}
-                    </div>
-                  </div>
-                </div>
+ <div class="dn-report-row">
+  <div class="dn-report-col dn-report-col--left">
+    <h4 class="dn-label">Strategiskt tänkande och anpassningsförmåga</h4>
+    <p class="dn-body-text">
+      En chef ska kunna tänka strategiskt, väga långsiktiga och kortsiktiga konsekvenser
+      och anpassa sig efter förändrade omständigheter.
+    </p>
+  </div>
+
+  <div class="dn-report-col dn-report-col--right">
+    <div id="strategi-export" class="rating-export">
+      {{ strategi_table_html|safe }}
+    </div>
+
+    <img
+      id="strategi-preview"
+      class="dn-report-table export-preview"
+      alt="Strategi-tabell"
+      style="display:none;"
+    />
+
+    <div class="dn-report-text">
+      {{ data.strategi_text|safe }}
+    </div>
+  </div>
+</div>
 
                 {# RAD 9 – Kommunikation #}
-                <div class="dn-report-row">
-                  <div class="dn-report-col dn-report-col--left">
-                    <h4 class="dn-label">Kommunikation och samarbete</h4>
-                    <p class="dn-body-text">
-                      Som chef är det viktigt att kommunicera tydligt, vara lyhörd och aktivt skapa
-                      samarbeten och relationer, både internt och externt.
-                    </p>
-                  </div>
-                  <div class="dn-report-col dn-report-col--right">
-                    {% if data.kommunikation_table_html %}
-                      <div class="dn-report-table">
-                        {{ data.kommunikation_table_html|safe }}
-                      </div>
-                    {% endif %}
-                    <div class="dn-report-text">
-                      {{ data.kommunikation_text|safe }}
-                    </div>
-                  </div>
-                </div>
+<div class="dn-report-row">
+  <div class="dn-report-col dn-report-col--left">
+    <h4 class="dn-label">Kommunikation och samarbete</h4>
+    <p class="dn-body-text">
+      Som chef är det viktigt att kommunicera tydligt, vara lyhörd och aktivt skapa
+      samarbeten och relationer, både internt och externt.
+    </p>
+  </div>
+
+  <div class="dn-report-col dn-report-col--right">
+    <div id="kommunikation-export" class="rating-export">
+      {{ kommunikation_table_html|safe }}
+    </div>
+
+    <img
+      id="kommunikation-preview"
+      class="dn-report-table export-preview"
+      alt="Kommunikation-tabell"
+      style="display:none;"
+    />
+
+    <div class="dn-report-text">
+      {{ data.kommunikation_text|safe }}
+    </div>
+  </div>
+</div>
+
 
                 {# RAD 10 – Slutsats #}
                 <div class="dn-report-row">
@@ -378,9 +465,125 @@
 
           </div>
         </div>
+
       </section>
     </main>
 
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+
+<script>
+(function () {
+  // Map: export-div -> preview-img -> hidden input
+  const TABLES = [
+    { exportId: "leda-export",          previewId: "leda-preview",          inputId: "leda_image_input" },
+    { exportId: "mod-export",           previewId: "mod-preview",           inputId: "mod_image_input" },
+    { exportId: "sjalkannedom-export",  previewId: "sjalkannedom-preview",  inputId: "sjalkannedom_image_input" },
+    { exportId: "strategi-export",      previewId: "strategi-preview",      inputId: "strategi_image_input" },
+    { exportId: "kommunikation-export", previewId: "kommunikation-preview", inputId: "kommunikation_image_input" },
+  ];
+
+  const downloadBtn = document.getElementById("downloadWordBtn");
+  const statusEl = document.getElementById("imgStatus");
+
+  function setStatus(text) {
+    if (statusEl) statusEl.textContent = text;
+  }
+
+  // Rendera EN div till PNG dataURL
+async function renderToPngDataUrl(el) {
+  // Skapa en offscreen wrapper
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "fixed";
+  wrapper.style.left = "-99999px";
+  wrapper.style.top = "0";
+  wrapper.style.width = el.offsetWidth + "px";
+  wrapper.style.background = "#ffffff";
+  wrapper.style.zIndex = "-1";
+
+  // Klona export-elementet
+  const clone = el.cloneNode(true);
+
+  // Lägg på export-klass (här styr vi font-size)
+  clone.classList.add("export-scale");
+
+  // Viktigt: se till att klonen inte råkar bli bredare än wrappern
+  clone.style.width = "100%";
+  clone.style.maxWidth = "100%";
+  clone.style.background = "#ffffff";
+
+    const canvas = await html2canvas(el, {
+      backgroundColor: "#ffffff",
+      scale: 2,              // skarpare i Word
+      useCORS: true,
+      logging: false,
+    });
+
+    
+
+    return canvas.toDataURL("image/png");
+  }
+
+  async function buildAllImages() {
+    downloadBtn.disabled = true;
+    setStatus("Skapar tabellbilder...");
+
+    let okCount = 0;
+
+    for (const t of TABLES) {
+      const exportEl = document.getElementById(t.exportId);
+      const previewEl = document.getElementById(t.previewId);
+      const inputEl = document.getElementById(t.inputId);
+
+      // Om sektion saknas i rapporten: hoppa
+      if (!exportEl || !previewEl || !inputEl) continue;
+
+      // Om tabellen är tom, hoppa
+      const hasDots = exportEl.querySelector(".dn-dot");
+      if (!hasDots) continue;
+
+      try {
+        // Gör PNG
+        const dataUrl = await renderToPngDataUrl(exportEl);
+
+        // Sätt preview
+        previewEl.src = dataUrl;
+        previewEl.style.display = "block";
+        previewEl.style.width = "100%";
+previewEl.style.maxWidth = "100%";
+previewEl.style.height = "auto";
+
+
+        // Sätt hidden input som skickas vid POST
+        inputEl.value = dataUrl;
+
+        // (Valfritt) göm HTML-tabellen när bilden finns
+        exportEl.style.display = "none";
+
+        okCount++;
+      } catch (e) {
+        console.error("Kunde inte skapa bild för", t.exportId, e);
+      }
+    }
+
+    if (okCount > 0) {
+      setStatus("Tabellbilder klara ✅");
+      downloadBtn.disabled = false;
+    } else {
+      setStatus("Kunde inte skapa tabellbilder. Kontrollera att tabellerna renderas.");
+      // Låt knappen vara disabled så du inte laddar ner utan bilder
+      downloadBtn.disabled = true;
+    }
+  }
+
+  // Kör när sidan är redo
+  window.addEventListener("load", buildAllImages);
+})();
+</script>
+
 </body>
+
+
 </html>
