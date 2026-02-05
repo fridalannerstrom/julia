@@ -280,7 +280,7 @@ MOTIVATION_FACTORS = {
         ),
     },
     "work_life_balance": {
-        "label": "Work life balance",
+        "label": "Balans mellan arbete och privatliv",
         "definition": (
             "Balans mellan arbete och privatliv, så de kan uppfylla sina åtaganden både i arbetet "
             "och utanför. Söker tydliga gränser så de kan stänga av när arbetsdagen är slut och "
@@ -312,7 +312,7 @@ MOTIVATION_FACTORS = {
         ),
     },
     "forvarv": {
-        "label": "Förvärv",
+        "label": "Anskaffning",
         "definition": (
             "Motiveras av ekonomisk belöning och att arbeta i en välbetald roll så de har råd med de "
             "saker de vill ha utan att behöva oroa sig för kostnader. Fokus på lön och förmåner är "
@@ -320,7 +320,7 @@ MOTIVATION_FACTORS = {
         ),
     },
     "autonomi": {
-        "label": "Autonomi",
+        "label": "Självständighet",
         "definition": (
             "Friheten att fatta egna beslut om hur de ska planera sin tid och organisera sitt arbete. "
             "Presterar som bäst när de får förtroende att sätta sin egen arbetsriktning och slutföra "
@@ -376,7 +376,7 @@ MOTIVATION_FACTORS = {
         ),
     },
     "marknadsvarde": {
-        "label": "Marknadsvärde",
+        "label": "Kommersiellt fokus",
         "definition": (
             "Trivs i en roll som är kommersiellt fokuserad och bidrar till organisationens ekonomiska "
             "framgång. Motiveras av att se kopplingen mellan sin roll och organisationens resultat och "
