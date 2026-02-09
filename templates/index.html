@@ -219,9 +219,9 @@
 
                 <div class="dn-row">
                   {# ───────── Jobbannons (PDF) ───────── #}
-                  <h3 class="adminui-label">0. Jobbannons (PDF)</h3>
+                  <h3 class="adminui-label">1. Jobbannons (PDF)</h3>
                   <p class="adminui-intro">
-                    Ladda upp en PDF med jobbannons/tjänstebeskrivning (valfritt).
+                    Ladda upp en PDF med jobbannons/tjänstebeskrivning (valfritt). Observera att jobbannonsen ej får vara en inskannad bild.
                   </p>
 
                   <div class="adminui-upload-area">
@@ -239,7 +239,7 @@
                 </div>
 
                 {# ───────── Exceluppladdning ───────── #}
-                <h3 class="adminui-label">1. Excelfil</h3>
+                <h3 class="adminui-label">2. Excelfil</h3>
                 <p class="adminui-intro">
                   Ladda upp din excelfil med testresultatet.
                 </p>
@@ -261,7 +261,7 @@
                 <input type="hidden" name="uploaded_files_text" value="{{ uploaded_files_text|default_if_none:'' }}">
 
                 {# ───────── CV-text ───────── #}
-                <h3 class="adminui-label">2. CV (klistra in text)</h3>
+                <h3 class="adminui-label">3. CV (klistra in text)</h3>
                 <p class="adminui-intro">
                   Klistra in texten från kandidatens CV. Det gör inget om den är rörig – AI hjälper dig att städa upp
                   den.
@@ -275,7 +275,7 @@
                 </div>
 
                 {# ───────── Motivationsfaktorer ───────── #}
-                <h3 class="adminui-label">3. Motivationsfaktorer</h3>
+                <h3 class="adminui-label">4. Motivationsfaktorer</h3>
                 <p class="adminui-intro">
                   Välj upp till <strong>tre</strong> motivationsfaktorer som bäst beskriver vad som driver kandidaten.
                 </p>
@@ -292,7 +292,7 @@
                 {# ───────── Motivation ───────── #}
                 <div class="dn-row">
                   <div class="dn-field-group">
-                    <label for="id_motivation_notes">Anteckningar om motivation</label>
+                    <label for="id_motivation_notes">5. Anteckningar om motivation</label>
                     <textarea id="id_motivation_notes" name="motivation_notes" rows="4"
                       class="adminui-textarea">{{ motivation_notes }}</textarea>
                   </div>
@@ -301,19 +301,19 @@
                 {# ───────── Färdighetspoäng på samma rad ───────── #}
                 <div class="dn-row dn-row--two">
                   <div class="dn-field-group">
-                    <label for="id_logical_score">Logisk färdighet (0–99)</label>
+                    <label for="id_logical_score">6. Logisk färdighet (0–99)</label>
                     <input type="number" id="id_logical_score" name="logical_score" min="0" max="99" class="dn-input"
                       value="{{ logical_score }}">
                   </div>
                   <div class="dn-field-group">
-                    <label for="id_verbal_score">Verbal färdighet (0–99)</label>
+                    <label for="id_verbal_score">7. Verbal färdighet (0–99)</label>
                     <input type="number" id="id_verbal_score" name="verbal_score" min="0" max="99" class="dn-input"
                       value="{{ verbal_score }}">
                   </div>
                 </div>
 
 
-                <h3 class="adminui-label">3. Intervjuanteckningar</h3>
+                <h3 class="adminui-label">8. Intervjuanteckningar</h3>
                 <p class="adminui-intro">
                   Klistra in anteckningar från intervjun. Anteckningarna kan vara slarviga, AI renskriver den.
                 </p>
