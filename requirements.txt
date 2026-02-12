@@ -10,7 +10,7 @@ charset-normalizer==3.4.1
 colorama==0.4.6
 distro==1.9.0
 dj-database-url==2.3.0
-Django==5.2
+Django==5.2.11
 django-markdownify==0.9.5
 et_xmlfile==2.0.0
 google-api-core==2.24.2
