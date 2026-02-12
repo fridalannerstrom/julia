@@ -3083,7 +3083,7 @@ def report_open(request, report_id):
 
 @login_required
 def report_edit(request, report_id):
-    report = get_object_or_404(Report, id=report_id, created_by=request.user)
+    report = get_object_or_404(Report, id=report_id)
 
     # Anta att report.data är en dict (JSONField) med ALLT du behöver
     # Ex: kandidat, intervju_text, excel_text, motivation_factors, etc.
